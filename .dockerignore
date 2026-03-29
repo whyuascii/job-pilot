@@ -8,7 +8,5 @@ docker/data
 coverage
 .turbo
 *.log
-.vinxi
-.output
 dist
 docs

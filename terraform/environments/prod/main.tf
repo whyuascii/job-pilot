@@ -151,36 +151,104 @@ resource "aws_s3_bucket_policy" "storage" {
   })
 }
 
-# ─── Web Service ──────────────────────────────────────────────────────────────
-# TanStack Start frontend at job-pilot.whyuascii.com
+# ─── Web Hosting (S3 + CloudFront) ────────────────────────────────────────────
+# Static SPA files served via CloudFront at job-pilot.whyuascii.com
 
-module "web" {
-  source = "../../modules/service"
+data "aws_acm_certificate" "wildcard" {
+  domain      = "*.whyuascii.com"
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
 
-  service_name      = "job-pilot-web"
-  container_port    = 3000
-  image_tag         = var.web_image_tag
-  cpu               = var.web_cpu
-  memory            = var.web_memory
-  host_header       = "job-pilot.whyuascii.com"
-  health_check_path = "/"
-  desired_count     = 1
-  listener_priority = 110
-  tags              = var.tags
+resource "aws_s3_bucket" "web" {
+  bucket = "job-pilot-web-${data.aws_caller_identity.current.account_id}"
+  tags   = var.tags
+}
 
-  environment_variables = [
-    { name = "PORT", value = "3000" },
-    { name = "NODE_ENV", value = "production" },
-    { name = "API_URL", value = "https://api.job-pilot.whyuascii.com" },
-  ]
+resource "aws_s3_bucket_policy" "web" {
+  bucket = aws_s3_bucket.web.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowCloudFrontOAC"
+      Effect    = "Allow"
+      Principal = { Service = "cloudfront.amazonaws.com" }
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.web.arn}/*"
+      Condition = {
+        StringEquals = {
+          "AWS:SourceArn" = aws_cloudfront_distribution.web.arn
+        }
+      }
+    }]
+  })
+}
 
-  secrets = [
-    { name = "DATABASE_URL", valueFrom = "/whyuascii/job-pilot/database-url" },
-    { name = "BETTER_AUTH_SECRET", valueFrom = "/whyuascii/job-pilot/better-auth-secret" },
-    { name = "ENCRYPTION_KEY", valueFrom = "/whyuascii/job-pilot/encryption-key" },
-    # Optional — add when needed:
-    # { name = "REDIS_URL", valueFrom = "/whyuascii/job-pilot/redis-url" },
-  ]
+resource "aws_cloudfront_origin_access_control" "web" {
+  name                              = "job-pilot-web-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+resource "aws_cloudfront_distribution" "web" {
+  enabled             = true
+  default_root_object = "index.html"
+  aliases             = ["job-pilot.whyuascii.com"]
+  price_class         = "PriceClass_100"
+  tags                = var.tags
+
+  origin {
+    domain_name              = aws_s3_bucket.web.bucket_regional_domain_name
+    origin_id                = "s3-web"
+    origin_access_control_id = aws_cloudfront_origin_access_control.web.id
+  }
+
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "s3-web"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 31536000
+  }
+
+  # SPA routing — serve index.html for 403/404
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 10
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 10
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = data.aws_acm_certificate.wildcard.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
 }
 
 # ─── API Service ──────────────────────────────────────────────────────────────
@@ -221,7 +289,6 @@ module "api" {
 }
 
 # ─── DNS Records ──────────────────────────────────────────────────────────────
-# Point subdomains to the shared ALB (wildcard cert covers *.whyuascii.com)
 
 resource "aws_route53_record" "web" {
   zone_id = data.aws_route53_zone.main.zone_id
@@ -229,12 +296,13 @@ resource "aws_route53_record" "web" {
   type    = "A"
 
   alias {
-    name                   = data.aws_lb.main.dns_name
-    zone_id                = data.aws_lb.main.zone_id
-    evaluate_target_health = true
+    name                   = aws_cloudfront_distribution.web.domain_name
+    zone_id                = aws_cloudfront_distribution.web.hosted_zone_id
+    evaluate_target_health = false
   }
 }
 
+# API still routes through the shared ALB
 resource "aws_route53_record" "api" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = "api.job-pilot.whyuascii.com"

@@ -75,14 +75,3 @@ jobs:
 
       - name: Run tests
         run: pnpm vitest run
-
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -f docker/Dockerfile -t job-pilot-web:${{ github.sha }} .

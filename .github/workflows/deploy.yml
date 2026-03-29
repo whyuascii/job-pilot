@@ -1,4 +1,4 @@
-name: Deploy to ECS
+name: Deploy
 
 on:
   push:
@@ -46,7 +46,7 @@ jobs:
       - name: Run tests
         run: pnpm vitest run
 
-  # ─── Build & Push Docker Images ─────────────────────────────────────────────
+  # ─── Build & Push API Docker Image ─────────────────────────────────────────
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -71,19 +71,6 @@ jobs:
         id: meta
         run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push web image
-        env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-          TAG: ${{ steps.meta.outputs.version }}
-        run: |
-          docker build \
-            -f docker/Dockerfile \
-            --build-arg VITE_POSTHOG_KEY="${{ vars.VITE_POSTHOG_KEY }}" \
-            --build-arg VITE_POSTHOG_HOST="${{ vars.VITE_POSTHOG_HOST }}" \
-            -t "$REGISTRY/whyuascii/job-pilot-web:$TAG" \
-            .
-          docker push "$REGISTRY/whyuascii/job-pilot-web:$TAG"
-
       - name: Build and push API image
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
@@ -95,53 +82,48 @@ jobs:
             .
           docker push "$REGISTRY/whyuascii/job-pilot-api:$TAG"
 
-  # ─── Deploy to ECS ──────────────────────────────────────────────────────────
+  # ─── Deploy Web to S3 + CloudFront ────────────────────────────────────────
   deploy-web:
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
-
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        env:
+          VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
+        run: pnpm turbo build --filter=@job-pilot/web
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Deploy web service
-        env:
-          SERVICE: job-pilot-web
-          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
-          ECR_URL: ${{ vars.WEB_ECR_REPO_URL }}
+      - name: Deploy to S3
+        run: aws s3 sync apps/web/dist/ s3://${{ vars.WEB_S3_BUCKET }}/ --delete
+
+      - name: Invalidate CloudFront cache
         run: |
-          TASK_DEF=$(aws ecs describe-services \
-            --cluster "${{ vars.ECS_CLUSTER }}" \
-            --services "$SERVICE" \
-            --query 'services[0].taskDefinition' \
-            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
 
-          aws ecs describe-task-definition \
-            --task-definition "$TASK_DEF" \
-            --query 'taskDefinition' \
-            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
-            | jq --arg img "$ECR_URL:$IMAGE_TAG" '.containerDefinitions[0].image = $img' \
-            > new-task-def.json
-
-          NEW_TASK_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://new-task-def.json \
-            --query 'taskDefinition.taskDefinitionArn' \
-            --output text)
-
-          aws ecs update-service \
-            --cluster "${{ vars.ECS_CLUSTER }}" \
-            --service "$SERVICE" \
-            --task-definition "$NEW_TASK_ARN"
-
-      - name: Wait for web deployment to stabilize
-        run: |
-          aws ecs wait services-stable \
-            --cluster "${{ vars.ECS_CLUSTER }}" \
-            --services job-pilot-web
-
+  # ─── Deploy API to ECS ────────────────────────────────────────────────────
   deploy-api:
     needs: build
     runs-on: ubuntu-latest

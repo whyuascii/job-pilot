@@ -1,12 +1,21 @@
-output "web_service_name" {
-  description = "Web ECS service name"
-  value       = module.web.service_name
+# ─── Web (S3 + CloudFront) ────────────────────────────────────────────────────
+
+output "web_bucket_name" {
+  description = "S3 bucket name for web static files"
+  value       = aws_s3_bucket.web.id
 }
 
-output "web_ecr_repository_url" {
-  description = "Web ECR repository URL"
-  value       = module.web.ecr_repository_url
+output "web_cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for cache invalidation"
+  value       = aws_cloudfront_distribution.web.id
 }
+
+output "web_cloudfront_domain_name" {
+  description = "CloudFront distribution domain name"
+  value       = aws_cloudfront_distribution.web.domain_name
+}
+
+# ─── API (ECS) ────────────────────────────────────────────────────────────────
 
 output "api_service_name" {
   description = "API ECS service name"
@@ -17,6 +26,8 @@ output "api_ecr_repository_url" {
   description = "API ECR repository URL"
   value       = module.api.ecr_repository_url
 }
+
+# ─── Shared ───────────────────────────────────────────────────────────────────
 
 output "storage_bucket" {
   description = "S3 bucket name for application storage"

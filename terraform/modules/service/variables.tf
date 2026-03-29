@@ -65,12 +65,6 @@ variable "secrets" {
   default = []
 }
 
-variable "shm_size_mb" {
-  description = "Shared memory size in MB (0 to disable). Required for Chromium/Playwright."
-  type        = number
-  default     = 0
-}
-
 variable "listener_priority" {
   description = "ALB listener rule priority (null for auto-assigned)"
   type        = number

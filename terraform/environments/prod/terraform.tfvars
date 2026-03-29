@@ -1,9 +1,6 @@
 # Non-sensitive values only. This file is committed to git.
 # Secrets are stored in AWS SSM Parameter Store.
 
-web_cpu    = 256
-web_memory = 512
-
 api_cpu    = 1024
 api_memory = 2048
 

@@ -29,58 +29,19 @@ RUN pnpm --filter @job-pilot/shared build || true && \
     pnpm --filter @job-pilot/api build
 
 # ---------------------------------------------------------------------------
-# Production stage — Playwright-compatible image
+# Production stage — lightweight Alpine image
 # ---------------------------------------------------------------------------
-# node:20-slim is Debian-based (not Alpine) which supports glibc needed by
-# Chromium. We install Playwright's system dependencies for headless Chrome.
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 
-# Install system dependencies for Playwright Chromium (headless)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Chromium runtime dependencies
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libdbus-1-3 \
-    libxkbcommon0 \
-    libatspi2.0-0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    libwayland-client0 \
-    # Font rendering
-    fonts-liberation \
-    fonts-noto-color-emoji \
-    # Utilities
-    wget \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN groupadd -g 1001 nodejs && useradd -m -u 1001 -g nodejs api
+RUN addgroup -g 1001 nodejs && adduser -u 1001 -G nodejs -s /bin/sh -D api
 
 # Copy everything from builder (includes node_modules, built output)
 COPY --from=builder --chown=api:nodejs /app /app
 
-# Install Playwright browsers (Chromium only — saves ~500MB vs all browsers)
-RUN npx playwright install chromium
-
-# Create directories for screenshots and temp files
-RUN mkdir -p /tmp/job-pilot-screenshots && chown api:nodejs /tmp/job-pilot-screenshots
-
 USER api
 
-# Production defaults: headless mode, no display needed
 ENV NODE_ENV=production
-ENV AUTO_APPLY_HEADED=false
 
 EXPOSE 3001
 

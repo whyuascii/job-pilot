@@ -4,30 +4,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-# ─── Web Service ──────────────────────────────────────────────────────────────
-
-variable "web_image_tag" {
-  description = "Docker image tag for the web service (set by CI — no default)"
-  type        = string
-
-  validation {
-    condition     = var.web_image_tag != "latest"
-    error_message = "Do not use 'latest' — pass the git SHA tag from CI."
-  }
-}
-
-variable "web_cpu" {
-  description = "CPU units for the web task (256 = 0.25 vCPU)"
-  type        = number
-  default     = 256
-}
-
-variable "web_memory" {
-  description = "Memory in MiB for the web task"
-  type        = number
-  default     = 512
-}
-
 # ─── API Service ──────────────────────────────────────────────────────────────
 
 variable "api_image_tag" {

@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 # Production overlay - use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
 # For cloud deployment (ECS/Fargate), use managed services for Postgres/Redis/S3.
@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-jobpilot}
       POSTGRES_DB: ${POSTGRES_DB:-jobpilot}
     ports:
-      - "127.0.0.1:5432:5432"
+      - '127.0.0.1:5432:5432'
     restart: always
     deploy:
       resources:
@@ -20,7 +20,7 @@ services:
   redis:
     command: redis-server --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "127.0.0.1:6379:6379"
+      - '127.0.0.1:6379:6379'
     restart: always
 
   minio:
@@ -28,59 +28,18 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     restart: always
 
-  web:
-    image: job-pilot-web:latest
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    ports:
-      - "${APP_PORT:-3000}:3000"
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-jobpilot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jobpilot}
-      REDIS_URL: ${REDIS_URL:-}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
-      APP_URL: ${APP_URL:-http://localhost:3000}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      S3_ENDPOINT: http://minio:9000
-      S3_BUCKET: ${S3_BUCKET:-job-pilot}
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # -------------------------------------------------------------------------
-  # API service — handles auto-apply browser automation
-  # -------------------------------------------------------------------------
-  # Uses Playwright + Chromium for headless form filling.
-  # Requires 2GB+ memory for Chromium stability.
-  # In ECS/Fargate: use 2 vCPU + 4GB memory task definition.
+  # ─── API Service ─────────────────────────────────────────────────────────
   api:
     image: job-pilot-api:latest
     build:
       context: ..
       dockerfile: apps/api/Dockerfile
     ports:
-      - "${API_PORT:-3001}:3001"
+      - '${API_PORT:-3001}:3001'
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -89,53 +48,25 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
       APP_URL: ${APP_URL:-http://localhost:3000}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      # S3 for resume storage + screenshots
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: ${S3_BUCKET:-job-pilot}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      # Browser automation settings
-      AUTO_APPLY_HEADED: "false"
-      SCREENSHOT_DIR: /tmp/job-pilot-screenshots
-      # Optional: Lightpanda for fast pre-scraping (connect to sidecar)
-      LIGHTPANDA_WS_URL: ${LIGHTPANDA_WS_URL:-}
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
     restart: always
-    # Chromium needs /dev/shm larger than default 64MB
-    shm_size: '1gb'
     deploy:
       resources:
         limits:
-          memory: 2G
-        reservations:
           memory: 1G
+        reservations:
+          memory: 512M
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
-
-  # -------------------------------------------------------------------------
-  # Lightpanda (optional) — fast headless browser for read-only scraping
-  # -------------------------------------------------------------------------
-  # 9x less memory, 11x faster than Chromium for page analysis.
-  # Comment out this service if not needed.
-  # Set LIGHTPANDA_WS_URL=ws://lightpanda:9222 on the API service to enable.
-  lightpanda:
-    image: lightpanda/lightpanda:latest
-    container_name: jobpilot-lightpanda
-    command: ["serve", "--host", "0.0.0.0", "--port", "9222"]
-    ports:
-      - "127.0.0.1:9222:9222"
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    profiles:
-      - lightpanda  # Only start with: docker compose --profile lightpanda up

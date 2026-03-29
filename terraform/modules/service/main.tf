@@ -20,8 +20,7 @@ locals {
     }
   ]
 
-  # Base container definition
-  base_container = {
+  container_definition = {
     name      = var.service_name
     image     = "${aws_ecr_repository.service.repository_url}:${var.image_tag}"
     essential = true
@@ -45,13 +44,6 @@ locals {
     environment = var.environment_variables
     secrets     = local.resolved_secrets
   }
-
-  # Add linuxParameters only when shared memory is needed (Chromium/Playwright)
-  container_definition = merge(local.base_container, var.shm_size_mb > 0 ? {
-    linuxParameters = {
-      sharedMemorySize = var.shm_size_mb
-    }
-  } : {})
 }
 
 resource "aws_ecs_task_definition" "service" {
