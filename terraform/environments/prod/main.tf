@@ -251,6 +251,48 @@ resource "aws_cloudfront_distribution" "web" {
   }
 }
 
+# ─── ACM Certificate for API Subdomain ───────────────────────────────────────
+# *.whyuascii.com only covers one level (e.g. job-pilot.whyuascii.com).
+# api.job-pilot.whyuascii.com is two levels deep and needs its own cert.
+
+resource "aws_acm_certificate" "api" {
+  domain_name       = "api.job-pilot.whyuascii.com"
+  validation_method = "DNS"
+  tags              = var.tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "api_cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.api.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = each.value.name
+  type            = each.value.type
+  ttl             = 300
+  records         = [each.value.record]
+  allow_overwrite = true
+}
+
+resource "aws_acm_certificate_validation" "api" {
+  certificate_arn         = aws_acm_certificate.api.arn
+  validation_record_fqdns = [for record in aws_route53_record.api_cert_validation : record.fqdn]
+}
+
+# Attach API cert to the shared ALB listener (SNI selects the right cert per hostname)
+resource "aws_lb_listener_certificate" "api" {
+  listener_arn    = data.aws_ssm_parameter.alb_https_listener_arn.value
+  certificate_arn = aws_acm_certificate_validation.api.certificate_arn
+}
+
 # ─── API Service ──────────────────────────────────────────────────────────────
 # Express API at api.job-pilot.whyuascii.com
 
