@@ -37,10 +37,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm turbo typecheck
+        run: pnpm turbo type-check
+        continue-on-error: false
+
+      - name: Build
+        run: pnpm turbo build
 
       - name: Run tests
-        run: pnpm turbo test
+        run: pnpm vitest run
 
   # ─── Build & Push Docker Images ─────────────────────────────────────────────
   build:
@@ -74,6 +78,8 @@ jobs:
         run: |
           docker build \
             -f docker/Dockerfile \
+            --build-arg VITE_POSTHOG_KEY="${{ vars.VITE_POSTHOG_KEY }}" \
+            --build-arg VITE_POSTHOG_HOST="${{ vars.VITE_POSTHOG_HOST }}" \
             -t "$REGISTRY/whyuascii/job-pilot-web:$TAG" \
             .
           docker push "$REGISTRY/whyuascii/job-pilot-web:$TAG"

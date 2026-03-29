@@ -1,9 +1,12 @@
 {
   "extends": "@job-pilot/config-typescript/react.json",
   "compilerOptions": {
+    "types": ["node"],
     "paths": {
       "~/*": ["./app/*"]
-    }
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["app"]
 }

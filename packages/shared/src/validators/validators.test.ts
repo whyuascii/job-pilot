@@ -5,7 +5,6 @@ import {
   candidateSchema,
   skillSchema,
   experienceBlockSchema,
-  projectSchema,
   jobSchema,
   applicationSchema,
   applicationStatusSchema,

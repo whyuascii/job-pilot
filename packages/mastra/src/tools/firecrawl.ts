@@ -61,10 +61,10 @@ async function extractWithClaude(rawText: string): Promise<string> {
   });
 
   // Extract text from the response content blocks
-  const textBlocks = message.content.filter(
-    (block): block is { type: 'text'; text: string } => block.type === 'text',
-  );
-  return textBlocks.map((block) => block.text).join('\n');
+  return message.content
+    .filter((block) => block.type === 'text')
+    .map((block) => ('text' in block ? block.text : ''))
+    .join('\n');
 }
 
 /**
@@ -94,7 +94,7 @@ export const webScraperTool = createTool({
     content: z.string(),
     metadata: z.record(z.unknown()),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ context }: { context: { url: string; timeout?: number } }) => {
     const { url, timeout = 15000 } = context;
 
     // --- Validate URL ---

@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { createId } from '../utils.js';
 import { users } from './tenants.js';
 
