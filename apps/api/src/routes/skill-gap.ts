@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, jobs, skills } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 const SKILL_ALIASES: Record<string, string[]> = {
   javascript: ['js', 'ecmascript', 'es6', 'es2015'],
@@ -88,6 +89,11 @@ router.get('/:jobId', async (req, res, next) => {
         ? Math.round((matchedNiceToHave.length / niceToHave.length) * 100)
         : 100;
     const overallScore = Math.round(mustHaveScore * 0.7 + niceToHaveScore * 0.3);
+    capture(ctx.userId, 'skill_gap_analyzed', {
+      tenantId: ctx.tenantId,
+      jobId: job.id,
+      overallScore,
+    });
     res.json({
       jobId: job.id,
       jobTitle: job.title,
@@ -108,6 +114,10 @@ router.get('/:jobId', async (req, res, next) => {
       candidateSkills: candidateSkillNames,
     });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'skill_gap_analyzed', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

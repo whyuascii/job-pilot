@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { notifications } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -42,6 +43,7 @@ router.post('/read', async (req, res, next) => {
       )
       .returning();
     if (!updated) throw new Error('Notification not found');
+    capture(ctx.userId, 'notification_read', { tenantId: ctx.tenantId });
     res.json(updated);
   } catch (e) {
     next(e);

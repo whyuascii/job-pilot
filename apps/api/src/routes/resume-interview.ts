@@ -12,6 +12,7 @@ import {
 } from '@job-pilot/db/schema';
 import { RESUME_INTERVIEW_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -153,6 +154,8 @@ router.post('/start', async (req, res, next) => {
 
     const { systemPrompt, candidate } = await buildSystemPrompt(ctx, jobId);
 
+    capture(ctx.userId, 'resume_interview_started', { tenantId: ctx.tenantId, jobId });
+
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -218,6 +221,10 @@ router.post('/start', async (req, res, next) => {
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
     res.end();
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_interview_started', e, { tenantId: ctx.tenantId });
+    } catch {}
     if (res.headersSent) {
       res.write(`data: ${JSON.stringify({ type: 'error', error: (e as Error).message })}\n\n`);
       res.end();

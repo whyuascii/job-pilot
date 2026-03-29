@@ -23,6 +23,7 @@ import {
 } from '@job-pilot/mastra/prompts';
 import { cacheDelete, cacheDeletePattern } from '../lib/cache.js';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 import { getDownloadUrl } from '../lib/s3.js';
 
@@ -601,8 +602,21 @@ router.post('/ingest-url', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     checkRateLimit(`ingestJobFromUrl:${ctx.tenantId}`, 10);
-    res.json(await ingestJobFromUrlInternal(req.body.url, ctx));
+    const result = await ingestJobFromUrlInternal(req.body.url, ctx);
+    capture(ctx.userId, 'job_ingested_from_url', {
+      tenantId: ctx.tenantId,
+      url: req.body.url,
+      jobId: 'id' in result ? result.id : undefined,
+    });
+    res.json(result);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'job_ingested_from_url', e, {
+        tenantId: ctx.tenantId,
+        url: req.body.url,
+      });
+    } catch {}
     next(e);
   }
 });
@@ -675,8 +689,13 @@ router.post('/ingest-text', async (req, res, next) => {
     } catch {
       /* best-effort */
     }
+    capture(ctx.userId, 'job_ingested_from_text', { tenantId: ctx.tenantId, jobId: job.id });
     res.json({ ...job, score, deduplicated: false });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'job_ingested_from_text', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -685,8 +704,19 @@ router.post('/score-job', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     checkRateLimit(`scoreJob:${ctx.tenantId}`, 20);
-    res.json(await scoreJobInternal(req.body.jobId, ctx));
+    const result = await scoreJobInternal(req.body.jobId, ctx);
+    capture(ctx.userId, 'job_scored', {
+      tenantId: ctx.tenantId,
+      jobId: req.body.jobId,
+      fitScore: result.fitScore,
+      competitivenessScore: result.competitivenessScore,
+    });
+    res.json(result);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'job_scored', e, { tenantId: ctx.tenantId, jobId: req.body.jobId });
+    } catch {}
     next(e);
   }
 });
@@ -714,12 +744,20 @@ router.post('/rescore-all', async (req, res, next) => {
         errors.push({ jobId: job.id, error: err instanceof Error ? err.message : 'Unknown' });
       }
     }
+    capture(ctx.userId, 'all_jobs_rescored', {
+      tenantId: ctx.tenantId,
+      count: scoredCount,
+    });
     res.json({
       count: scoredCount,
       total: allJobs.length,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'all_jobs_rescored', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -796,9 +834,11 @@ router.post('/parse-resume', async (req, res, next) => {
         .update(resumes)
         .set({ parsedContent: parsed, updatedAt: new Date() })
         .where(eq(resumes.id, resume.id));
+      capture(ctx.userId, 'resume_parsed', { tenantId: ctx.tenantId, resumeId: req.body.resumeId });
       res.json(parsed);
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      captureError(ctx.userId, 'resume_parsed', err, { tenantId: ctx.tenantId });
       throw err;
     } finally {
       await recordLLMRun({
@@ -958,8 +998,16 @@ router.post('/tailor-resume', async (req, res, next) => {
         version: nextVersion,
       })
       .returning();
+    capture(ctx.userId, 'resume_tailored', { tenantId: ctx.tenantId, jobId: req.body.jobId });
     res.json({ ...saved, content: tailoredContent });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_tailored', e, {
+        tenantId: ctx.tenantId,
+        jobId: req.body.jobId,
+      });
+    } catch {}
     next(e);
   }
 });

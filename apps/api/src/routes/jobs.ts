@@ -18,6 +18,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { jobs, jobScores } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -286,8 +287,13 @@ router.post('/', async (req, res, next) => {
         parsedDescription: data.parsedDescription || '',
       })
       .returning();
+    capture(ctx.userId, 'job_created', { jobId: job.id, tenantId: ctx.tenantId });
     res.json(job);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'job_created', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -298,8 +304,13 @@ router.post('/delete', async (req, res, next) => {
     const ctx = getTenantContext();
     const { jobId } = req.body;
     await db.delete(jobs).where(and(eq(jobs.id, jobId), eq(jobs.tenantId, ctx.tenantId)));
+    capture(ctx.userId, 'job_deleted', { jobId, tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'job_deleted', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

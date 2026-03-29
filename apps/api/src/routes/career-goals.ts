@@ -5,6 +5,7 @@ import { db } from '@job-pilot/db';
 import { candidates, careerGoals, jobs, preferences, projects } from '@job-pilot/db/schema';
 import { CAREER_GROWTH_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 import { getClient, loadCandidateProfile, parseJsonResponse, recordLLMRun } from './ai.js';
 
@@ -78,6 +79,7 @@ router.post('/', async (req, res, next) => {
       })
       .returning();
 
+    capture(ctx.userId, 'career_goal_set', { tenantId: ctx.tenantId });
     res.json(goal);
   } catch (e) {
     next(e);

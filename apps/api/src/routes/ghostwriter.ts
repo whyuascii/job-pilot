@@ -11,6 +11,7 @@ import {
 } from '@job-pilot/db/schema';
 import { GHOSTWRITER_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -134,6 +135,8 @@ router.post('/chat', async (req, res, next) => {
       content: message,
     });
 
+    capture(ctx.userId, 'ghostwriter_message_sent', { tenantId: ctx.tenantId, jobId });
+
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -171,6 +174,10 @@ router.post('/chat', async (req, res, next) => {
     res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
     res.end();
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'ghostwriter_message_sent', e, { tenantId: ctx.tenantId });
+    } catch {}
     // If headers already sent (SSE started), end gracefully
     if (res.headersSent) {
       res.write(`data: ${JSON.stringify({ type: 'error', error: (e as Error).message })}\n\n`);
@@ -207,8 +214,13 @@ router.post('/save-to-answers', async (req, res, next) => {
       })
       .returning();
 
+    capture(ctx.userId, 'ghostwriter_answer_saved', { tenantId: ctx.tenantId });
     res.json(saved);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'ghostwriter_answer_saved', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

@@ -4,6 +4,7 @@ import { db } from '@job-pilot/db';
 import { gmailTokens, recruiterMessages } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 import { decrypt, encrypt } from '../lib/crypto.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -145,8 +146,13 @@ router.post('/callback', async (req, res, next) => {
       scope: tokenData.scope || GMAIL_SCOPES,
       expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
     });
+    capture(ctx.userId, 'gmail_oauth_completed', { tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'gmail_oauth_completed', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -182,8 +188,13 @@ router.post('/disconnect', async (_req, res, next) => {
     await db
       .delete(gmailTokens)
       .where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
+    capture(ctx.userId, 'gmail_disconnected', { tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'gmail_disconnected', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -237,8 +248,13 @@ router.post('/sync-messages', async (_req, res, next) => {
       });
       synced++;
     }
+    capture(ctx.userId, 'gmail_messages_synced', { tenantId: ctx.tenantId, syncedCount: synced });
     res.json({ synced, skipped, total: messages.length });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'gmail_messages_synced', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -331,8 +347,16 @@ router.post('/send', async (req, res, next) => {
       templateType: templateType || null,
     });
 
+    capture(ctx.userId, 'email_sent', {
+      tenantId: ctx.tenantId,
+      templateType: templateType || null,
+    });
     res.json({ success: true, messageId: sendResult.id });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'email_sent', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });

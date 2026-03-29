@@ -123,9 +123,96 @@ jobs:
             --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
+  # ─── Run Database Migrations ──────────────────────────────────────────────
+  migrate:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run database migrations via ECS task
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          ECR_URL: ${{ vars.API_ECR_REPO_URL }}
+        run: |
+          set -euo pipefail
+          # Get the current task definition to reuse its config (env vars, vpc, etc.)
+          TASK_DEF=$(aws ecs describe-services \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services job-pilot-api \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          # Register a new task definition with the latest image
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition' \
+            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)' \
+            | jq --arg img "$ECR_URL:$IMAGE_TAG" '.containerDefinitions[0].image = $img' \
+            > migrate-task-def.json
+
+          MIGRATE_TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://migrate-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          # Get the network config from the running service
+          NETWORK_CONFIG=$(aws ecs describe-services \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services job-pilot-api \
+            --query 'services[0].networkConfiguration' \
+            --output json)
+
+          # Run migration as a one-off task with command override
+          # migrate.ts resolves the migrations folder via __dirname (no CWD dependency)
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --task-definition "$MIGRATE_TASK_ARN" \
+            --launch-type FARGATE \
+            --network-configuration "$NETWORK_CONFIG" \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "job-pilot-api",
+                "command": ["node", "--import", "tsx", "/app/packages/db/src/run-migrate.ts"]
+              }]
+            }' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "Migration task: $TASK_ARN"
+
+          # Wait for the task to complete
+          aws ecs wait tasks-stopped \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --tasks "$TASK_ARN"
+
+          # Check exit code
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code $EXIT_CODE"
+            aws ecs describe-tasks \
+              --cluster "${{ vars.ECS_CLUSTER }}" \
+              --tasks "$TASK_ARN" \
+              --query 'tasks[0].containers[0].reason' \
+              --output text
+            exit 1
+          fi
+
+          echo "Migrations completed successfully"
+
   # ─── Deploy API to ECS ────────────────────────────────────────────────────
   deploy-api:
-    needs: build
+    needs: [build, migrate]
     runs-on: ubuntu-latest
 
     steps:
@@ -141,6 +228,7 @@ jobs:
           IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
           ECR_URL: ${{ vars.API_ECR_REPO_URL }}
         run: |
+          set -euo pipefail
           TASK_DEF=$(aws ecs describe-services \
             --cluster "${{ vars.ECS_CLUSTER }}" \
             --services "$SERVICE" \

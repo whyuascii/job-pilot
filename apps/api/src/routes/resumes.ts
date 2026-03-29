@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, resumes } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { deleteObject, getDownloadUrl, getUploadUrl } from '../lib/s3.js';
 
 function createId(): string {
@@ -64,8 +65,13 @@ router.post('/', async (req, res, next) => {
         isPreferred: false,
       })
       .returning();
+    capture(ctx.userId, 'resume_created', { resumeId: resume.id, tenantId: ctx.tenantId });
     res.json(resume);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_created', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -81,8 +87,13 @@ router.post('/delete', async (req, res, next) => {
     if (!resume) throw new Error('Resume not found');
     await deleteObject(resume.storageKey);
     await db.delete(resumes).where(eq(resumes.id, resumeId));
+    capture(ctx.userId, 'resume_deleted', { resumeId, tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_deleted', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -102,8 +113,13 @@ router.post('/set-preferred', async (req, res, next) => {
       .where(and(eq(resumes.id, resumeId), eq(resumes.candidateId, candidate.id)))
       .returning();
     if (!updated) throw new Error('Resume not found');
+    capture(ctx.userId, 'resume_set_preferred', { resumeId, tenantId: ctx.tenantId });
     res.json(updated);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_set_preferred', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

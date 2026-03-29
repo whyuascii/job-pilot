@@ -25,6 +25,7 @@ import {
 } from '@job-pilot/db/schema';
 import { cacheGet, cacheSet } from '../lib/cache.js';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const TERMINAL_STATUSES = ['rejected', 'withdrawn', 'accepted', 'offer_declined'];
 const INTERVIEW_STAGES = ['interview', 'phone_screen', 'final_round', 'offer', 'accepted'];
@@ -535,6 +536,10 @@ router.get('/control-tower', async (_req, res, next) => {
     };
 
     await cacheSet(cacheKey, result, 120); // 2-minute cache for control tower
+    capture(ctx.userId, 'dashboard_loaded', {
+      tenantId: ctx.tenantId,
+      totalApplications: summary.total,
+    });
     res.json(result);
   } catch (e) {
     next(e);

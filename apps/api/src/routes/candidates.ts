@@ -4,6 +4,7 @@ import { db } from '@job-pilot/db';
 import { candidates } from '@job-pilot/db/schema';
 import { cacheDelete, cacheGet, cacheSet } from '../lib/cache.js';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 const router = Router();
 
@@ -75,8 +76,16 @@ router.post('/', async (req, res, next) => {
       .returning();
 
     await cacheDelete(`candidate:${ctx.tenantId}:${ctx.userId}`);
+    capture(ctx.userId, 'candidate_profile_updated', {
+      candidateId: candidate.id,
+      tenantId: ctx.tenantId,
+    });
     res.json(updated);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'candidate_profile_updated', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

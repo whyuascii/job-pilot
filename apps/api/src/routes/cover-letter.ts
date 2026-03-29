@@ -5,6 +5,7 @@ import { db } from '@job-pilot/db';
 import { candidates, coverLetters, jobs, jobScores, tailoredResumes } from '@job-pilot/db/schema';
 import { COVER_LETTER_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 import { getClient, loadCandidateProfile, parseJsonResponse, recordLLMRun } from './ai.js';
 
@@ -181,8 +182,16 @@ Generate a tailored cover letter.`;
       })
       .returning();
 
+    capture(ctx.userId, 'cover_letter_generated', { tenantId: ctx.tenantId, jobId });
     res.json(saved);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'cover_letter_generated', e, {
+        tenantId: ctx.tenantId,
+        jobId: req.body.jobId,
+      });
+    } catch {}
     next(e);
   }
 });

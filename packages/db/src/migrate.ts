@@ -1,6 +1,10 @@
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -14,8 +18,10 @@ const client = postgres(connectionString, { max: 1 });
 const db = drizzle(client);
 
 async function main() {
-  console.log('Running migrations...');
-  await migrate(db, { migrationsFolder: './src/migrations' });
+  // Resolve migrations folder relative to this file (works regardless of CWD)
+  const migrationsFolder = resolve(__dirname, 'migrations');
+  console.log(`Running migrations from ${migrationsFolder}...`);
+  await migrate(db, { migrationsFolder });
   console.log('Migrations completed successfully');
   await client.end();
   process.exit(0);

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, skills } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const router = Router();
 
@@ -44,6 +45,7 @@ router.post('/', async (req, res, next) => {
         yearsUsed: data.yearsUsed ?? null,
       })
       .returning();
+    capture(ctx.userId, 'skill_added', { tenantId: ctx.tenantId });
     res.json(skill);
   } catch (e) {
     next(e);
@@ -97,6 +99,7 @@ router.post('/bulk', async (req, res, next) => {
       yearsUsed: s.yearsUsed ?? null,
     }));
     const result = await db.insert(skills).values(values).returning();
+    capture(ctx.userId, 'skills_bulk_imported', { tenantId: ctx.tenantId, count: result.length });
     res.json(result);
   } catch (e) {
     next(e);

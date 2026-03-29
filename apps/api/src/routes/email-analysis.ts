@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { applications, jobs, llmRuns, outcomes, recruiterMessages } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 
 function createId(): string {
@@ -133,8 +134,17 @@ router.post('/analyze', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     checkRateLimit(`analyzeRecruitMessage:${ctx.tenantId}`, 20);
-    res.json(await analyzeMessageInternal(req.body.messageId, ctx));
+    const result = await analyzeMessageInternal(req.body.messageId, ctx);
+    capture(ctx.userId, 'email_analyzed', {
+      tenantId: ctx.tenantId,
+      messageId: req.body.messageId,
+    });
+    res.json(result);
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'email_analyzed', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });

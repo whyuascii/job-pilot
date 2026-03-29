@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, jobs, tailoredResumes } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const router = Router();
 
@@ -87,6 +88,7 @@ router.post('/export', async (req, res, next) => {
     if (!tailored) throw new Error('No tailored resume found. Generate one first.');
     const content = tailored.contentJson as any;
     const html = generateResumeHtml(content, candidate, job);
+    capture(ctx.userId, 'resume_rendered', { tenantId: ctx.tenantId });
     res.json({ html, fileName: `${candidate.currentTitle || 'resume'}-${job.company}.html` });
   } catch (e) {
     next(e);

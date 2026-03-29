@@ -272,14 +272,18 @@ module "api" {
     { name = "PORT", value = "3001" },
     { name = "NODE_ENV", value = "production" },
     { name = "APP_URL", value = "https://job-pilot.whyuascii.com" },
+    { name = "API_URL", value = "https://api.job-pilot.whyuascii.com" },
     { name = "S3_BUCKET", value = aws_s3_bucket.storage.id },
     { name = "S3_REGION", value = var.aws_region },
+    # No S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY — SDK uses IAM task role
   ]
 
   secrets = [
     { name = "DATABASE_URL", valueFrom = "/whyuascii/job-pilot/database-url" },
     { name = "BETTER_AUTH_SECRET", valueFrom = "/whyuascii/job-pilot/better-auth-secret" },
     { name = "ENCRYPTION_KEY", valueFrom = "/whyuascii/job-pilot/encryption-key" },
+    { name = "ANTHROPIC_API_KEY", valueFrom = "/whyuascii/job-pilot/anthropic-api-key" },
+    { name = "POSTHOG_API_KEY", valueFrom = "/whyuascii/job-pilot/posthog-api-key" },
     # Optional — add when needed:
     # { name = "REDIS_URL", valueFrom = "/whyuascii/job-pilot/redis-url" },
     # { name = "GOOGLE_CLIENT_ID", valueFrom = "/whyuascii/job-pilot/google-client-id" },

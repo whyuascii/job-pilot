@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, experienceBlocks } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const router = Router();
 
@@ -50,6 +51,7 @@ router.post('/', async (req, res, next) => {
         skills: data.skills || [],
       })
       .returning();
+    capture(ctx.userId, 'experience_added', { tenantId: ctx.tenantId });
     res.json(exp);
   } catch (e) {
     next(e);
@@ -90,6 +92,7 @@ router.post('/delete', async (req, res, next) => {
       .where(
         and(eq(experienceBlocks.id, experienceId), eq(experienceBlocks.candidateId, candidate.id)),
       );
+    capture(ctx.userId, 'experience_deleted', { tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
     next(e);

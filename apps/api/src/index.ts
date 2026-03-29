@@ -203,9 +203,19 @@ app.use(errorHandler);
 // ---------------------------------------------------------------------------
 registerRoutes()
   .then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[API] Server running on http://localhost:${PORT}`);
     });
+
+    // Graceful shutdown — flush PostHog events
+    const gracefulShutdown = async () => {
+      const { shutdown } = await import('./lib/posthog.js');
+      await shutdown();
+      server.close();
+      process.exit(0);
+    };
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
   })
   .catch((err) => {
     console.error('[API] Failed to register routes:', err);

@@ -10,6 +10,7 @@ import {
   tailoredResumes,
 } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const STAGE_ORDER = [
   'discovered',
@@ -132,6 +133,7 @@ router.get('/funnel', async (_req, res, next) => {
       advanceRate:
         row.totalCount > 0 ? Math.round(((advMap[row.company] ?? 0) / row.totalCount) * 100) : 0,
     }));
+    capture(ctx.userId, 'analytics_viewed', { tenantId: ctx.tenantId, section: 'funnel' });
     res.json({ funnelStages, conversionRates, averageTimeInStage, topCompanies });
   } catch (e) {
     next(e);

@@ -11,6 +11,7 @@ import {
   outcomes,
 } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -107,8 +108,17 @@ router.post('/', async (req, res, next) => {
       notes: 'Application submitted',
     });
 
+    capture(ctx.userId, 'application_created', {
+      applicationId: app.id,
+      jobId,
+      tenantId: ctx.tenantId,
+    });
     res.json(app);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'application_created', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -118,6 +128,13 @@ router.post('/update-status', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     const { applicationId, status } = req.body;
+
+    // Read current status for analytics tracking
+    const current = await db.query.applications.findFirst({
+      where: and(eq(applications.id, applicationId), eq(applications.tenantId, ctx.tenantId)),
+      columns: { status: true },
+    });
+    const previousStatus = current?.status ?? 'unknown';
 
     const [updated] = await db
       .update(applications)
@@ -134,8 +151,18 @@ router.post('/update-status', async (req, res, next) => {
       notes: `Status changed to ${status}`,
     });
 
+    capture(ctx.userId, 'application_status_updated', {
+      applicationId,
+      from: previousStatus,
+      to: status,
+      tenantId: ctx.tenantId,
+    });
     res.json(updated);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'application_status_updated', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -238,8 +265,17 @@ router.post('/mark-applied', async (req, res, next) => {
       })
       .returning();
 
+    capture(ctx.userId, 'application_marked_applied', {
+      applicationId: app.id,
+      jobId,
+      tenantId: ctx.tenantId,
+    });
     res.json({ application: app, flightRecordId: flightRecord.id });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'application_marked_applied', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -258,8 +294,13 @@ router.post('/delete', async (req, res, next) => {
       .delete(applications)
       .where(and(eq(applications.id, applicationId), eq(applications.tenantId, ctx.tenantId)));
 
+    capture(ctx.userId, 'application_deleted', { applicationId, tenantId: ctx.tenantId });
     res.json({ success: true });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'application_deleted', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -336,8 +377,17 @@ router.post('/quick-add', async (req, res, next) => {
       notes: 'Quick-added from Control Tower',
     });
 
+    capture(ctx.userId, 'application_quick_added', {
+      applicationId: app.id,
+      jobId: job.id,
+      tenantId: ctx.tenantId,
+    });
     res.json({ ...app, job });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'application_quick_added', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

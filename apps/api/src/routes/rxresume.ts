@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, coverLetters, jobs, jobScores } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -15,15 +16,20 @@ function createId(): string {
 const RXRESUME_URL = process.env.RXRESUME_URL || 'http://localhost:3100';
 
 function getS3Client() {
-  return new S3Client({
-    endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
-    region: 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
-      secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
-    },
-    forcePathStyle: true,
-  });
+  const config: ConstructorParameters<typeof S3Client>[0] = {
+    region: process.env.S3_REGION || 'us-east-1',
+  };
+  if (process.env.S3_ENDPOINT) {
+    config.endpoint = process.env.S3_ENDPOINT;
+    config.forcePathStyle = true;
+    if (process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY) {
+      config.credentials = {
+        accessKeyId: process.env.S3_ACCESS_KEY,
+        secretAccessKey: process.env.S3_SECRET_KEY,
+      };
+    }
+  }
+  return new S3Client(config);
 }
 
 const RXRESUME_TEMPLATES = [
@@ -232,8 +238,17 @@ router.post('/generate-pdf', async (req, res, next) => {
       await fetch(`${RXRESUME_URL}/api/resume/${created.id}`, { method: 'DELETE' });
     } catch {}
 
+    capture(ctx.userId, 'resume_pdf_generated', {
+      jobId,
+      templateId: resumeData.metadata.template,
+      tenantId: ctx.tenantId,
+    });
     res.json({ url: downloadUrl, key });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'resume_pdf_generated', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });

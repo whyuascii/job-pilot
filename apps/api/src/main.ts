@@ -1,9 +1,14 @@
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { config } from 'dotenv';
 
 // Load .env from monorepo root BEFORE any app code evaluates
+// In production (ECS), dotenv may not be available — env vars come from the task definition
 const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(__dirname, '../../../.env') });
+try {
+  const { config } = await import('dotenv');
+  config({ path: resolve(__dirname, '../../../.env') });
+} catch {
+  // dotenv not available in production — env vars set by ECS task definition
+}
 
 await import('./index.js');

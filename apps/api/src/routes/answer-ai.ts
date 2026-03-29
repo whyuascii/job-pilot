@@ -14,6 +14,7 @@ import {
 } from '@job-pilot/db/schema';
 import { DETECT_QUESTIONS_PROMPT, SUGGEST_ANSWER_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 import { sanitizeText } from '../lib/sanitize.js';
 import { getClient, loadCandidateProfile, parseJsonResponse } from './ai.js';
@@ -92,8 +93,17 @@ router.post('/detect-questions', async (req, res, next) => {
         .returning();
       savedQuestions.push({ ...saved, category: q.category, likelihood: q.likelihood });
     }
+    capture(ctx.userId, 'questions_detected', {
+      tenantId: ctx.tenantId,
+      applicationId,
+      count: savedQuestions.length,
+    });
     res.json(savedQuestions);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'questions_detected', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -177,6 +187,11 @@ router.post('/suggest-answer', async (req, res, next) => {
         sourceEvidence: suggestion.sourceEvidence,
       })
       .where(eq(applicationQuestions.id, questionId));
+    capture(ctx.userId, 'answer_suggested', {
+      tenantId: ctx.tenantId,
+      questionId,
+      applicationId,
+    });
     res.json({
       ...suggestion,
       questionId,
@@ -187,6 +202,10 @@ router.post('/suggest-answer', async (req, res, next) => {
       })),
     });
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'answer_suggested', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -285,19 +304,32 @@ router.post('/approve-answer', async (req, res, next) => {
         lastUsed: new Date(),
       })
       .returning();
+    capture(ctx.userId, 'answer_approved', {
+      tenantId: ctx.tenantId,
+      questionId,
+      applicationId,
+    });
     res.json(bankEntry);
   } catch (e) {
+    try {
+      const ctx = getTenantContext();
+      captureError(ctx.userId, 'answer_approved', e, { tenantId: ctx.tenantId });
+    } catch {}
     next(e);
   }
 });
 
 router.post('/dismiss-question', async (req, res, next) => {
   try {
-    getTenantContext();
+    const ctx = getTenantContext();
     await db
       .update(applicationQuestions)
       .set({ suggestedAnswer: null, approved: false })
       .where(eq(applicationQuestions.id, req.body.questionId));
+    capture(ctx.userId, 'question_dismissed', {
+      tenantId: ctx.tenantId,
+      questionId: req.body.questionId,
+    });
     res.json({ success: true });
   } catch (e) {
     next(e);

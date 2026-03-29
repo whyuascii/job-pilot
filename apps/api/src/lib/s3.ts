@@ -1,30 +1,38 @@
 // S3-compatible storage client
-// Works with MinIO (local dev) and Supabase Storage (production)
-// Configure via env vars: S3_ENDPOINT, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET
-//
-// Supabase Storage production config:
-//   S3_ENDPOINT=https://<project>.supabase.co/storage/v1/s3
-//   S3_ACCESS_KEY=<supabase-service-role-key>
-//   S3_SECRET_KEY=<supabase-service-role-key>
-//   S3_BUCKET=resumes
+// Production (ECS): Uses IAM task role credentials (no static keys needed)
+// Local dev (MinIO): Set S3_ENDPOINT + S3_ACCESS_KEY + S3_SECRET_KEY
 
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
+  type S3ClientConfig,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const s3Client = new S3Client({
-  endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
-  region: process.env.S3_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
-    secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
-  },
-  forcePathStyle: true,
-});
+function createS3Client(): S3Client {
+  const config: S3ClientConfig = {
+    region: process.env.S3_REGION || 'us-east-1',
+  };
+
+  // MinIO / custom endpoint mode: use static credentials + path-style
+  if (process.env.S3_ENDPOINT) {
+    config.endpoint = process.env.S3_ENDPOINT;
+    config.forcePathStyle = true;
+    if (process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY) {
+      config.credentials = {
+        accessKeyId: process.env.S3_ACCESS_KEY,
+        secretAccessKey: process.env.S3_SECRET_KEY,
+      };
+    }
+  }
+  // Production AWS S3: SDK auto-discovers credentials from IAM task role
+
+  return new S3Client(config);
+}
+
+const s3Client = createS3Client();
 
 const BUCKET = process.env.S3_BUCKET || 'job-pilot';
 

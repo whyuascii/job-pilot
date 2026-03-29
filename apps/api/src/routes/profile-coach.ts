@@ -9,6 +9,7 @@ import {
   PROFILE_COACH_PROMPT,
 } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 import { getClient, loadCandidateProfile, parseJsonResponse, recordLLMRun } from './ai.js';
 
@@ -248,6 +249,7 @@ router.post('/analyze', async (req, res, next) => {
       }>(responseText);
       success = true;
 
+      capture(ctx.userId, 'profile_analyzed', { tenantId: ctx.tenantId });
       res.json({
         message: parsed.message,
         suggestions: parsed.suggestions || [],
@@ -256,6 +258,7 @@ router.post('/analyze', async (req, res, next) => {
       });
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      captureError(ctx.userId, 'profile_analyzed', err, { tenantId: ctx.tenantId });
       throw err;
     } finally {
       await recordLLMRun({
@@ -415,9 +418,14 @@ router.post('/career-growth', async (req, res, next) => {
       }>(responseText);
       success = true;
 
+      capture(ctx.userId, 'career_growth_plan_generated', { tenantId: ctx.tenantId, jobId });
       res.json(parsed);
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      captureError(ctx.userId, 'career_growth_plan_generated', err, {
+        tenantId: ctx.tenantId,
+        jobId,
+      });
       throw err;
     } finally {
       await recordLLMRun({

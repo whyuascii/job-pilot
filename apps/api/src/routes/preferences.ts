@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates, preferences } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
+import { capture } from '../lib/posthog.js';
 
 const router = Router();
 
@@ -63,6 +64,7 @@ router.post('/update', async (req, res, next) => {
       .where(and(eq(preferences.id, preferenceId), eq(preferences.candidateId, candidate.id)))
       .returning();
     if (!updated) throw new Error('Preference not found');
+    capture(ctx.userId, 'preferences_updated', { tenantId: ctx.tenantId });
     res.json(updated);
   } catch (e) {
     next(e);

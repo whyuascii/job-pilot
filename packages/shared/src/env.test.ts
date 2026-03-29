@@ -60,17 +60,17 @@ describe('env validation', () => {
     expect(() => validateEnv()).toThrow('Environment validation failed');
   });
 
-  it('provides defaults for optional S3 variables', async () => {
+  it('S3 variables are optional (IAM task role in production)', async () => {
     process.env.DATABASE_URL = 'https://db.example.com/mydb';
     process.env.REDIS_URL = 'redis://localhost:6379';
 
     const validateEnv = await importValidateEnv();
     const env = validateEnv();
 
-    expect(env.S3_ENDPOINT).toBe('http://localhost:9000');
+    expect(env.S3_ENDPOINT).toBeUndefined();
     expect(env.S3_BUCKET).toBe('job-pilot');
-    expect(env.S3_ACCESS_KEY).toBe('minioadmin');
-    expect(env.S3_SECRET_KEY).toBe('minioadmin');
+    expect(env.S3_ACCESS_KEY).toBeUndefined();
+    expect(env.S3_SECRET_KEY).toBeUndefined();
     expect(env.S3_REGION).toBe('us-east-1');
   });
 
@@ -105,14 +105,15 @@ describe('env validation', () => {
     expect(env.NODE_ENV).toBe('development');
   });
 
-  it('provides default for SESSION_SECRET', async () => {
+  it('SESSION_SECRET and BETTER_AUTH_SECRET are both optional', async () => {
     process.env.DATABASE_URL = 'https://db.example.com/mydb';
     process.env.REDIS_URL = 'redis://localhost:6379';
 
     const validateEnv = await importValidateEnv();
     const env = validateEnv();
 
-    expect(env.SESSION_SECRET).toBe('change-me-in-production-at-least-32-chars!!');
+    expect(env.SESSION_SECRET).toBeUndefined();
+    expect(env.BETTER_AUTH_SECRET).toBeUndefined();
   });
 
   it('allows optional ANTHROPIC_API_KEY to be omitted', async () => {
@@ -127,21 +128,6 @@ describe('env validation', () => {
 
     expect(env.ANTHROPIC_API_KEY).toBeUndefined();
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ANTHROPIC_API_KEY is not set'));
-    warnSpy.mockRestore();
-  });
-
-  it('allows optional FIRECRAWL_API_KEY to be omitted', async () => {
-    process.env.DATABASE_URL = 'https://db.example.com/mydb';
-    process.env.REDIS_URL = 'redis://localhost:6379';
-    delete process.env.FIRECRAWL_API_KEY;
-
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    const validateEnv = await importValidateEnv();
-    const env = validateEnv();
-
-    expect(env.FIRECRAWL_API_KEY).toBeUndefined();
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('FIRECRAWL_API_KEY is not set'));
     warnSpy.mockRestore();
   });
 
@@ -196,32 +182,33 @@ describe('env validation', () => {
     expect(() => validateEnv()).toThrow('Environment validation failed');
   });
 
-  it('throws in production when S3 defaults are minioadmin', async () => {
+  it('throws in production when no auth secret is set', async () => {
     process.env.DATABASE_URL = 'https://db.example.com/mydb';
     process.env.NODE_ENV = 'production';
-    process.env.SESSION_SECRET = 'a-real-production-secret-that-is-long-enough!!';
-    // S3_ACCESS_KEY and S3_SECRET_KEY will default to 'minioadmin'
+    // No BETTER_AUTH_SECRET or SESSION_SECRET
 
     const validateEnv = await importValidateEnv();
-    expect(() => validateEnv()).toThrow('minioadmin');
+    expect(() => validateEnv()).toThrow('BETTER_AUTH_SECRET or SESSION_SECRET must be set');
   });
 
-  it('throws in production when SESSION_SECRET is the default', async () => {
+  it('passes production checks with BETTER_AUTH_SECRET', async () => {
     process.env.DATABASE_URL = 'https://db.example.com/mydb';
     process.env.NODE_ENV = 'production';
-    process.env.S3_ACCESS_KEY = 'real-access-key';
-    process.env.S3_SECRET_KEY = 'real-secret-key';
-    // SESSION_SECRET will default to the placeholder
+    process.env.BETTER_AUTH_SECRET = 'a-real-production-secret-that-is-long-enough!!';
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const validateEnv = await importValidateEnv();
-    expect(() => validateEnv()).toThrow('SESSION_SECRET must be changed');
+    const env = validateEnv();
+
+    expect(env.NODE_ENV).toBe('production');
+    expect(env.BETTER_AUTH_SECRET).toBe('a-real-production-secret-that-is-long-enough!!');
+    warnSpy.mockRestore();
   });
 
-  it('passes production checks with real credentials', async () => {
+  it('passes production checks with SESSION_SECRET as alternative', async () => {
     process.env.DATABASE_URL = 'https://db.example.com/mydb';
     process.env.NODE_ENV = 'production';
-    process.env.S3_ACCESS_KEY = 'real-access-key';
-    process.env.S3_SECRET_KEY = 'real-secret-key';
     process.env.SESSION_SECRET = 'a-real-production-secret-that-is-long-enough!!';
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -231,5 +218,19 @@ describe('env validation', () => {
 
     expect(env.NODE_ENV).toBe('production');
     warnSpy.mockRestore();
+  });
+
+  it('accepts S3 credentials when explicitly provided', async () => {
+    process.env.DATABASE_URL = 'https://db.example.com/mydb';
+    process.env.S3_ENDPOINT = 'http://localhost:9000';
+    process.env.S3_ACCESS_KEY = 'minio-key';
+    process.env.S3_SECRET_KEY = 'minio-secret';
+
+    const validateEnv = await importValidateEnv();
+    const env = validateEnv();
+
+    expect(env.S3_ENDPOINT).toBe('http://localhost:9000');
+    expect(env.S3_ACCESS_KEY).toBe('minio-key');
+    expect(env.S3_SECRET_KEY).toBe('minio-secret');
   });
 });

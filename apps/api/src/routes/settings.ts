@@ -12,6 +12,7 @@ import {
 } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 import { decrypt, encrypt } from '../lib/crypto.js';
+import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 
 function createId(): string {
@@ -454,8 +455,13 @@ router.post('/save-api-key', async (req, res, next) => {
       encryptedKey: encryptedValue,
     });
 
+    capture(ctx.userId, 'api_key_saved', { tenantId: ctx.tenantId, service });
     res.json({ success: true, hasKey: true });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'api_key_saved', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -469,8 +475,13 @@ router.post('/delete-api-key', async (req, res, next) => {
       .delete(apiKeys)
       .where(and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)));
     const hasEnvKey = !!process.env[ENV_VAR_MAP[service]];
+    capture(ctx.userId, 'api_key_deleted', { tenantId: ctx.tenantId, service });
     res.json({ success: true, hasKey: hasEnvKey, source: hasEnvKey ? 'env' : null });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'api_key_deleted', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -634,8 +645,16 @@ router.post('/job-sources', async (req, res, next) => {
         enabled: true,
       })
       .returning();
+    capture(ctx.userId, 'job_source_created', {
+      tenantId: ctx.tenantId,
+      sourceType: req.body.type,
+    });
     res.json(source);
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'job_source_created', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -680,8 +699,19 @@ router.post('/job-sources/sync', async (req, res, next) => {
     });
     if (!source) throw new Error('Job source not found');
     if (!source.enabled) throw new Error('Job source is disabled.');
-    res.json(await syncSource(source, ctx));
+    const syncResult = await syncSource(source, ctx);
+    capture(ctx.userId, 'job_source_synced', {
+      tenantId: ctx.tenantId,
+      sourceId: source.id,
+      newJobs: syncResult.newJobs,
+      duplicates: syncResult.duplicates,
+    });
+    res.json(syncResult);
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'job_source_synced', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
@@ -706,12 +736,24 @@ router.post('/job-sources/sync-all', async (_req, res, next) => {
     for (const source of syncableSources) {
       results.push(await syncSource(source, ctx));
     }
+    const totalNewJobs = results.reduce((s, r) => s + r.newJobs, 0);
+    const totalErrors = results.reduce((s, r) => s + r.errors.length, 0);
+    capture(ctx.userId, 'all_sources_synced', {
+      tenantId: ctx.tenantId,
+      sourcesCount: syncableSources.length,
+      totalNewJobs,
+      totalErrors,
+    });
     res.json({
       results,
-      totalNewJobs: results.reduce((s, r) => s + r.newJobs, 0),
-      totalErrors: results.reduce((s, r) => s + r.errors.length, 0),
+      totalNewJobs,
+      totalErrors,
     });
   } catch (e) {
+    try {
+      const c = getTenantContext();
+      captureError(c.userId, 'all_sources_synced', e, { tenantId: c.tenantId });
+    } catch {}
     next(e);
   }
 });
