@@ -10,6 +10,13 @@ import { tenantMiddleware } from './middleware/tenant.js';
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
+const API_URL = process.env.API_URL || '';
+
+// Allowed CORS origins: the SPA domain + the API domain (if different)
+const allowedOrigins = [APP_URL];
+if (API_URL && API_URL !== APP_URL) {
+  allowedOrigins.push(API_URL);
+}
 
 // Trust proxy headers from ALB / CloudFront / reverse proxies
 if (process.env.NODE_ENV === 'production') {
@@ -22,7 +29,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(securityHeaders);
 app.use(
   cors({
-    origin: APP_URL,
+    origin: allowedOrigins,
     credentials: true,
   }),
 );

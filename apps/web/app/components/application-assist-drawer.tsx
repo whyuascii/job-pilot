@@ -32,7 +32,7 @@ import {
 } from '@job-pilot/ui';
 import { EmailComposeDialog } from '~/components/email-compose-dialog';
 import { ResumeInterview } from '~/components/resume-interview';
-import { api } from '~/lib/api-client';
+import { api, getApiBase } from '~/lib/api-client';
 import { captureEvent } from '~/lib/posthog';
 
 // ---------------------------------------------------------------------------
@@ -502,7 +502,7 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
     setStreaming(true);
 
     try {
-      const response = await fetch('/api/ghostwriter/chat', {
+      const response = await fetch(`${getApiBase()}/api/ghostwriter/chat`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

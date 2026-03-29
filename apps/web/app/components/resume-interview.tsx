@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { ArrowLeft, Bookmark, Check, Loader2, Send, SkipForward, Sparkles } from 'lucide-react';
 import { Badge, Button, Card, CardContent, Textarea } from '@job-pilot/ui';
-import { api } from '~/lib/api-client';
+import { api, getApiBase } from '~/lib/api-client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -289,7 +289,7 @@ export function ResumeInterview({
     setMessages([assistantMsg]);
 
     try {
-      const response = await fetch('/api/resume-interview/start', {
+      const response = await fetch(`${getApiBase()}/api/resume-interview/start`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -369,7 +369,7 @@ export function ResumeInterview({
     setState('streaming');
 
     try {
-      const response = await fetch('/api/resume-interview/chat', {
+      const response = await fetch(`${getApiBase()}/api/resume-interview/chat`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

@@ -53,7 +53,7 @@ if (API_URL && API_URL !== APP_URL) {
 }
 
 export const auth = betterAuth({
-  baseURL: APP_URL,
+  baseURL: API_URL || APP_URL,
   database: drizzleAdapter(db, {
     provider: 'pg',
     usePlural: true,

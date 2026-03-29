@@ -1,3 +1,8 @@
+// In production the SPA is served from CloudFront (job-pilot.whyuascii.com)
+// while the API runs on a separate origin (api.job-pilot.whyuascii.com).
+// VITE_API_URL is set at build time so fetch calls reach the Express API.
+const API_BASE = (import.meta as any).env?.VITE_API_URL || '';
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -6,6 +11,10 @@ export class ApiError extends Error {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+export function getApiBase(): string {
+  return API_BASE;
 }
 
 async function request<T>(method: string, path: string, data?: unknown): Promise<T> {
@@ -19,7 +28,7 @@ async function request<T>(method: string, path: string, data?: unknown): Promise
     opts.body = JSON.stringify(data);
   }
 
-  const res = await fetch(path, opts);
+  const res = await fetch(`${API_BASE}${path}`, opts);
 
   if (!res.ok) {
     const body = await res.text();
