@@ -1,4 +1,5 @@
 import { Agent } from '@mastra/core';
+
 import { DETECT_QUESTIONS_PROMPT } from '../prompts/answer-detect.js';
 import { SUGGEST_ANSWER_PROMPT } from '../prompts/answer-suggest.js';
 

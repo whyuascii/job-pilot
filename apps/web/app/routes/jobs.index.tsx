@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -27,6 +28,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +54,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 import type { JobListParams, JobListResult } from '~/lib/api-client';
 import { captureEvent } from '~/lib/posthog';

@@ -1,4 +1,5 @@
 import { index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+
 import { createId } from '../utils.js';
 import { tenants, users } from './tenants.js';
 

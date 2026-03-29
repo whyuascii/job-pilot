@@ -1,7 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { NextFunction, Request, Response } from 'express';
+
 import { db } from '@job-pilot/db';
 import { users } from '@job-pilot/db/schema';
+
 import { auth } from '../lib/auth.js';
 
 export interface AuthenticatedRequest extends Request {

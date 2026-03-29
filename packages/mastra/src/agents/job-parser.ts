@@ -1,4 +1,5 @@
 import { Agent } from '@mastra/core';
+
 import { JOB_PARSER_PROMPT } from '../prompts/job-parser.js';
 
 export const jobParserAgent = new Agent({

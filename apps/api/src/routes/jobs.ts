@@ -15,8 +15,10 @@ import {
   sql,
 } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { jobs, jobScores } from '@job-pilot/db/schema';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture, captureError } from '../lib/posthog.js';
 

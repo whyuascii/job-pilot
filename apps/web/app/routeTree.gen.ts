@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import type { createStart } from '@tanstack/react-start';
+
 import type { getRouter } from './router.tsx';
 import { Route as rootRouteImport } from './routes/__root';
 import { Route as AnalyticsRouteImport } from './routes/analytics';

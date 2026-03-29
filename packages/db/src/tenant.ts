@@ -1,5 +1,6 @@
 import { and, eq, SQL } from 'drizzle-orm';
 import { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
+
 import { db } from './client.js';
 
 export type TenantContext = {

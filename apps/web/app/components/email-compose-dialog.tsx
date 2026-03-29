@@ -1,5 +1,7 @@
 import * as React from 'react';
+
 import { AlertTriangle, Loader2, Send } from 'lucide-react';
+
 import {
   Button,
   Dialog,
@@ -17,6 +19,7 @@ import {
   SelectValue,
   Textarea,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 interface EmailTemplate {

@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { useRouter } from '@tanstack/react-router';
 
 interface ErrorFallbackProps {
@@ -38,7 +39,10 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
               Try Again
             </button>
           )}
-          <a href="/dashboard" className="hover:bg-accent rounded-md border px-4 py-2 text-sm font-medium">
+          <a
+            href="/dashboard"
+            className="hover:bg-accent rounded-md border px-4 py-2 text-sm font-medium"
+          >
             Return to Flight Deck
           </a>
         </div>

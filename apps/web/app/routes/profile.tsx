@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import {
   Ban,
@@ -35,6 +36,7 @@ import {
   User,
   X,
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +68,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@job-pilot/ui';
+
 import { ProfileCoachPanel } from '~/components/profile-coach';
 import { api } from '~/lib/api-client';
 import { captureEvent } from '~/lib/posthog';

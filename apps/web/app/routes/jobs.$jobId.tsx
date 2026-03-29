@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
   AlertTriangle,
@@ -31,6 +32,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react';
+
 import {
   Badge,
   Button,
@@ -45,6 +47,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@job-pilot/ui';
+
 import { ApplicationAssistDrawer } from '~/components/application-assist-drawer';
 import {
   ResumeComparisonView,

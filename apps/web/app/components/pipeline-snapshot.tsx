@@ -1,5 +1,7 @@
 import * as React from 'react';
+
 import { ArrowRight, BarChart3, DollarSign, TrendingDown } from 'lucide-react';
+
 import { Badge } from '@job-pilot/ui';
 
 interface PipelineData {

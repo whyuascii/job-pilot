@@ -1,4 +1,5 @@
 import { Agent } from '@mastra/core';
+
 import { SCORING_PROMPT } from '../prompts/scoring.js';
 
 export const scoringAgent = new Agent({

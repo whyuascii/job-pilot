@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { candidates, jobs, projects } from '@job-pilot/db/schema';
 import {
@@ -8,6 +9,7 @@ import {
   PROFILE_ANALYSIS_PROMPT,
   PROFILE_COACH_PROMPT,
 } from '@job-pilot/mastra/prompts';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';

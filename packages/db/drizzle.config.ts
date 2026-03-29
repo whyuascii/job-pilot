@@ -1,5 +1,6 @@
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+
 import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 

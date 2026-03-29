@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import {
   Bookmark,
   Check,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   User,
 } from 'lucide-react';
+
 import {
   Badge,
   Button,
@@ -30,6 +32,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@job-pilot/ui';
+
 import { EmailComposeDialog } from '~/components/email-compose-dialog';
 import { ResumeInterview } from '~/components/resume-interview';
 import { api, getApiBase } from '~/lib/api-client';

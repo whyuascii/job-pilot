@@ -1,7 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { candidates, preferences } from '@job-pilot/db/schema';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture } from '../lib/posthog.js';
 

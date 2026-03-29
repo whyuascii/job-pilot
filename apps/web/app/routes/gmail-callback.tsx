@@ -1,7 +1,10 @@
 import React from 'react';
+
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+
 import { Button } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 export const Route = createFileRoute('/gmail-callback')({

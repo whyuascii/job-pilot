@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
   BarChart3,
@@ -16,6 +17,7 @@ import {
   User,
   X,
 } from 'lucide-react';
+
 import { NotificationBell } from '~/components/notification-bell';
 
 const navItems = [

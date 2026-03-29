@@ -1,6 +1,9 @@
 import * as React from 'react';
+
 import { ArrowLeft, Bookmark, Check, Loader2, Send, SkipForward, Sparkles } from 'lucide-react';
+
 import { Badge, Button, Card, CardContent, Textarea } from '@job-pilot/ui';
+
 import { api, getApiBase } from '~/lib/api-client';
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import { Agent } from '@mastra/core';
+
 import { RESUME_TAILORING_PROMPT } from '../prompts/resume-tailor.js';
 
 export const resumeTailorAgent = new Agent({

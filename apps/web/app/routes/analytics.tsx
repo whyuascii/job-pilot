@@ -14,7 +14,9 @@ import {
   TrendingUp,
   XCircle,
 } from 'lucide-react';
+
 import { Skeleton } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 type FunnelStage = { stage: string; count: number; percentage: number };

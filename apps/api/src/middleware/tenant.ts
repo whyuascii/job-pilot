@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import type { NextFunction, Response } from 'express';
+
 import { db } from '@job-pilot/db';
+
 import { runWithTenantContext } from '../lib/context.js';
 import type { AuthenticatedRequest } from './auth.js';
 

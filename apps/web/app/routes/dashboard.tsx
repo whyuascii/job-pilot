@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
   AlertTriangle,
@@ -10,7 +11,9 @@ import {
   TrendingDown,
   User,
 } from 'lucide-react';
+
 import { Badge, Button, Skeleton } from '@job-pilot/ui';
+
 import { ActiveMissions } from '~/components/active-missions';
 import { ActivityFeed } from '~/components/activity-feed';
 import { PipelineSnapshot } from '~/components/pipeline-snapshot';

@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { ChevronDown, ChevronUp, FileText, Minus, Plus } from 'lucide-react';
+
 import { Badge, Card, CardContent, CardHeader, CardTitle, Separator } from '@job-pilot/ui';
 
 // ---------------------------------------------------------------------------

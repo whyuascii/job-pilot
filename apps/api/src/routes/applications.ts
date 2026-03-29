@@ -1,5 +1,6 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import {
   applications,
@@ -10,6 +11,7 @@ import {
   jobScores,
   outcomes,
 } from '@job-pilot/db/schema';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture, captureError } from '../lib/posthog.js';
 

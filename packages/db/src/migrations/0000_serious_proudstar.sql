@@ -1,4 +1,4 @@
-CREATE TABLE "answer_bank" (
+CREATE TABLE IF NOT EXISTS "answer_bank" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"tenant_id" text NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE "answer_bank" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "application_questions" (
+CREATE TABLE IF NOT EXISTS "application_questions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"application_id" text NOT NULL,
 	"question" text NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE "application_questions" (
 	"approved" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "applications" (
+CREATE TABLE IF NOT EXISTS "applications" (
 	"id" text PRIMARY KEY NOT NULL,
 	"job_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE "applications" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "llm_runs" (
+CREATE TABLE IF NOT EXISTS "llm_runs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"model" varchar(100) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE "llm_runs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "outcomes" (
+CREATE TABLE IF NOT EXISTS "outcomes" (
 	"id" text PRIMARY KEY NOT NULL,
 	"application_id" text NOT NULL,
 	"stage" varchar(30) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE "outcomes" (
 	"metadata" jsonb
 );
 --> statement-breakpoint
-CREATE TABLE "recruiter_messages" (
+CREATE TABLE IF NOT EXISTS "recruiter_messages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"application_id" text,
 	"tenant_id" text NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE "recruiter_messages" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "tailored_resumes" (
+CREATE TABLE IF NOT EXISTS "tailored_resumes" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"job_id" text NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE "tailored_resumes" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "accounts" (
+CREATE TABLE IF NOT EXISTS "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"account_id" text NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE "accounts" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sessions" (
+CREATE TABLE IF NOT EXISTS "sessions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"token" text NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE "sessions" (
 	CONSTRAINT "sessions_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE "verifications" (
+CREATE TABLE IF NOT EXISTS "verifications" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
@@ -130,7 +130,7 @@ CREATE TABLE "verifications" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "cover_letters" (
+CREATE TABLE IF NOT EXISTS "cover_letters" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"job_id" text NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE "cover_letters" (
 	"created_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "flight_records" (
+CREATE TABLE IF NOT EXISTS "flight_records" (
 	"id" text PRIMARY KEY NOT NULL,
 	"application_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE "flight_records" (
 	"created_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "candidates" (
+CREATE TABLE IF NOT EXISTS "candidates" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"tenant_id" text NOT NULL,
@@ -183,7 +183,7 @@ CREATE TABLE "candidates" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "experience_blocks" (
+CREATE TABLE IF NOT EXISTS "experience_blocks" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"company" varchar(200) NOT NULL,
@@ -197,7 +197,7 @@ CREATE TABLE "experience_blocks" (
 	"skills" jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "preferences" (
+CREATE TABLE IF NOT EXISTS "preferences" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"key" varchar(100) NOT NULL,
@@ -205,7 +205,7 @@ CREATE TABLE "preferences" (
 	"category" varchar(20) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "projects" (
+CREATE TABLE IF NOT EXISTS "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"name" varchar(200) NOT NULL,
@@ -215,7 +215,7 @@ CREATE TABLE "projects" (
 	"highlights" jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "resumes" (
+CREATE TABLE IF NOT EXISTS "resumes" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"tenant_id" text NOT NULL,
@@ -228,7 +228,7 @@ CREATE TABLE "resumes" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "skills" (
+CREATE TABLE IF NOT EXISTS "skills" (
 	"id" text PRIMARY KEY NOT NULL,
 	"candidate_id" text NOT NULL,
 	"name" varchar(100) NOT NULL,
@@ -238,7 +238,7 @@ CREATE TABLE "skills" (
 	"last_used" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE TABLE "career_goals" (
+CREATE TABLE IF NOT EXISTS "career_goals" (
 	"id" text PRIMARY KEY NOT NULL,
 	"job_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -249,7 +249,7 @@ CREATE TABLE "career_goals" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "ghostwriter_messages" (
+CREATE TABLE IF NOT EXISTS "ghostwriter_messages" (
 	"id" text PRIMARY KEY NOT NULL,
 	"job_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE "ghostwriter_messages" (
 	"created_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "gmail_tokens" (
+CREATE TABLE IF NOT EXISTS "gmail_tokens" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"user_id" text NOT NULL,
@@ -272,7 +272,7 @@ CREATE TABLE "gmail_tokens" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "api_keys" (
+CREATE TABLE IF NOT EXISTS "api_keys" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"service" varchar(50) NOT NULL,
@@ -281,7 +281,7 @@ CREATE TABLE "api_keys" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "tenants" (
+CREATE TABLE IF NOT EXISTS "tenants" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" varchar(100) NOT NULL,
 	"slug" varchar(50) NOT NULL,
@@ -291,7 +291,7 @@ CREATE TABLE "tenants" (
 	CONSTRAINT "tenants_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text,
 	"email" varchar(255) NOT NULL,
@@ -304,7 +304,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "job_scores" (
+CREATE TABLE IF NOT EXISTS "job_scores" (
 	"id" text PRIMARY KEY NOT NULL,
 	"job_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -318,7 +318,7 @@ CREATE TABLE "job_scores" (
 	"scored_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "job_sources" (
+CREATE TABLE IF NOT EXISTS "job_sources" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"name" varchar(100) NOT NULL,
@@ -329,7 +329,7 @@ CREATE TABLE "job_sources" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "jobs" (
+CREATE TABLE IF NOT EXISTS "jobs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"source_id" text,
@@ -357,7 +357,7 @@ CREATE TABLE "jobs" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "notifications" (
+CREATE TABLE IF NOT EXISTS "notifications" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"user_id" text NOT NULL,
@@ -369,7 +369,7 @@ CREATE TABLE "notifications" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sent_emails" (
+CREATE TABLE IF NOT EXISTS "sent_emails" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
 	"candidate_id" text NOT NULL,
@@ -382,85 +382,238 @@ CREATE TABLE "sent_emails" (
 	"created_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "application_questions" ADD CONSTRAINT "application_questions_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "applications" ADD CONSTRAINT "applications_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "applications" ADD CONSTRAINT "applications_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "applications" ADD CONSTRAINT "applications_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "applications" ADD CONSTRAINT "applications_tailored_resume_id_resumes_id_fk" FOREIGN KEY ("tailored_resume_id") REFERENCES "public"."resumes"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "llm_runs" ADD CONSTRAINT "llm_runs_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "recruiter_messages" ADD CONSTRAINT "recruiter_messages_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "recruiter_messages" ADD CONSTRAINT "recruiter_messages_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "candidates" ADD CONSTRAINT "candidates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "candidates" ADD CONSTRAINT "candidates_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "experience_blocks" ADD CONSTRAINT "experience_blocks_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "preferences" ADD CONSTRAINT "preferences_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "projects" ADD CONSTRAINT "projects_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "resumes" ADD CONSTRAINT "resumes_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "resumes" ADD CONSTRAINT "resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "skills" ADD CONSTRAINT "skills_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "job_sources" ADD CONSTRAINT "job_sources_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_source_id_job_sources_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."job_sources"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "answer_bank_tenant_id_category_idx" ON "answer_bank" USING btree ("tenant_id","category");--> statement-breakpoint
-CREATE INDEX "applications_tenant_id_status_idx" ON "applications" USING btree ("tenant_id","status");--> statement-breakpoint
-CREATE INDEX "applications_candidate_id_idx" ON "applications" USING btree ("candidate_id");--> statement-breakpoint
-CREATE INDEX "applications_sub_status_idx" ON "applications" USING btree ("sub_status");--> statement-breakpoint
-CREATE INDEX "applications_last_activity_idx" ON "applications" USING btree ("last_activity_at");--> statement-breakpoint
-CREATE INDEX "applications_source_idx" ON "applications" USING btree ("source");--> statement-breakpoint
-CREATE INDEX "outcomes_application_id_idx" ON "outcomes" USING btree ("application_id");--> statement-breakpoint
-CREATE INDEX "cover_letters_tenant_id_job_id_idx" ON "cover_letters" USING btree ("tenant_id","job_id");--> statement-breakpoint
-CREATE INDEX "flight_records_tenant_id_candidate_id_idx" ON "flight_records" USING btree ("tenant_id","candidate_id");--> statement-breakpoint
-CREATE INDEX "experience_blocks_candidate_id_idx" ON "experience_blocks" USING btree ("candidate_id");--> statement-breakpoint
-CREATE INDEX "resumes_candidate_id_tenant_id_idx" ON "resumes" USING btree ("candidate_id","tenant_id");--> statement-breakpoint
-CREATE INDEX "skills_candidate_id_idx" ON "skills" USING btree ("candidate_id");--> statement-breakpoint
-CREATE INDEX "career_goals_tenant_id_idx" ON "career_goals" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX "career_goals_candidate_id_idx" ON "career_goals" USING btree ("candidate_id");--> statement-breakpoint
-CREATE INDEX "ghostwriter_messages_tenant_id_job_id_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id");--> statement-breakpoint
-CREATE INDEX "gw_messages_context_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id","context");--> statement-breakpoint
-CREATE UNIQUE INDEX "gmail_tokens_tenant_user_idx" ON "gmail_tokens" USING btree ("tenant_id","user_id");--> statement-breakpoint
-CREATE INDEX "gmail_tokens_user_id_idx" ON "gmail_tokens" USING btree ("user_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "api_keys_tenant_service_idx" ON "api_keys" USING btree ("tenant_id","service");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_tenant_email_idx" ON "users" USING btree ("tenant_id","email");--> statement-breakpoint
-CREATE INDEX "job_scores_job_id_idx" ON "job_scores" USING btree ("job_id");--> statement-breakpoint
-CREATE INDEX "job_scores_overall_score_idx" ON "job_scores" USING btree ("overall_score");--> statement-breakpoint
-CREATE INDEX "job_scores_candidate_id_idx" ON "job_scores" USING btree ("candidate_id");--> statement-breakpoint
-CREATE INDEX "jobs_tenant_id_idx" ON "jobs" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX "jobs_created_at_idx" ON "jobs" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "jobs_tenant_id_created_at_idx" ON "jobs" USING btree ("tenant_id","created_at");--> statement-breakpoint
-CREATE INDEX "notifications_tenant_user_idx" ON "notifications" USING btree ("tenant_id","user_id");--> statement-breakpoint
-CREATE INDEX "notifications_user_read_idx" ON "notifications" USING btree ("user_id","read");--> statement-breakpoint
-CREATE INDEX "notifications_created_at_idx" ON "notifications" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX "sent_emails_tenant_id_idx" ON "sent_emails" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX "sent_emails_application_id_idx" ON "sent_emails" USING btree ("application_id");
+DO $$ BEGIN
+ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "application_questions" ADD CONSTRAINT "application_questions_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "applications" ADD CONSTRAINT "applications_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "applications" ADD CONSTRAINT "applications_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "applications" ADD CONSTRAINT "applications_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "applications" ADD CONSTRAINT "applications_tailored_resume_id_resumes_id_fk" FOREIGN KEY ("tailored_resume_id") REFERENCES "public"."resumes"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "llm_runs" ADD CONSTRAINT "llm_runs_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "outcomes" ADD CONSTRAINT "outcomes_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "recruiter_messages" ADD CONSTRAINT "recruiter_messages_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "recruiter_messages" ADD CONSTRAINT "recruiter_messages_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "candidates" ADD CONSTRAINT "candidates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "candidates" ADD CONSTRAINT "candidates_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "experience_blocks" ADD CONSTRAINT "experience_blocks_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "preferences" ADD CONSTRAINT "preferences_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "projects" ADD CONSTRAINT "projects_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "resumes" ADD CONSTRAINT "resumes_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "resumes" ADD CONSTRAINT "resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "skills" ADD CONSTRAINT "skills_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "users" ADD CONSTRAINT "users_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "job_sources" ADD CONSTRAINT "job_sources_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_source_id_job_sources_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."job_sources"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "answer_bank_tenant_id_category_idx" ON "answer_bank" USING btree ("tenant_id","category");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "applications_tenant_id_status_idx" ON "applications" USING btree ("tenant_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "applications_candidate_id_idx" ON "applications" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "applications_sub_status_idx" ON "applications" USING btree ("sub_status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "applications_last_activity_idx" ON "applications" USING btree ("last_activity_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "applications_source_idx" ON "applications" USING btree ("source");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "outcomes_application_id_idx" ON "outcomes" USING btree ("application_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "cover_letters_tenant_id_job_id_idx" ON "cover_letters" USING btree ("tenant_id","job_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "flight_records_tenant_id_candidate_id_idx" ON "flight_records" USING btree ("tenant_id","candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "experience_blocks_candidate_id_idx" ON "experience_blocks" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resumes_candidate_id_tenant_id_idx" ON "resumes" USING btree ("candidate_id","tenant_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "skills_candidate_id_idx" ON "skills" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "career_goals_tenant_id_idx" ON "career_goals" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "career_goals_candidate_id_idx" ON "career_goals" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ghostwriter_messages_tenant_id_job_id_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "gw_messages_context_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id","context");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "gmail_tokens_tenant_user_idx" ON "gmail_tokens" USING btree ("tenant_id","user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "gmail_tokens_user_id_idx" ON "gmail_tokens" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "api_keys_tenant_service_idx" ON "api_keys" USING btree ("tenant_id","service");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "users_tenant_email_idx" ON "users" USING btree ("tenant_id","email");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "job_scores_job_id_idx" ON "job_scores" USING btree ("job_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "job_scores_overall_score_idx" ON "job_scores" USING btree ("overall_score");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "job_scores_candidate_id_idx" ON "job_scores" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "jobs_tenant_id_idx" ON "jobs" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "jobs_created_at_idx" ON "jobs" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "jobs_tenant_id_created_at_idx" ON "jobs" USING btree ("tenant_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notifications_tenant_user_idx" ON "notifications" USING btree ("tenant_id","user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notifications_user_read_idx" ON "notifications" USING btree ("user_id","read");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notifications_created_at_idx" ON "notifications" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sent_emails_tenant_id_idx" ON "sent_emails" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sent_emails_application_id_idx" ON "sent_emails" USING btree ("application_id");

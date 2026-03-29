@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -24,6 +25,7 @@ import {
   User,
   X,
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,7 @@ import {
   Label,
   Separator,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 import { authClient } from '~/lib/auth-client';
 import { captureEvent } from '~/lib/posthog';

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
   ArrowRight,
@@ -20,6 +21,7 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +41,7 @@ import {
   Separator,
   Skeleton,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 // ---------------------------------------------------------------------------

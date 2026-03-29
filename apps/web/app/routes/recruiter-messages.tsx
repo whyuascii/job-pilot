@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -14,6 +15,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+
 import {
   Badge,
   Button,
@@ -24,6 +26,7 @@ import {
   StatusBadge,
   statusLabels,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 interface EmailAnalysisResult {

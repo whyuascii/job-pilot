@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import {
   Building2,
   Calendar,
@@ -9,7 +10,9 @@ import {
   Loader2,
   Target,
 } from 'lucide-react';
+
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 interface FlightRecord {

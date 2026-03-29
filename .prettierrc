@@ -10,11 +10,13 @@
   ],
   "importOrder": [
     "^react",
+    "",
     "<THIRD_PARTY_MODULES>",
+    "",
     "^@job-pilot/(.*)$",
+    "",
     "^~/(.*)$",
+    "",
     "^[./]"
-  ],
-  "importOrderSeparation": true,
-  "importOrderSortSpecifiers": true
+  ]
 }

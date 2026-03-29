@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { useRouter } from '@tanstack/react-router';
 import {
   Bot,
@@ -16,6 +17,7 @@ import {
   User,
   Zap,
 } from 'lucide-react';
+
 import {
   Badge,
   Button,
@@ -26,6 +28,7 @@ import {
   ScrollArea,
   Textarea,
 } from '@job-pilot/ui';
+
 import { api, ApiError } from '~/lib/api-client';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

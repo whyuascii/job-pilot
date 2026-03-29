@@ -1,9 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { candidates, coverLetters, jobs, jobScores, tailoredResumes } from '@job-pilot/db/schema';
 import { COVER_LETTER_PROMPT } from '@job-pilot/mastra/prompts';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture, captureError } from '../lib/posthog.js';
 import { checkRateLimit } from '../lib/rate-limit.js';

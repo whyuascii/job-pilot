@@ -2,8 +2,10 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { candidates, coverLetters, jobs, jobScores } from '@job-pilot/db/schema';
+
 import { getTenantContext } from '../lib/context.js';
 import { capture, captureError } from '../lib/posthog.js';
 

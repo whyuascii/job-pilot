@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import { Loader2, Plus, X } from 'lucide-react';
+
 import { Badge, Button, Input, Label } from '@job-pilot/ui';
 
 interface QuickAddData {

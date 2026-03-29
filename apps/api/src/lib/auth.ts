@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { eq } from 'drizzle-orm';
+
 import { candidates, db, tenants, users } from '@job-pilot/db';
 
 function createId(): string {

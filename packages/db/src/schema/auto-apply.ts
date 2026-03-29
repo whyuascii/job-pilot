@@ -1,4 +1,5 @@
 import { index, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+
 import { createId } from '../utils.js';
 import { applications } from './applications.js';
 import { candidates } from './candidates.js';

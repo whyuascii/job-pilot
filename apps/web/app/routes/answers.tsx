@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -16,6 +17,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +43,7 @@ import {
   Label,
   Separator,
 } from '@job-pilot/ui';
+
 import { api } from '~/lib/api-client';
 
 // ─── Route Definition ────────────────────────────────────────────────────────

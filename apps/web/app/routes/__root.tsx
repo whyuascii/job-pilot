@@ -1,5 +1,7 @@
 import * as React from 'react';
+
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router';
+
 import { ErrorFallback, NotFound } from '~/components/error-boundary';
 import { SidebarLayout } from '~/components/sidebar-layout';
 import { api } from '~/lib/api-client';

@@ -1,7 +1,9 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
+
 import { db } from '@job-pilot/db';
 import { applications, candidates, flightRecords, jobs, jobScores } from '@job-pilot/db/schema';
+
 import { getTenantContext } from '../lib/context.js';
 
 const router = Router();

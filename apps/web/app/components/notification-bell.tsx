@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { useNavigate } from '@tanstack/react-router';
 import {
   Bell,
@@ -10,6 +11,7 @@ import {
   Star,
   TrendingUp,
 } from 'lucide-react';
+
 import { api } from '~/lib/api-client';
 
 type Notification = {

@@ -9,6 +9,7 @@ import {
   timestamp,
   varchar,
 } from 'drizzle-orm/pg-core';
+
 import { createId } from '../utils.js';
 import { candidates, resumes } from './candidates.js';
 import { jobs } from './jobs.js';

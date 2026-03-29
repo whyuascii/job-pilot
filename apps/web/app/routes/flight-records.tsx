@@ -1,7 +1,10 @@
 import * as React from 'react';
+
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Building2, Calendar, ChevronDown, ChevronUp, FileText, Plane, Target } from 'lucide-react';
+
 import { Badge, Button, Card, CardContent, Separator } from '@job-pilot/ui';
+
 import { FlightRecordViewer } from '~/components/flight-record-viewer';
 import { api } from '~/lib/api-client';
 

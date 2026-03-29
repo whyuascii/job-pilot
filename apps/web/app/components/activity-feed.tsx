@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { Link } from '@tanstack/react-router';
 import {
   ArrowUpCircle,
@@ -11,6 +12,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+
 import { Badge, Button } from '@job-pilot/ui';
 
 export interface ActivityFeedItem {

@@ -13,6 +13,7 @@ import {
   Target,
   Trophy,
 } from 'lucide-react';
+
 import { Badge, Button } from '@job-pilot/ui';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
