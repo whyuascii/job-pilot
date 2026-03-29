@@ -150,7 +150,7 @@ jobs:
           aws ecs describe-task-definition \
             --task-definition "$TASK_DEF" \
             --query 'taskDefinition' \
-            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)' \
             | jq --arg img "$ECR_URL:$IMAGE_TAG" '.containerDefinitions[0].image = $img' \
             > new-task-def.json
 
