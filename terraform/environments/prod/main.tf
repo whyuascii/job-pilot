@@ -118,6 +118,22 @@ resource "aws_s3_bucket_lifecycle_configuration" "storage" {
   }
 }
 
+# CORS — allows the SPA to upload/download directly via presigned URLs
+resource "aws_s3_bucket_cors_configuration" "storage" {
+  bucket = aws_s3_bucket.storage.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_origins = [
+      "https://job-pilot.whyuascii.com",
+      "http://localhost:5173",
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 # Grant the shared ECS task role access to the bucket.
 # No S3 access keys needed — the AWS SDK discovers credentials from the task role.
 data "aws_ssm_parameter" "task_role_arn" {
