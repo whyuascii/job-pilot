@@ -32,6 +32,18 @@ CREATE TABLE "applications" (
 	"tailored_resume_id" text,
 	"applied_at" timestamp with time zone,
 	"notes" text DEFAULT '' NOT NULL,
+	"cover_letter_id" text,
+	"flight_record_id" text,
+	"comp_min" integer,
+	"comp_max" integer,
+	"equity_details" text,
+	"comp_notes" text,
+	"sub_status" varchar(30),
+	"status_note" text,
+	"declined_by_user" boolean DEFAULT false NOT NULL,
+	"last_activity_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"rejected_at" timestamp with time zone,
+	"source" varchar(50) DEFAULT 'job_pilot' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -118,10 +130,39 @@ CREATE TABLE "verifications" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "cover_letters" (
+	"id" text PRIMARY KEY NOT NULL,
+	"candidate_id" text NOT NULL,
+	"job_id" text NOT NULL,
+	"tenant_id" text NOT NULL,
+	"content" text NOT NULL,
+	"content_html" text,
+	"version" integer DEFAULT 1 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "flight_records" (
+	"id" text PRIMARY KEY NOT NULL,
+	"application_id" text NOT NULL,
+	"candidate_id" text NOT NULL,
+	"job_id" text NOT NULL,
+	"tenant_id" text NOT NULL,
+	"resume_snapshot" jsonb NOT NULL,
+	"cover_letter_snapshot" text,
+	"job_snapshot" jsonb NOT NULL,
+	"score_snapshot" jsonb,
+	"applied_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "candidates" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"tenant_id" text NOT NULL,
+	"email" varchar(255),
+	"phone" varchar(30),
+	"legal_name" varchar(200),
+	"preferred_name" varchar(100),
 	"headline" varchar(200) NOT NULL,
 	"summary" text DEFAULT '' NOT NULL,
 	"years_of_experience" integer DEFAULT 0 NOT NULL,
@@ -133,6 +174,11 @@ CREATE TABLE "candidates" (
 	"salary_max" integer,
 	"salary_currency" varchar(3) DEFAULT 'USD' NOT NULL,
 	"visa_required" boolean DEFAULT false NOT NULL,
+	"linkedin_url" varchar(500),
+	"github_url" varchar(500),
+	"website_url" varchar(500),
+	"portfolio_url" varchar(500),
+	"avoided_companies" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -192,6 +238,28 @@ CREATE TABLE "skills" (
 	"last_used" timestamp with time zone
 );
 --> statement-breakpoint
+CREATE TABLE "career_goals" (
+	"id" text PRIMARY KEY NOT NULL,
+	"job_id" text NOT NULL,
+	"candidate_id" text NOT NULL,
+	"tenant_id" text NOT NULL,
+	"notes" text,
+	"selected_for_coaching" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "ghostwriter_messages" (
+	"id" text PRIMARY KEY NOT NULL,
+	"job_id" text NOT NULL,
+	"candidate_id" text NOT NULL,
+	"tenant_id" text NOT NULL,
+	"role" varchar(20) NOT NULL,
+	"content" text NOT NULL,
+	"context" varchar(30),
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "gmail_tokens" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
@@ -200,6 +268,15 @@ CREATE TABLE "gmail_tokens" (
 	"refresh_token" text NOT NULL,
 	"scope" text NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "api_keys" (
+	"id" text PRIMARY KEY NOT NULL,
+	"tenant_id" text NOT NULL,
+	"service" varchar(50) NOT NULL,
+	"encrypted_key" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -216,13 +293,15 @@ CREATE TABLE "tenants" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
-	"tenant_id" text NOT NULL,
+	"tenant_id" text,
 	"email" varchar(255) NOT NULL,
 	"name" varchar(100) NOT NULL,
-	"password_hash" text,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
 	"role" varchar(20) DEFAULT 'member' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "job_scores" (
@@ -290,6 +369,19 @@ CREATE TABLE "notifications" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "sent_emails" (
+	"id" text PRIMARY KEY NOT NULL,
+	"tenant_id" text NOT NULL,
+	"candidate_id" text NOT NULL,
+	"application_id" text,
+	"to" text NOT NULL,
+	"subject" text NOT NULL,
+	"body" text NOT NULL,
+	"template_type" varchar(30),
+	"sent_at" timestamp with time zone DEFAULT now(),
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "answer_bank" ADD CONSTRAINT "answer_bank_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "application_questions" ADD CONSTRAINT "application_questions_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -306,6 +398,13 @@ ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_job_id_jobs_id_f
 ALTER TABLE "tailored_resumes" ADD CONSTRAINT "tailored_resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "cover_letters" ADD CONSTRAINT "cover_letters_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "flight_records" ADD CONSTRAINT "flight_records_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "candidates" ADD CONSTRAINT "candidates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "candidates" ADD CONSTRAINT "candidates_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "experience_blocks" ADD CONSTRAINT "experience_blocks_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -314,8 +413,15 @@ ALTER TABLE "projects" ADD CONSTRAINT "projects_candidate_id_candidates_id_fk" F
 ALTER TABLE "resumes" ADD CONSTRAINT "resumes_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "resumes" ADD CONSTRAINT "resumes_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "skills" ADD CONSTRAINT "skills_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "career_goals" ADD CONSTRAINT "career_goals_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ghostwriter_messages" ADD CONSTRAINT "ghostwriter_messages_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gmail_tokens" ADD CONSTRAINT "gmail_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "job_scores" ADD CONSTRAINT "job_scores_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -324,15 +430,28 @@ ALTER TABLE "jobs" ADD CONSTRAINT "jobs_tenant_id_tenants_id_fk" FOREIGN KEY ("t
 ALTER TABLE "jobs" ADD CONSTRAINT "jobs_source_id_job_sources_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."job_sources"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_candidate_id_candidates_id_fk" FOREIGN KEY ("candidate_id") REFERENCES "public"."candidates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sent_emails" ADD CONSTRAINT "sent_emails_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "answer_bank_tenant_id_category_idx" ON "answer_bank" USING btree ("tenant_id","category");--> statement-breakpoint
 CREATE INDEX "applications_tenant_id_status_idx" ON "applications" USING btree ("tenant_id","status");--> statement-breakpoint
 CREATE INDEX "applications_candidate_id_idx" ON "applications" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX "applications_sub_status_idx" ON "applications" USING btree ("sub_status");--> statement-breakpoint
+CREATE INDEX "applications_last_activity_idx" ON "applications" USING btree ("last_activity_at");--> statement-breakpoint
+CREATE INDEX "applications_source_idx" ON "applications" USING btree ("source");--> statement-breakpoint
 CREATE INDEX "outcomes_application_id_idx" ON "outcomes" USING btree ("application_id");--> statement-breakpoint
+CREATE INDEX "cover_letters_tenant_id_job_id_idx" ON "cover_letters" USING btree ("tenant_id","job_id");--> statement-breakpoint
+CREATE INDEX "flight_records_tenant_id_candidate_id_idx" ON "flight_records" USING btree ("tenant_id","candidate_id");--> statement-breakpoint
 CREATE INDEX "experience_blocks_candidate_id_idx" ON "experience_blocks" USING btree ("candidate_id");--> statement-breakpoint
 CREATE INDEX "resumes_candidate_id_tenant_id_idx" ON "resumes" USING btree ("candidate_id","tenant_id");--> statement-breakpoint
 CREATE INDEX "skills_candidate_id_idx" ON "skills" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX "career_goals_tenant_id_idx" ON "career_goals" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "career_goals_candidate_id_idx" ON "career_goals" USING btree ("candidate_id");--> statement-breakpoint
+CREATE INDEX "ghostwriter_messages_tenant_id_job_id_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id");--> statement-breakpoint
+CREATE INDEX "gw_messages_context_idx" ON "ghostwriter_messages" USING btree ("tenant_id","job_id","context");--> statement-breakpoint
 CREATE UNIQUE INDEX "gmail_tokens_tenant_user_idx" ON "gmail_tokens" USING btree ("tenant_id","user_id");--> statement-breakpoint
 CREATE INDEX "gmail_tokens_user_id_idx" ON "gmail_tokens" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "api_keys_tenant_service_idx" ON "api_keys" USING btree ("tenant_id","service");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_tenant_email_idx" ON "users" USING btree ("tenant_id","email");--> statement-breakpoint
 CREATE INDEX "job_scores_job_id_idx" ON "job_scores" USING btree ("job_id");--> statement-breakpoint
 CREATE INDEX "job_scores_overall_score_idx" ON "job_scores" USING btree ("overall_score");--> statement-breakpoint
@@ -342,4 +461,6 @@ CREATE INDEX "jobs_created_at_idx" ON "jobs" USING btree ("created_at");--> stat
 CREATE INDEX "jobs_tenant_id_created_at_idx" ON "jobs" USING btree ("tenant_id","created_at");--> statement-breakpoint
 CREATE INDEX "notifications_tenant_user_idx" ON "notifications" USING btree ("tenant_id","user_id");--> statement-breakpoint
 CREATE INDEX "notifications_user_read_idx" ON "notifications" USING btree ("user_id","read");--> statement-breakpoint
-CREATE INDEX "notifications_created_at_idx" ON "notifications" USING btree ("created_at");
+CREATE INDEX "notifications_created_at_idx" ON "notifications" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "sent_emails_tenant_id_idx" ON "sent_emails" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "sent_emails_application_id_idx" ON "sent_emails" USING btree ("application_id");

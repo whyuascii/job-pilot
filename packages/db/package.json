@@ -10,10 +10,10 @@
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:migrate:run": "tsx src/run-migrate.ts",
+    "db:check": "drizzle-kit check",
     "type-check": "tsc --noEmit",
     "db:seed": "tsx src/run-seed.ts",
     "clean": "rm -rf dist .turbo"

@@ -40,6 +40,9 @@ jobs:
         run: pnpm turbo type-check
         continue-on-error: false
 
+      - name: Verify migrations match schema
+        run: pnpm --filter @job-pilot/db db:check
+
       - name: Build
         run: pnpm turbo build
 
