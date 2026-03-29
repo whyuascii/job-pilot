@@ -1,16 +1,18 @@
 import * as React from 'react';
-import { Outlet, createRootRoute, useRouterState } from '@tanstack/react-router';
-
-import { SidebarLayout } from '~/components/sidebar-layout';
+import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router';
 import { ErrorFallback, NotFound } from '~/components/error-boundary';
+import { SidebarLayout } from '~/components/sidebar-layout';
 import { api } from '~/lib/api-client';
-import { identifyUser } from '~/lib/posthog';
+import { identifyUser, registerSuperProperties, setTenantGroup } from '~/lib/posthog';
 
 const publicPaths = ['/login', '/signup', '/'];
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
-    if (location.pathname === '/' || publicPaths.some(path => path !== '/' && location.pathname.startsWith(path))) {
+    if (
+      location.pathname === '/' ||
+      publicPaths.some((path) => path !== '/' && location.pathname.startsWith(path))
+    ) {
       return {};
     }
 
@@ -51,7 +53,9 @@ function RedirectToLogin() {
 
 function RootComponent() {
   const routerState = useRouterState();
-  const isPublicPage = routerState.location.pathname === '/' || publicPaths.some(path => path !== '/' && routerState.location.pathname.startsWith(path));
+  const isPublicPage =
+    routerState.location.pathname === '/' ||
+    publicPaths.some((path) => path !== '/' && routerState.location.pathname.startsWith(path));
 
   if (isPublicPage) {
     return <Outlet />;
@@ -69,6 +73,18 @@ function AuthenticatedLayout() {
       identifyUser(session.user.id, {
         email: session.user.email,
         name: session.user.name,
+        createdAt: session.user.createdAt,
+      });
+
+      // Set tenant group for B2B analytics if available
+      if (session.user.tenantId) {
+        setTenantGroup(session.user.tenantId);
+      }
+
+      // Register super properties sent with every event
+      registerSuperProperties({
+        app_version: '1.0.0',
+        platform: 'web',
       });
     }
   }, [context?.session]);

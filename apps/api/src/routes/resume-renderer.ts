@@ -1,7 +1,7 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { tailoredResumes, candidates, jobs } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { candidates, jobs, tailoredResumes } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 const router = Router();
@@ -18,21 +18,29 @@ function formatResumeDate(dateStr: string | null | undefined): string {
 }
 
 function generateResumeHtml(content: any, candidate: any, job: any): string {
-  const experienceHtml = (content.experienceBlocks || []).map((exp: any) => `
+  const experienceHtml = (content.experienceBlocks || [])
+    .map(
+      (exp: any) => `
     <div class="experience-block">
       <div class="exp-header">
         <strong>${exp.title}</strong> at ${exp.company}
         <span class="dates">${formatResumeDate(exp.startDate)} – ${formatResumeDate(exp.endDate)}</span>
       </div>
       <ul>${(exp.bullets || []).map((b: string) => `<li>${b}</li>`).join('')}</ul>
-    </div>`).join('');
+    </div>`,
+    )
+    .join('');
 
-  const projectsHtml = (content.projectHighlights || []).map((p: any) => `
+  const projectsHtml = (content.projectHighlights || [])
+    .map(
+      (p: any) => `
     <div class="project-block">
       <strong>${p.name}</strong>
       <p>${p.description}</p>
       ${p.skills?.length ? `<div class="skills">${p.skills.join(' · ')}</div>` : ''}
-    </div>`).join('');
+    </div>`,
+    )
+    .join('');
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${candidate.currentTitle || 'Resume'} – ${job.company}</title>
@@ -60,16 +68,29 @@ router.post('/export', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     const { jobId } = req.body;
-    const candidate = await db.query.candidates.findFirst({ where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)) });
+    const candidate = await db.query.candidates.findFirst({
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
+    });
     if (!candidate) throw new Error('No candidate profile found.');
-    const job = await db.query.jobs.findFirst({ where: and(eq(jobs.id, jobId), eq(jobs.tenantId, ctx.tenantId)) });
+    const job = await db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.tenantId, ctx.tenantId)),
+    });
     if (!job) throw new Error('Job not found');
-    const tailored = await db.query.tailoredResumes.findFirst({ where: and(eq(tailoredResumes.jobId, jobId), eq(tailoredResumes.candidateId, candidate.id), eq(tailoredResumes.tenantId, ctx.tenantId)), orderBy: [desc(tailoredResumes.version)] });
+    const tailored = await db.query.tailoredResumes.findFirst({
+      where: and(
+        eq(tailoredResumes.jobId, jobId),
+        eq(tailoredResumes.candidateId, candidate.id),
+        eq(tailoredResumes.tenantId, ctx.tenantId),
+      ),
+      orderBy: [desc(tailoredResumes.version)],
+    });
     if (!tailored) throw new Error('No tailored resume found. Generate one first.');
     const content = tailored.contentJson as any;
     const html = generateResumeHtml(content, candidate, job);
     res.json({ html, fileName: `${candidate.currentTitle || 'resume'}-${job.company}.html` });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

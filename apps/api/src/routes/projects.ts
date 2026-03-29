@@ -1,7 +1,7 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { projects, candidates } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { candidates, projects } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 const router = Router();
@@ -23,7 +23,9 @@ router.get('/', async (_req, res, next) => {
       where: eq(projects.candidateId, candidate.id),
     });
     res.json(list);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/projects
@@ -32,16 +34,21 @@ router.post('/', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const data = req.body;
-    const [project] = await db.insert(projects).values({
-      candidateId: candidate.id,
-      name: data.name,
-      description: data.description || '',
-      url: data.url ?? null,
-      skills: data.skills || [],
-      highlights: data.highlights || [],
-    }).returning();
+    const [project] = await db
+      .insert(projects)
+      .values({
+        candidateId: candidate.id,
+        name: data.name,
+        description: data.description || '',
+        url: data.url ?? null,
+        skills: data.skills || [],
+        highlights: data.highlights || [],
+      })
+      .returning();
     res.json(project);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/projects/update
@@ -50,13 +57,16 @@ router.post('/update', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const { projectId, ...data } = req.body;
-    const [updated] = await db.update(projects)
+    const [updated] = await db
+      .update(projects)
       .set(data)
       .where(and(eq(projects.id, projectId), eq(projects.candidateId, candidate.id)))
       .returning();
     if (!updated) throw new Error('Project not found');
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/projects/delete
@@ -65,9 +75,13 @@ router.post('/delete', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const { projectId } = req.body;
-    await db.delete(projects).where(and(eq(projects.id, projectId), eq(projects.candidateId, candidate.id)));
+    await db
+      .delete(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.candidateId, candidate.id)));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

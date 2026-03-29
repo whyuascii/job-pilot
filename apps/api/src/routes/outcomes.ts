@@ -1,7 +1,7 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { outcomes, applications } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { applications, outcomes } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
@@ -28,7 +28,9 @@ router.post('/list', async (req, res, next) => {
       orderBy: [desc(outcomes.occurredAt)],
     });
     res.json(list);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/outcomes
@@ -42,14 +44,19 @@ router.post('/', async (req, res, next) => {
     });
     if (!app) throw new Error('Application not found');
 
-    const [outcome] = await db.insert(outcomes).values({
-      id: createId(),
-      applicationId,
-      stage,
-      notes: notes || '',
-    }).returning();
+    const [outcome] = await db
+      .insert(outcomes)
+      .values({
+        id: createId(),
+        applicationId,
+        stage,
+        notes: notes || '',
+      })
+      .returning();
     res.json(outcome);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

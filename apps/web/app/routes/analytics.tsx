@@ -1,18 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
-  BarChart3,
-  Plane,
-  ArrowRight,
-  Building2,
-  TrendingUp,
-  Clock,
-  Target,
-  Globe,
-  FileText,
-  CheckCircle2,
-  XCircle,
-  ArrowUpRight,
   ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
+  Building2,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Globe,
+  Plane,
+  Target,
+  TrendingUp,
+  XCircle,
 } from 'lucide-react';
 import { Skeleton } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
@@ -165,13 +165,12 @@ type AnalyticsLoaderData = {
 
 export const Route = createFileRoute('/analytics')({
   loader: async (): Promise<AnalyticsLoaderData> => {
-    const [funnel, scoreCorrelation, sourceEffectiveness, resumeVariants] =
-      await Promise.all([
-        api.analytics.getFunnel(),
-        api.analytics.getScoreCorrelation(),
-        api.analytics.getSourceEffectiveness(),
-        api.analytics.getResumeVariants(),
-      ]);
+    const [funnel, scoreCorrelation, sourceEffectiveness, resumeVariants] = await Promise.all([
+      api.analytics.getFunnel(),
+      api.analytics.getScoreCorrelation(),
+      api.analytics.getSourceEffectiveness(),
+      api.analytics.getResumeVariants(),
+    ]);
     return { funnel, scoreCorrelation, sourceEffectiveness, resumeVariants };
   },
   component: AnalyticsPage,
@@ -232,24 +231,20 @@ function FunnelChart({ stages }: { stages: FunnelStage[] }) {
   const maxCount = Math.max(...stages.map((s) => s.count), 1);
 
   // Separate pipeline stages from terminal stages
-  const pipelineStages = stages.filter(
-    (s) => s.stage !== 'rejected' && s.stage !== 'withdrawn',
-  );
-  const terminalStages = stages.filter(
-    (s) => s.stage === 'rejected' || s.stage === 'withdrawn',
-  );
+  const pipelineStages = stages.filter((s) => s.stage !== 'rejected' && s.stage !== 'withdrawn');
+  const terminalStages = stages.filter((s) => s.stage === 'rejected' || s.stage === 'withdrawn');
 
   const totalApps = stages.reduce((sum, s) => sum + s.count, 0);
 
   if (totalApps === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <BarChart3 className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Application Funnel</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Plane className="h-12 w-12 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-16">
+          <Plane className="mb-3 h-12 w-12 opacity-20" />
           <p className="text-sm">No applications yet. Start applying to see your funnel.</p>
         </div>
       </div>
@@ -257,11 +252,11 @@ function FunnelChart({ stages }: { stages: FunnelStage[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-6">
-        <BarChart3 className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-6 flex items-center gap-2">
+        <BarChart3 className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Application Funnel</h2>
-        <span className="ml-auto text-sm text-muted-foreground">
+        <span className="text-muted-foreground ml-auto text-sm">
           {totalApps} total application{totalApps !== 1 ? 's' : ''}
         </span>
       </div>
@@ -269,57 +264,38 @@ function FunnelChart({ stages }: { stages: FunnelStage[] }) {
       {/* Pipeline stages */}
       <div className="space-y-3">
         {pipelineStages.map((stage) => (
-          <FunnelBar
-            key={stage.stage}
-            stage={stage}
-            maxCount={maxCount}
-          />
+          <FunnelBar key={stage.stage} stage={stage} maxCount={maxCount} />
         ))}
       </div>
 
       {/* Terminal stages (rejected/withdrawn) */}
-      {terminalStages.length > 0 &&
-        terminalStages.some((s) => s.count > 0) && (
-          <div className="mt-6 pt-4 border-t">
-            <p className="text-xs font-medium text-muted-foreground mb-3">
-              Closed
-            </p>
-            <div className="space-y-3">
-              {terminalStages
-                .filter((s) => s.count > 0)
-                .map((stage) => (
-                  <FunnelBar
-                    key={stage.stage}
-                    stage={stage}
-                    maxCount={maxCount}
-                  />
-                ))}
-            </div>
+      {terminalStages.length > 0 && terminalStages.some((s) => s.count > 0) && (
+        <div className="mt-6 border-t pt-4">
+          <p className="text-muted-foreground mb-3 text-xs font-medium">Closed</p>
+          <div className="space-y-3">
+            {terminalStages
+              .filter((s) => s.count > 0)
+              .map((stage) => (
+                <FunnelBar key={stage.stage} stage={stage} maxCount={maxCount} />
+              ))}
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }
 
-function FunnelBar({
-  stage,
-  maxCount,
-}: {
-  stage: FunnelStage;
-  maxCount: number;
-}) {
+function FunnelBar({ stage, maxCount }: { stage: FunnelStage; maxCount: number }) {
   const label = stageLabels[stage.stage] ?? stage.stage;
   const color = stageColors[stage.stage] ?? 'bg-zinc-400';
   const widthPercent = Math.max((stage.count / maxCount) * 100, 2);
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs font-medium w-36 shrink-0 text-right">
-        {label}
-      </span>
-      <div className="flex-1 h-7 rounded-full bg-muted overflow-hidden">
+      <span className="w-36 shrink-0 text-right text-xs font-medium">{label}</span>
+      <div className="bg-muted h-7 flex-1 overflow-hidden rounded-full">
         <div
-          className={`h-full rounded-full ${color} transition-all flex items-center justify-end pr-2`}
+          className={`h-full rounded-full ${color} flex items-center justify-end pr-2 transition-all`}
           style={{ width: `${widthPercent}%`, minWidth: '2rem' }}
         >
           {stage.count > 0 && (
@@ -329,9 +305,7 @@ function FunnelBar({
           )}
         </div>
       </div>
-      <span className="text-xs text-muted-foreground w-10 text-right">
-        {stage.percentage}%
-      </span>
+      <span className="text-muted-foreground w-10 text-right text-xs">{stage.percentage}%</span>
     </div>
   );
 }
@@ -343,13 +317,13 @@ function FunnelBar({
 function ConversionRatesCard({ rates }: { rates: ConversionRate[] }) {
   if (rates.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingUp className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Conversion Rates</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <TrendingUp className="h-10 w-10 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <TrendingUp className="mb-3 h-10 w-10 opacity-20" />
           <p className="text-sm">Conversion data will appear as applications progress.</p>
         </div>
       </div>
@@ -357,9 +331,9 @@ function ConversionRatesCard({ rates }: { rates: ConversionRate[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center gap-2">
+        <TrendingUp className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Conversion Rates</h2>
       </div>
       <div className="space-y-3">
@@ -374,18 +348,13 @@ function ConversionRatesCard({ rates }: { rates: ConversionRate[] }) {
                 : 'text-red-500';
 
           return (
-            <div
-              key={`${rate.from}-${rate.to}`}
-              className="flex items-center gap-2"
-            >
-              <span className="text-xs font-medium w-28 shrink-0 truncate text-right">
+            <div key={`${rate.from}-${rate.to}`} className="flex items-center gap-2">
+              <span className="w-28 shrink-0 truncate text-right text-xs font-medium">
                 {fromLabel}
               </span>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="text-xs font-medium w-28 shrink-0 truncate">
-                {toLabel}
-              </span>
-              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+              <ArrowRight className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+              <span className="w-28 shrink-0 truncate text-xs font-medium">{toLabel}</span>
+              <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
                 <div
                   className={`h-full rounded-full transition-all ${
                     rate.rate >= 60
@@ -397,9 +366,7 @@ function ConversionRatesCard({ rates }: { rates: ConversionRate[] }) {
                   style={{ width: `${rate.rate}%` }}
                 />
               </div>
-              <span className={`text-xs font-bold w-10 text-right ${rateColor}`}>
-                {rate.rate}%
-              </span>
+              <span className={`w-10 text-right text-xs font-bold ${rateColor}`}>{rate.rate}%</span>
             </div>
           );
         })}
@@ -415,13 +382,13 @@ function ConversionRatesCard({ rates }: { rates: ConversionRate[] }) {
 function TimeInStageCard({ stages }: { stages: AverageTimeInStage[] }) {
   if (stages.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <Clock className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Average Time in Stage</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Clock className="h-10 w-10 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <Clock className="mb-3 h-10 w-10 opacity-20" />
           <p className="text-sm">Timing data will appear as applications advance.</p>
         </div>
       </div>
@@ -431,9 +398,9 @@ function TimeInStageCard({ stages }: { stages: AverageTimeInStage[] }) {
   const maxDays = Math.max(...stages.map((s) => s.avgDays), 1);
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <Clock className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center gap-2">
+        <Clock className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Average Time in Stage</h2>
       </div>
       <div className="space-y-3">
@@ -444,18 +411,14 @@ function TimeInStageCard({ stages }: { stages: AverageTimeInStage[] }) {
 
           return (
             <div key={stage.stage} className="flex items-center gap-3">
-              <span className="text-xs font-medium w-32 shrink-0 text-right truncate">
-                {label}
-              </span>
-              <div className="flex-1 h-5 rounded-full bg-muted overflow-hidden">
+              <span className="w-32 shrink-0 truncate text-right text-xs font-medium">{label}</span>
+              <div className="bg-muted h-5 flex-1 overflow-hidden rounded-full">
                 <div
                   className={`h-full rounded-full ${color} transition-all`}
                   style={{ width: `${widthPercent}%` }}
                 />
               </div>
-              <span className="text-xs font-semibold w-16 text-right">
-                {stage.avgDays}d avg
-              </span>
+              <span className="w-16 text-right text-xs font-semibold">{stage.avgDays}d avg</span>
             </div>
           );
         })}
@@ -471,13 +434,13 @@ function TimeInStageCard({ stages }: { stages: AverageTimeInStage[] }) {
 function TopCompaniesTable({ companies }: { companies: TopCompany[] }) {
   if (companies.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Building2 className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <Building2 className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Top Companies</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Building2 className="h-10 w-10 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <Building2 className="mb-3 h-10 w-10 opacity-20" />
           <p className="text-sm">Company analytics will appear once you start applying.</p>
         </div>
       </div>
@@ -485,23 +448,19 @@ function TopCompaniesTable({ companies }: { companies: TopCompany[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <Building2 className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center gap-2">
+        <Building2 className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Top Companies</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left">
-              <th className="pb-3 font-medium text-muted-foreground">Company</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">
-                Applications
-              </th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">
-                Advance Rate
-              </th>
-              <th className="pb-3 font-medium text-muted-foreground">Progress</th>
+              <th className="text-muted-foreground pb-3 font-medium">Company</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Applications</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Advance Rate</th>
+              <th className="text-muted-foreground pb-3 font-medium">Progress</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -513,17 +472,17 @@ function TopCompaniesTable({ companies }: { companies: TopCompany[] }) {
                   <span
                     className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                       company.advanceRate >= 50
-                        ? 'bg-white text-emerald-700 border border-emerald-300'
+                        ? 'border border-emerald-300 bg-white text-emerald-700'
                         : company.advanceRate >= 25
-                          ? 'bg-white text-amber-900 border border-amber-300'
-                          : 'bg-white text-muted-foreground border border-border'
+                          ? 'border border-amber-300 bg-white text-amber-900'
+                          : 'text-muted-foreground border-border border bg-white'
                     }`}
                   >
                     {company.advanceRate}%
                   </span>
                 </td>
                 <td className="py-3">
-                  <div className="h-2 w-full max-w-[120px] rounded-full bg-muted overflow-hidden">
+                  <div className="bg-muted h-2 w-full max-w-[120px] overflow-hidden rounded-full">
                     <div
                       className={`h-full rounded-full transition-all ${
                         company.advanceRate >= 50
@@ -552,45 +511,50 @@ function TopCompaniesTable({ companies }: { companies: TopCompany[] }) {
 function ScoreCorrelationCard({ data }: { data: ScoreCorrelationAnalytics }) {
   if (data.totalCount === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <Target className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Score Correlation Analysis</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Target className="h-10 w-10 mb-3 opacity-20" />
-          <p className="text-sm">Score correlation data will appear once applications have scores.</p>
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <Target className="mb-3 h-10 w-10 opacity-20" />
+          <p className="text-sm">
+            Score correlation data will appear once applications have scores.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-muted-foreground" />
+          <Target className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Score Correlation Analysis</h2>
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>{data.successfulCount} successful / {data.totalCount} total</span>
+        <div className="text-muted-foreground flex items-center gap-4 text-xs">
+          <span>
+            {data.successfulCount} successful / {data.totalCount} total
+          </span>
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground mb-4">
-        Comparing average scores for applications that reached interview/offer stages vs all applications.
+      <p className="text-muted-foreground mb-4 text-xs">
+        Comparing average scores for applications that reached interview/offer stages vs all
+        applications.
       </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Fit Dimensions */}
         <div>
-          <h3 className="text-sm font-medium mb-3 text-sky-600">Fit Scores</h3>
+          <h3 className="mb-3 text-sm font-medium text-sky-600">Fit Scores</h3>
           <ScoreDimensionTable dimensions={data.fitDimensions} />
         </div>
 
         {/* Competitiveness Dimensions */}
         <div>
-          <h3 className="text-sm font-medium mb-3 text-violet-600">Competitiveness Scores</h3>
+          <h3 className="mb-3 text-sm font-medium text-violet-600">Competitiveness Scores</h3>
           <ScoreDimensionTable dimensions={data.competitivenessDimensions} />
         </div>
       </div>
@@ -602,7 +566,7 @@ function ScoreDimensionTable({ dimensions }: { dimensions: ScoreDimension[] }) {
   return (
     <div className="space-y-2">
       {/* Header row */}
-      <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+      <div className="text-muted-foreground flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
         <span className="flex-1">Dimension</span>
         <span className="w-14 text-right">Success</span>
         <span className="w-14 text-right">All</span>
@@ -627,15 +591,11 @@ function ScoreDimensionTable({ dimensions }: { dimensions: ScoreDimension[] }) {
                   : ''
             }`}
           >
-            <span className="flex-1 text-xs truncate">{dim.label}</span>
-            <span className="w-14 text-right text-xs font-semibold">
-              {dim.successfulAvg}
-            </span>
-            <span className="w-14 text-right text-xs text-muted-foreground">
-              {dim.allAvg}
-            </span>
+            <span className="flex-1 truncate text-xs">{dim.label}</span>
+            <span className="w-14 text-right text-xs font-semibold">{dim.successfulAvg}</span>
+            <span className="text-muted-foreground w-14 text-right text-xs">{dim.allAvg}</span>
             <span
-              className={`w-14 text-right text-xs font-bold flex items-center justify-end gap-0.5 ${
+              className={`flex w-14 items-center justify-end gap-0.5 text-right text-xs font-bold ${
                 highlightPositive && isSignificant
                   ? 'text-emerald-600'
                   : !highlightPositive && isSignificant
@@ -648,7 +608,8 @@ function ScoreDimensionTable({ dimensions }: { dimensions: ScoreDimension[] }) {
               ) : dim.delta < 0 ? (
                 <ArrowDownRight className="h-3 w-3" />
               ) : null}
-              {dim.delta > 0 ? '+' : ''}{dim.delta}
+              {dim.delta > 0 ? '+' : ''}
+              {dim.delta}
             </span>
           </div>
         );
@@ -664,13 +625,13 @@ function ScoreDimensionTable({ dimensions }: { dimensions: ScoreDimension[] }) {
 function CompanyResponseCard({ companies }: { companies: CompanyEffectiveness[] }) {
   if (companies.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Building2 className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <Building2 className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Company Response Rates</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Building2 className="h-10 w-10 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <Building2 className="mb-3 h-10 w-10 opacity-20" />
           <p className="text-sm">Response rate data will appear as applications progress.</p>
         </div>
       </div>
@@ -680,25 +641,25 @@ function CompanyResponseCard({ companies }: { companies: CompanyEffectiveness[] 
   const maxApps = Math.max(...companies.map((c) => c.totalApplications), 1);
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <Building2 className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center gap-2">
+        <Building2 className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Company Response Rates</h2>
       </div>
-      <p className="text-xs text-muted-foreground mb-4">
+      <p className="text-muted-foreground mb-4 text-xs">
         Companies ranked by percentage of applications that advanced past the applied stage.
       </p>
       <div className="space-y-3">
         {companies.map((company) => (
           <div key={company.company} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium truncate max-w-[60%]">{company.company}</span>
+              <span className="max-w-[60%] truncate font-medium">{company.company}</span>
               <span className="text-muted-foreground">
                 {company.advancedApplications}/{company.totalApplications} advanced
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-4 rounded-full bg-muted overflow-hidden">
+              <div className="bg-muted h-4 flex-1 overflow-hidden rounded-full">
                 {/* Background bar showing total applications proportionally */}
                 <div
                   className={`h-full rounded-full transition-all ${
@@ -714,7 +675,7 @@ function CompanyResponseCard({ companies }: { companies: CompanyEffectiveness[] 
                 />
               </div>
               <span
-                className={`text-xs font-bold w-10 text-right ${
+                className={`w-10 text-right text-xs font-bold ${
                   company.responseRate >= 50
                     ? 'text-emerald-600'
                     : company.responseRate >= 25
@@ -739,13 +700,13 @@ function CompanyResponseCard({ companies }: { companies: CompanyEffectiveness[] 
 function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
   if (sources.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Globe className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <Globe className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Source Effectiveness</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Globe className="h-10 w-10 mb-3 opacity-20" />
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <Globe className="mb-3 h-10 w-10 opacity-20" />
           <p className="text-sm">Source metrics will appear once jobs are ingested from sources.</p>
         </div>
       </div>
@@ -753,24 +714,24 @@ function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-4">
-        <Globe className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center gap-2">
+        <Globe className="text-muted-foreground h-5 w-5" />
         <h2 className="font-semibold">Source Effectiveness</h2>
       </div>
-      <p className="text-xs text-muted-foreground mb-4">
+      <p className="text-muted-foreground mb-4 text-xs">
         Job sources ranked by average quality score and interview conversion.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left">
-              <th className="pb-3 font-medium text-muted-foreground">Source</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Jobs</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Apps</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Interviews</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Avg Score</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Conversion</th>
+              <th className="text-muted-foreground pb-3 font-medium">Source</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Jobs</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Apps</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Interviews</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Avg Score</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Conversion</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -784,10 +745,10 @@ function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
                   <span
                     className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
                       source.avgScore >= 75
-                        ? 'bg-white text-emerald-700 border border-emerald-300'
+                        ? 'border border-emerald-300 bg-white text-emerald-700'
                         : source.avgScore >= 50
-                          ? 'bg-white text-amber-900 border border-amber-300'
-                          : 'bg-white text-muted-foreground border border-border'
+                          ? 'border border-amber-300 bg-white text-amber-900'
+                          : 'text-muted-foreground border-border border bg-white'
                     }`}
                   >
                     {source.avgScore}
@@ -795,7 +756,7 @@ function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
                 </td>
                 <td className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                    <div className="bg-muted h-2 w-16 overflow-hidden rounded-full">
                       <div
                         className={`h-full rounded-full ${
                           source.conversionRate >= 50
@@ -807,9 +768,7 @@ function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
                         style={{ width: `${Math.max(source.conversionRate, 3)}%` }}
                       />
                     </div>
-                    <span className="text-xs font-semibold w-8">
-                      {source.conversionRate}%
-                    </span>
+                    <span className="w-8 text-xs font-semibold">{source.conversionRate}%</span>
                   </div>
                 </td>
               </tr>
@@ -828,56 +787,56 @@ function SourceQualityCard({ sources }: { sources: SourceEffectiveness[] }) {
 function ResumeVariantCard({ data }: { data: ResumeVariantAnalytics }) {
   if (data.variants.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="h-5 w-5 text-muted-foreground" />
+      <div className="bg-card rounded-xl border p-6 shadow">
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Resume Variant Performance</h2>
         </div>
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <FileText className="h-10 w-10 mb-3 opacity-20" />
-          <p className="text-sm">Resume performance data will appear once tailored resumes are used in applications.</p>
+        <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+          <FileText className="mb-3 h-10 w-10 opacity-20" />
+          <p className="text-sm">
+            Resume performance data will appear once tailored resumes are used in applications.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-muted-foreground" />
+          <FileText className="text-muted-foreground h-5 w-5" />
           <h2 className="font-semibold">Resume Variant Performance</h2>
         </div>
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg bg-muted/50 p-3 text-center">
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
           <div className="text-2xl font-bold">{data.summary.totalVariants}</div>
-          <div className="text-xs text-muted-foreground">Variants Used</div>
+          <div className="text-muted-foreground text-xs">Variants Used</div>
         </div>
-        <div className="rounded-lg bg-muted/50 p-3 text-center">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
           <div className="text-2xl font-bold text-emerald-600">
             {data.summary.successfulVariants}
           </div>
-          <div className="text-xs text-muted-foreground">Led to Interview+</div>
+          <div className="text-muted-foreground text-xs">Led to Interview+</div>
         </div>
-        <div className="rounded-lg bg-muted/50 p-3 text-center">
-          <div className="text-2xl font-bold">
-            {data.summary.successRate}%
-          </div>
-          <div className="text-xs text-muted-foreground">Success Rate</div>
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="text-2xl font-bold">{data.summary.successRate}%</div>
+          <div className="text-muted-foreground text-xs">Success Rate</div>
         </div>
       </div>
 
       {/* Success rate bar */}
       {data.summary.totalVariants > 0 && (
         <div className="mb-6">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+          <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs">
             <span>Overall success rate</span>
             <span>{data.summary.successRate}%</span>
           </div>
-          <div className="h-3 rounded-full bg-muted overflow-hidden">
+          <div className="bg-muted h-3 overflow-hidden rounded-full">
             <div
               className={`h-full rounded-full transition-all ${
                 data.summary.successRate >= 50
@@ -897,33 +856,34 @@ function ResumeVariantCard({ data }: { data: ResumeVariantAnalytics }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left">
-              <th className="pb-3 font-medium text-muted-foreground">Company</th>
-              <th className="pb-3 font-medium text-muted-foreground">Position</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Version</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Status</th>
-              <th className="pb-3 font-medium text-muted-foreground text-center">Result</th>
+              <th className="text-muted-foreground pb-3 font-medium">Company</th>
+              <th className="text-muted-foreground pb-3 font-medium">Position</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Version</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Status</th>
+              <th className="text-muted-foreground pb-3 text-center font-medium">Result</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {data.variants.map((variant) => {
-              const statusLabel = stageLabels[variant.applicationStatus] ?? variant.applicationStatus;
+              const statusLabel =
+                stageLabels[variant.applicationStatus] ?? variant.applicationStatus;
 
               return (
                 <tr key={variant.resumeId}>
                   <td className="py-3 font-medium">{variant.company}</td>
-                  <td className="py-3 text-muted-foreground truncate max-w-[200px]">
+                  <td className="text-muted-foreground max-w-[200px] truncate py-3">
                     {variant.jobTitle}
                   </td>
                   <td className="py-3 text-center">
-                    <span className="inline-block rounded bg-muted px-2 py-0.5 text-xs font-mono">
+                    <span className="bg-muted inline-block rounded px-2 py-0.5 font-mono text-xs">
                       v{variant.version}
                     </span>
                   </td>
                   <td className="py-3 text-center">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        stageBadgeColors[variant.applicationStatus]
-                          ?? 'bg-white text-muted-foreground border border-border'
+                        stageBadgeColors[variant.applicationStatus] ??
+                        'text-muted-foreground border-border border bg-white'
                       }`}
                     >
                       {statusLabel}
@@ -931,11 +891,11 @@ function ResumeVariantCard({ data }: { data: ResumeVariantAnalytics }) {
                   </td>
                   <td className="py-3 text-center">
                     {variant.applicationStatus === 'no_application' ? (
-                      <span className="text-xs text-muted-foreground">--</span>
+                      <span className="text-muted-foreground text-xs">--</span>
                     ) : variant.isSuccessful ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" />
+                      <CheckCircle2 className="mx-auto h-4 w-4 text-emerald-500" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-muted-foreground/40 mx-auto" />
+                      <XCircle className="text-muted-foreground/40 mx-auto h-4 w-4" />
                     )}
                   </td>
                 </tr>

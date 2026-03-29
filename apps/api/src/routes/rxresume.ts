@@ -1,10 +1,10 @@
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { candidates, jobs, jobScores, coverLetters } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { candidates, coverLetters, jobs, jobScores } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -125,13 +125,17 @@ function mapToRxResumeSchema(content: TailoredContent, candidate: any) {
     },
     metadata: {
       template: 'azurill',
-      layout: [
-        [['summary', 'experience', 'projects'], ['skills']],
-      ],
+      layout: [[['summary', 'experience', 'projects'], ['skills']]],
       css: { value: '', visible: false },
       page: { margin: 18, format: 'a4', options: { breakLine: true, pageNumbers: true } },
       theme: { background: '#ffffff', text: '#000000', primary: '#0ea5e9' },
-      typography: { font: { family: 'IBM Plex Sans', subset: 'latin', variants: ['regular'] }, fontSize: 14, lineHeight: 1.5, hideIcons: false, underlineLinks: true },
+      typography: {
+        font: { family: 'IBM Plex Sans', subset: 'latin', variants: ['regular'] },
+        fontSize: 14,
+        lineHeight: 1.5,
+        hideIcons: false,
+        underlineLinks: true,
+      },
     },
   };
 }
@@ -204,18 +208,24 @@ router.post('/generate-pdf', async (req, res, next) => {
     const bucket = process.env.S3_BUCKET || 'job-pilot';
     const key = `resumes/${ctx.tenantId}/${jobId}/tailored-v${Date.now()}.pdf`;
 
-    await s3Client.send(new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: pdfBuffer,
-      ContentType: 'application/pdf',
-    }));
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: pdfBuffer,
+        ContentType: 'application/pdf',
+      }),
+    );
 
     // Generate download URL
-    const downloadUrl = await getSignedUrl(s3Client, new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }), { expiresIn: 3600 });
+    const downloadUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      }),
+      { expiresIn: 3600 },
+    );
 
     // Clean up temp resume in RxResume
     try {
@@ -223,7 +233,9 @@ router.post('/generate-pdf', async (req, res, next) => {
     } catch {}
 
     res.json({ url: downloadUrl, key });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

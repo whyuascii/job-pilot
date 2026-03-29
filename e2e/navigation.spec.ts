@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 /**
  * Navigation tests verify the sidebar layout and routing structure.
@@ -87,7 +87,7 @@ test.describe('Navigation - Page Titles and Meta', () => {
     const metaDescription = page.locator('meta[name="description"]');
     await expect(metaDescription).toHaveAttribute(
       'content',
-      'AI-powered job search operating system'
+      'AI-powered job search operating system',
     );
   });
 

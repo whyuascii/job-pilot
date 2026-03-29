@@ -48,9 +48,7 @@ describe('env validation', () => {
     const env = validateEnv();
 
     expect(env.REDIS_URL).toBeUndefined();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('REDIS_URL is not set')
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('REDIS_URL is not set'));
     warnSpy.mockRestore();
   });
 
@@ -128,9 +126,7 @@ describe('env validation', () => {
     const env = validateEnv();
 
     expect(env.ANTHROPIC_API_KEY).toBeUndefined();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('ANTHROPIC_API_KEY is not set')
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ANTHROPIC_API_KEY is not set'));
     warnSpy.mockRestore();
   });
 
@@ -145,9 +141,7 @@ describe('env validation', () => {
     const env = validateEnv();
 
     expect(env.FIRECRAWL_API_KEY).toBeUndefined();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('FIRECRAWL_API_KEY is not set')
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('FIRECRAWL_API_KEY is not set'));
     warnSpy.mockRestore();
   });
 

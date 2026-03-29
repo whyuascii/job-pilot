@@ -1,17 +1,17 @@
 import { Link } from '@tanstack/react-router';
 import {
-  Ghost,
-  Clock,
-  DollarSign,
-  Target,
   ArrowRight,
-  Phone,
+  Building2,
+  Clock,
   Code,
   Cpu,
-  Building2,
-  Trophy,
+  DollarSign,
+  Ghost,
   Handshake,
   MessageSquareMore,
+  Phone,
+  Target,
+  Trophy,
 } from 'lucide-react';
 import { Badge, Button } from '@job-pilot/ui';
 
@@ -36,51 +36,49 @@ interface ActiveMission {
 
 // ─── Sub-status config ───────────────────────────────────────────────────────
 
-const SUB_STATUS_CONFIG: Record<
-  string,
-  { label: string; className: string; icon: typeof Phone }
-> = {
-  phone_screen: {
-    label: 'Phone Screen',
-    className: 'border-blue-300 bg-blue-50 text-blue-700',
-    icon: Phone,
-  },
-  coding_challenge: {
-    label: 'Coding Challenge',
-    className: 'border-purple-300 bg-purple-50 text-purple-700',
-    icon: Code,
-  },
-  technical: {
-    label: 'Technical',
-    className: 'border-indigo-300 bg-indigo-50 text-indigo-700',
-    icon: Cpu,
-  },
-  onsite: {
-    label: 'Onsite',
-    className: 'border-amber-300 bg-amber-50 text-amber-700',
-    icon: Building2,
-  },
-  final_round: {
-    label: 'Final Round',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-700',
-    icon: Trophy,
-  },
-  offer_pending: {
-    label: 'Offer Pending',
-    className: 'border-green-300 bg-green-50 text-green-700',
-    icon: Handshake,
-  },
-  negotiating: {
-    label: 'Negotiating',
-    className: 'border-orange-300 bg-orange-50 text-orange-700',
-    icon: MessageSquareMore,
-  },
-  ghosted: {
-    label: 'Ghosted',
-    className: 'border-red-300 bg-red-50 text-red-700',
-    icon: Ghost,
-  },
-};
+const SUB_STATUS_CONFIG: Record<string, { label: string; className: string; icon: typeof Phone }> =
+  {
+    phone_screen: {
+      label: 'Phone Screen',
+      className: 'border-blue-300 bg-blue-50 text-blue-700',
+      icon: Phone,
+    },
+    coding_challenge: {
+      label: 'Coding Challenge',
+      className: 'border-purple-300 bg-purple-50 text-purple-700',
+      icon: Code,
+    },
+    technical: {
+      label: 'Technical',
+      className: 'border-indigo-300 bg-indigo-50 text-indigo-700',
+      icon: Cpu,
+    },
+    onsite: {
+      label: 'Onsite',
+      className: 'border-amber-300 bg-amber-50 text-amber-700',
+      icon: Building2,
+    },
+    final_round: {
+      label: 'Final Round',
+      className: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+      icon: Trophy,
+    },
+    offer_pending: {
+      label: 'Offer Pending',
+      className: 'border-green-300 bg-green-50 text-green-700',
+      icon: Handshake,
+    },
+    negotiating: {
+      label: 'Negotiating',
+      className: 'border-orange-300 bg-orange-50 text-orange-700',
+      icon: MessageSquareMore,
+    },
+    ghosted: {
+      label: 'Ghosted',
+      className: 'border-red-300 bg-red-50 text-red-700',
+      icon: Ghost,
+    },
+  };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -132,15 +130,15 @@ function MissionCard({ mission }: { mission: ActiveMission }) {
     <Link
       to="/applications/$applicationId"
       params={{ applicationId: mission.id }}
-      className="group block rounded-lg border bg-card p-3 transition-colors hover:border-sky-200 hover:bg-sky-50/30"
+      className="bg-card group block rounded-lg border p-3 transition-colors hover:border-sky-200 hover:bg-sky-50/30"
     >
       <div className="flex items-start justify-between gap-2">
         {/* Left: company + title */}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground truncate group-hover:text-sky-700 transition-colors">
+          <p className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-sky-700">
             {mission.jobCompany}
           </p>
-          <p className="text-xs text-muted-foreground truncate">{mission.jobTitle}</p>
+          <p className="text-muted-foreground truncate text-xs">{mission.jobTitle}</p>
         </div>
 
         {/* Right: score badge */}
@@ -153,9 +151,9 @@ function MissionCard({ mission }: { mission: ActiveMission }) {
       </div>
 
       {/* Middle row: sub-status + ghosted indicator */}
-      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {subConfig && (
-          <Badge className={`text-[10px] gap-1 ${subConfig.className}`}>
+          <Badge className={`gap-1 text-[10px] ${subConfig.className}`}>
             {SubIcon && <SubIcon className="h-2.5 w-2.5" />}
             {subConfig.label}
           </Badge>
@@ -170,9 +168,7 @@ function MissionCard({ mission }: { mission: ActiveMission }) {
 
       {/* Status note */}
       {mission.statusNote && (
-        <p className="mt-1.5 text-[11px] text-muted-foreground truncate">
-          {mission.statusNote}
-        </p>
+        <p className="text-muted-foreground mt-1.5 truncate text-[11px]">{mission.statusNote}</p>
       )}
 
       {/* Bottom row: days since activity + comp */}
@@ -186,7 +182,7 @@ function MissionCard({ mission }: { mission: ActiveMission }) {
               : `${mission.daysSinceActivity}d ago`}
         </span>
         {comp && (
-          <span className="flex items-center gap-0.5 text-muted-foreground">
+          <span className="text-muted-foreground flex items-center gap-0.5">
             <DollarSign className="h-2.5 w-2.5" />
             {comp}
           </span>
@@ -206,9 +202,9 @@ export function ActiveMissions({ missions }: { missions: ActiveMission[] }) {
 
   if (missions.length === 0) {
     return (
-      <div className="rounded-xl border bg-card p-6 shadow text-center">
-        <p className="text-sm font-semibold text-foreground mb-1">No Active Missions</p>
-        <p className="text-xs text-muted-foreground">
+      <div className="bg-card rounded-xl border p-6 text-center shadow">
+        <p className="text-foreground mb-1 text-sm font-semibold">No Active Missions</p>
+        <p className="text-muted-foreground text-xs">
           Applied jobs will appear here so you can track their progress.
         </p>
       </div>
@@ -216,17 +212,17 @@ export function ActiveMissions({ missions }: { missions: ActiveMission[] }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card shadow">
+    <div className="bg-card rounded-xl border shadow">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-foreground">Active Missions</h2>
+          <h2 className="text-foreground text-sm font-semibold">Active Missions</h2>
           <Badge variant="secondary" className="text-[10px]">
             {missions.length}
           </Badge>
         </div>
         <Link to="/applications">
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground">
+          <Button variant="ghost" size="sm" className="text-muted-foreground h-7 gap-1 text-xs">
             View all
             <ArrowRight className="h-3 w-3" />
           </Button>

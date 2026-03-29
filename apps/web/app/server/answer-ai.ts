@@ -1,22 +1,22 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import {
   answerBank,
   applicationQuestions,
   applications,
   candidates,
-  jobs,
-  skills,
   experienceBlocks,
+  jobs,
   llmRuns,
+  skills,
 } from '@job-pilot/db/schema';
-import { eq, and, ilike, or, desc } from 'drizzle-orm';
+import { DETECT_QUESTIONS_PROMPT, SUGGEST_ANSWER_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '~/lib/api';
 import { checkRateLimit } from '~/lib/rate-limit';
 import { sanitizeText } from '~/lib/sanitize';
-import Anthropic from '@anthropic-ai/sdk';
 import { getDecryptedApiKey } from './settings';
-import { DETECT_QUESTIONS_PROMPT, SUGGEST_ANSWER_PROMPT } from '@job-pilot/mastra/prompts';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,9 +26,7 @@ const MODEL = 'claude-sonnet-4-20250514';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
-  const random =
-    Math.random().toString(36).slice(2, 10) +
-    Math.random().toString(36).slice(2, 10);
+  const random = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
   return `${timestamp}_${random}`;
 }
 
@@ -44,24 +42,17 @@ async function getClient(): Promise<Anthropic> {
 function parseJsonResponse<T>(text: string): T {
   let cleaned = text.trim();
   if (cleaned.startsWith('```')) {
-    cleaned = cleaned
-      .replace(/^```(?:json)?\s*\n?/, '')
-      .replace(/\n?```\s*$/, '');
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
   }
   return JSON.parse(cleaned) as T;
 }
 
 async function getCurrentCandidate(ctx: { tenantId: string; userId: string }) {
   const candidate = await db.query.candidates.findFirst({
-    where: and(
-      eq(candidates.tenantId, ctx.tenantId),
-      eq(candidates.userId, ctx.userId),
-    ),
+    where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
   });
   if (!candidate)
-    throw new Error(
-      'No candidate profile found. Create one before using AI features.',
-    );
+    throw new Error('No candidate profile found. Create one before using AI features.');
   return candidate;
 }
 
@@ -143,9 +134,7 @@ interface SuggestedAnswer {
  * Saves detected questions to the applicationQuestions table.
  */
 export const detectApplicationQuestions = createServerFn({ method: 'POST' })
-  .validator(
-    (data: { applicationId: string; jobDescription?: string }) => data,
-  )
+  .validator((data: { applicationId: string; jobDescription?: string }) => data)
   .handler(async ({ data }) => {
     const ctx = await getTenantContext();
     checkRateLimit(`answerAI:${ctx.tenantId}`, 5);
@@ -156,10 +145,7 @@ export const detectApplicationQuestions = createServerFn({ method: 'POST' })
 
     // Load the application and its associated job
     const application = await db.query.applications.findFirst({
-      where: and(
-        eq(applications.id, data.applicationId),
-        eq(applications.tenantId, ctx.tenantId),
-      ),
+      where: and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)),
     });
 
     if (!application) throw new Error('Application not found');
@@ -208,14 +194,11 @@ ${descriptionText.slice(0, 4000)}`;
       outputTokens = message.usage?.output_tokens ?? 0;
 
       const responseText = message.content
-        .filter(
-          (block): block is Anthropic.TextBlock => block.type === 'text',
-        )
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
         .map((block) => block.text)
         .join('');
 
-      const detectedQuestions =
-        parseJsonResponse<DetectedQuestion[]>(responseText);
+      const detectedQuestions = parseJsonResponse<DetectedQuestion[]>(responseText);
       success = true;
 
       // Save detected questions to the applicationQuestions table
@@ -264,10 +247,7 @@ ${descriptionText.slice(0, 4000)}`;
  * and calls Claude to generate a tailored answer suggestion.
  */
 export const suggestAnswer = createServerFn({ method: 'POST' })
-  .validator(
-    (data: { questionId: string; applicationId: string; questionText: string }) =>
-      data,
-  )
+  .validator((data: { questionId: string; applicationId: string; questionText: string }) => data)
   .handler(async ({ data }) => {
     const ctx = await getTenantContext();
     checkRateLimit(`answerAI:${ctx.tenantId}`, 5);
@@ -279,10 +259,7 @@ export const suggestAnswer = createServerFn({ method: 'POST' })
 
     // Load the application and job context
     const application = await db.query.applications.findFirst({
-      where: and(
-        eq(applications.id, data.applicationId),
-        eq(applications.tenantId, ctx.tenantId),
-      ),
+      where: and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)),
     });
 
     if (!application) throw new Error('Application not found');
@@ -307,10 +284,7 @@ export const suggestAnswer = createServerFn({ method: 'POST' })
 
     if (keywords.length > 0) {
       const conditions = keywords.map((kw) =>
-        or(
-          ilike(answerBank.questionPattern, `%${kw}%`),
-          ilike(answerBank.answer, `%${kw}%`),
-        ),
+        or(ilike(answerBank.questionPattern, `%${kw}%`), ilike(answerBank.answer, `%${kw}%`)),
       );
 
       similarAnswers = await db
@@ -374,10 +348,7 @@ ${JSON.stringify(
 ${
   similarAnswers.length > 0
     ? similarAnswers
-        .map(
-          (a, i) =>
-            `${i + 1}. Q: ${a.questionPattern}\n   A: ${a.answer.slice(0, 500)}`,
-        )
+        .map((a, i) => `${i + 1}. Q: ${a.questionPattern}\n   A: ${a.answer.slice(0, 500)}`)
         .join('\n\n')
     : 'No similar answers found in the answer bank.'
 }`;
@@ -393,9 +364,7 @@ ${
       outputTokens = message.usage?.output_tokens ?? 0;
 
       const responseText = message.content
-        .filter(
-          (block): block is Anthropic.TextBlock => block.type === 'text',
-        )
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
         .map((block) => block.text)
         .join('');
 
@@ -471,10 +440,7 @@ export const searchSimilarAnswers = createServerFn({ method: 'POST' })
 
     // Build ILIKE conditions for each keyword against both question and answer
     const conditions = keywords.map((kw) =>
-      or(
-        ilike(answerBank.questionPattern, `%${kw}%`),
-        ilike(answerBank.answer, `%${kw}%`),
-      ),
+      or(ilike(answerBank.questionPattern, `%${kw}%`), ilike(answerBank.answer, `%${kw}%`)),
     );
 
     const results = await db
@@ -499,8 +465,7 @@ export const searchSimilarAnswers = createServerFn({ method: 'POST' })
 
     // Compute a simple relevance score based on keyword hit count
     const scored = results.map((r) => {
-      const text =
-        `${r.questionPattern} ${r.answer}`.toLowerCase();
+      const text = `${r.questionPattern} ${r.answer}`.toLowerCase();
       let hits = 0;
       for (const kw of keywords) {
         if (text.includes(kw)) hits++;
@@ -525,10 +490,7 @@ export const getApplicationQuestions = createServerFn({ method: 'GET' })
 
     // Verify the application belongs to this tenant
     const application = await db.query.applications.findFirst({
-      where: and(
-        eq(applications.id, data.applicationId),
-        eq(applications.tenantId, ctx.tenantId),
-      ),
+      where: and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)),
     });
 
     if (!application) throw new Error('Application not found');

@@ -1,22 +1,22 @@
 import * as React from 'react';
+import { AlertTriangle, Loader2, Send } from 'lucide-react';
 import {
+  Button,
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  Button,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
 } from '@job-pilot/ui';
-import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { api } from '~/lib/api-client';
 
 interface EmailTemplate {
@@ -135,13 +135,15 @@ export function EmailComposeDialog({
             <DialogTitle>Email Sent</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-3 py-6">
-            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
               <Send className="h-6 w-6 text-emerald-600" />
             </div>
-            <p className="text-sm text-muted-foreground">Your email has been sent successfully.</p>
+            <p className="text-muted-foreground text-sm">Your email has been sent successfully.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -159,7 +161,7 @@ export function EmailComposeDialog({
         </DialogHeader>
 
         {gmailConnected === false && (
-          <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 border border-amber-200 text-sm text-amber-800">
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             Gmail is not connected. Please connect Gmail with send permission in Settings.
           </div>
@@ -175,7 +177,9 @@ export function EmailComposeDialog({
               </SelectTrigger>
               <SelectContent>
                 {templates.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -213,13 +217,13 @@ export function EmailComposeDialog({
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button
             onClick={handleSend}
             disabled={!to || !subject || !body || sending || gmailConnected === false}

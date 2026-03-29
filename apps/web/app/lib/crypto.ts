@@ -11,9 +11,7 @@ async function getCrypto() {
  */
 async function getEncryptionKey(): Promise<Buffer> {
   const secret =
-    process.env.ENCRYPTION_KEY ||
-    process.env.BETTER_AUTH_SECRET ||
-    process.env.SESSION_SECRET;
+    process.env.ENCRYPTION_KEY || process.env.BETTER_AUTH_SECRET || process.env.SESSION_SECRET;
 
   if (!secret) {
     throw new Error(
@@ -39,10 +37,7 @@ export async function encrypt(plaintext: string): Promise<string> {
   const iv = randomBytes(IV_LENGTH);
 
   const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: TAG_LENGTH });
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
 
   return `${iv.toString('base64')}:${tag.toString('base64')}:${encrypted.toString('base64')}`;
@@ -59,9 +54,7 @@ export async function decrypt(ciphertext: string): Promise<string> {
 
   const parts = ciphertext.split(':');
   if (parts.length !== 3) {
-    throw new Error(
-      'Invalid ciphertext format. Expected "iv:tag:ciphertext" (base64-encoded).',
-    );
+    throw new Error('Invalid ciphertext format. Expected "iv:tag:ciphertext" (base64-encoded).');
   }
 
   const [ivB64, tagB64, encryptedB64] = parts;
@@ -85,10 +78,7 @@ export async function decrypt(ciphertext: string): Promise<string> {
   decipher.setAuthTag(tag);
 
   try {
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]);
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
     return decrypted.toString('utf8');
   } catch (err) {
     throw new Error(

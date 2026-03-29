@@ -53,7 +53,7 @@ export function validateEnv(): ServerEnv {
       .join('\n');
 
     throw new Error(
-      `Environment validation failed:\n${errorMessages}\n\nCheck your .env file and ensure all required variables are set.`
+      `Environment validation failed:\n${errorMessages}\n\nCheck your .env file and ensure all required variables are set.`,
     );
   }
 
@@ -62,7 +62,9 @@ export function validateEnv(): ServerEnv {
   // Block unsafe defaults in production
   if (_env.NODE_ENV === 'production') {
     if (_env.S3_ACCESS_KEY === 'minioadmin' || _env.S3_SECRET_KEY === 'minioadmin') {
-      throw new Error('S3_ACCESS_KEY / S3_SECRET_KEY must not use default minioadmin credentials in production');
+      throw new Error(
+        'S3_ACCESS_KEY / S3_SECRET_KEY must not use default minioadmin credentials in production',
+      );
     }
     if (_env.SESSION_SECRET === 'change-me-in-production-at-least-32-chars!!') {
       throw new Error('SESSION_SECRET must be changed from its default value in production');

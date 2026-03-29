@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
 import { sanitizeText, sanitizeUrl } from './sanitize';
 
 describe('sanitizeText', () => {
@@ -90,10 +89,10 @@ describe('sanitizeUrl', () => {
 
   it('accepts URLs with special characters', () => {
     expect(sanitizeUrl('https://example.com/path?q=hello%20world&a=1#section')).toBe(
-      'https://example.com/path?q=hello%20world&a=1#section'
+      'https://example.com/path?q=hello%20world&a=1#section',
     );
     expect(sanitizeUrl('https://example.com/search?q=a+b&lang=en')).toBe(
-      'https://example.com/search?q=a+b&lang=en'
+      'https://example.com/search?q=a+b&lang=en',
     );
   });
 

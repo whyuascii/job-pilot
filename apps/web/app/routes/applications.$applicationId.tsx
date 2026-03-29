@@ -1,29 +1,38 @@
 import React from 'react';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
+  AlertCircle,
   ArrowLeft,
-  Building2,
-  MapPin,
-  Calendar,
-  ExternalLink,
-  Clock,
-  MessageSquare,
-  ChevronRight,
   ArrowRight,
-  Sparkles,
-  Loader2,
+  BookOpen,
+  Building2,
+  Calendar,
   Check,
-  X,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  FileText,
+  Loader2,
+  MapPin,
+  MessageSquare,
   Pencil,
   Search,
-  AlertCircle,
-  BookOpen,
+  Sparkles,
   ThumbsUp,
-  FileText,
+  X,
 } from 'lucide-react';
-import { Button, Card, CardContent, Badge, Separator, Textarea } from '@job-pilot/ui';
-import { StatusBadge, statusLabels } from '@job-pilot/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Separator,
+  StatusBadge,
+  statusLabels,
+  Textarea,
+} from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
+import { captureEvent } from '~/lib/posthog';
 
 // ---------------------------------------------------------------------------
 // Route definition with loader
@@ -158,6 +167,7 @@ function ApplicationDetailPage() {
         status: newStatus,
         ...(statusNotes.trim() ? { notes: statusNotes.trim() } : {}),
       });
+      captureEvent('application_status_changed', { from: status, to: newStatus });
       setChanging(false);
       setStatusNotes('');
       router.invalidate();
@@ -212,7 +222,7 @@ function ApplicationDetailPage() {
         {/* Back button */}
         <Link
           to="/applications"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Applications
@@ -225,7 +235,7 @@ function ApplicationDetailPage() {
               {app.job?.title ?? 'Unknown Position'}
             </h1>
 
-            <div className="flex items-center gap-2 text-lg text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5 shrink-0" />
               <span>{app.job?.company ?? 'Unknown Company'}</span>
             </div>
@@ -233,7 +243,7 @@ function ApplicationDetailPage() {
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={status} />
               {app.appliedAt && (
-                <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span className="text-muted-foreground inline-flex items-center gap-1.5 text-sm">
                   <Calendar className="h-4 w-4 shrink-0" />
                   Applied {formatDate(app.appliedAt)}
                 </span>
@@ -250,13 +260,13 @@ function ApplicationDetailPage() {
       {/* ----------------------------------------------------------------- */}
       {app.job && (
         <Card>
-          <CardContent className="pt-6 space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <h2 className="text-lg font-semibold">Job Details</h2>
 
             <div className="grid gap-3 sm:grid-cols-2">
               {/* Location */}
               {app.job.location && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 shrink-0" />
                   <span>{app.job.location}</span>
                   {app.job.remotePolicy && (
@@ -269,7 +279,7 @@ function ApplicationDetailPage() {
 
               {/* Compensation */}
               {formatCompensation(app.job.compensationMin, app.job.compensationMax) && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <span className="font-medium">
                     {formatCompensation(app.job.compensationMin, app.job.compensationMax)}
                   </span>
@@ -280,7 +290,7 @@ function ApplicationDetailPage() {
             {/* Must-have skills */}
             {app.job.mustHaveSkills && (app.job.mustHaveSkills as string[]).length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                   Must-Have Skills
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -309,11 +319,7 @@ function ApplicationDetailPage() {
               </Button>
               {app.job.applyUrl && (
                 <Button variant="outline" size="sm" asChild>
-                  <a
-                    href={app.job.applyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={app.job.applyUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                     Apply URL
                   </a>
@@ -327,16 +333,13 @@ function ApplicationDetailPage() {
       {/* ----------------------------------------------------------------- */}
       {/* Answer Assistance (AI)                                             */}
       {/* ----------------------------------------------------------------- */}
-      <AnswerAssistanceSection
-        applicationId={app.id}
-        initialQuestions={initialQuestions}
-      />
+      <AnswerAssistanceSection applicationId={app.id} initialQuestions={initialQuestions} />
 
       {/* ----------------------------------------------------------------- */}
       {/* Status Management -- free movement to any stage                    */}
       {/* ----------------------------------------------------------------- */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Status</h2>
             <StatusBadge status={status} />
@@ -355,9 +358,7 @@ function ApplicationDetailPage() {
               </Button>
             ) : (
               <div className="space-y-3 rounded-lg border p-4">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Move to:
-                </p>
+                <p className="text-muted-foreground text-sm font-medium">Move to:</p>
                 <div className="flex flex-wrap gap-2">
                   {availableStatuses.map((ns) => (
                     <Button
@@ -414,14 +415,14 @@ function ApplicationDetailPage() {
       {/* Timeline / History                                                 */}
       {/* ----------------------------------------------------------------- */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-muted-foreground" />
+            <Clock className="text-muted-foreground h-5 w-5" />
             <h2 className="text-lg font-semibold">Status History</h2>
           </div>
 
           {outcomes.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
+            <p className="text-muted-foreground py-4 text-center text-sm">
               No status history recorded yet.
             </p>
           ) : (
@@ -430,24 +431,22 @@ function ApplicationDetailPage() {
                 <div key={outcome.id} className="relative flex gap-4 pb-6 last:pb-0">
                   {/* Vertical line */}
                   {idx < outcomes.length - 1 && (
-                    <div className="absolute left-[11px] top-6 bottom-0 w-px bg-border" />
+                    <div className="bg-border absolute bottom-0 left-[11px] top-6 w-px" />
                   )}
 
                   {/* Dot */}
-                  <div className="relative z-10 mt-1.5 h-[10px] w-[10px] shrink-0 rounded-full border-2 border-primary bg-background" />
+                  <div className="border-primary bg-background relative z-10 mt-1.5 h-[10px] w-[10px] shrink-0 rounded-full border-2" />
 
                   {/* Content */}
                   <div className="flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={outcome.stage as ApplicationStatus} />
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {formatDateTime(outcome.occurredAt)}
                       </span>
                     </div>
                     {outcome.notes && (
-                      <p className="text-sm text-muted-foreground">
-                        {outcome.notes}
-                      </p>
+                      <p className="text-muted-foreground text-sm">{outcome.notes}</p>
                     )}
                   </div>
                 </div>
@@ -457,16 +456,14 @@ function ApplicationDetailPage() {
 
           {/* Add note to timeline */}
           <div className="space-y-2 border-t pt-4">
-            <p className="text-xs font-medium text-muted-foreground">
-              Add a note to the timeline
-            </p>
+            <p className="text-muted-foreground text-xs font-medium">Add a note to the timeline</p>
             <div className="flex gap-2">
               <Textarea
                 placeholder="Enter a note..."
                 value={statusNotes}
                 onChange={(e) => setStatusNotes(e.target.value)}
                 rows={2}
-                className="text-sm flex-1"
+                className="flex-1 text-sm"
               />
               <Button
                 variant="secondary"
@@ -486,10 +483,10 @@ function ApplicationDetailPage() {
       {/* Notes Section                                                      */}
       {/* ----------------------------------------------------------------- */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              <MessageSquare className="text-muted-foreground h-5 w-5" />
               <h2 className="text-lg font-semibold">Notes</h2>
             </div>
             {!editingNotes && (
@@ -516,11 +513,7 @@ function ApplicationDetailPage() {
                 className="text-sm"
               />
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleSaveNotes}
-                  disabled={loading}
-                >
+                <Button size="sm" onClick={handleSaveNotes} disabled={loading}>
                   {loading ? 'Saving...' : 'Save Notes'}
                 </Button>
                 <Button
@@ -559,7 +552,10 @@ interface AnswerAssistanceSectionProps {
   initialQuestions: AppQuestion[];
 }
 
-function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssistanceSectionProps) {
+function AnswerAssistanceSection({
+  applicationId,
+  initialQuestions,
+}: AnswerAssistanceSectionProps) {
   const router = useRouter();
   const [questions, setQuestions] = React.useState<AppQuestion[]>(initialQuestions);
   const [detecting, setDetecting] = React.useState(false);
@@ -678,10 +674,10 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
 
   return (
     <Card>
-      <CardContent className="pt-6 space-y-4">
+      <CardContent className="space-y-4 pt-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="text-primary h-5 w-5" />
             <h2 className="text-lg font-semibold">Answer Assistance</h2>
           </div>
           {questions.length > 0 && (
@@ -700,18 +696,14 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
           )}
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          Use AI to detect likely application questions and generate tailored answers
-          based on your profile and answer bank.
+        <p className="text-muted-foreground text-sm">
+          Use AI to detect likely application questions and generate tailored answers based on your
+          profile and answer bank.
         </p>
 
         {/* Detect Questions Button */}
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handleDetectQuestions}
-            disabled={detecting}
-          >
+          <Button variant="outline" onClick={handleDetectQuestions} disabled={detecting}>
             {detecting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -725,7 +717,7 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
             )}
           </Button>
           {questions.length > 0 && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {questions.length} question{questions.length !== 1 ? 's' : ''} detected
             </span>
           )}
@@ -761,26 +753,18 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
               const isEditing = editingAnswerId === q.id;
 
               return (
-                <div
-                  key={q.id}
-                  className="rounded-lg border p-4 space-y-3"
-                >
+                <div key={q.id} className="space-y-3 rounded-lg border p-4">
                   {/* Question header */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-snug">
-                        {q.question}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <Badge
-                          variant={confidenceBadgeVariant(q.confidence)}
-                          className="text-xs"
-                        >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-snug">{q.question}</p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <Badge variant={confidenceBadgeVariant(q.confidence)} className="text-xs">
                           {q.confidence} likelihood
                         </Badge>
                         {q.approved && (
-                          <Badge variant="default" className="text-xs bg-emerald-600">
-                            <Check className="h-3 w-3 mr-1" />
+                          <Badge variant="default" className="bg-emerald-600 text-xs">
+                            <Check className="mr-1 h-3 w-3" />
                             Saved to Bank
                           </Badge>
                         )}
@@ -845,11 +829,11 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                             placeholder="Edit the suggested answer..."
                           />
                           <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-muted-foreground">
+                            <label className="text-muted-foreground text-xs font-medium">
                               Category:
                             </label>
                             <select
-                              className="h-8 rounded-md border border-input bg-background px-2 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="border-input bg-background focus-visible:ring-ring h-8 rounded-md border px-2 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
                               value={saveCategory}
                               onChange={(e) => setSaveCategory(e.target.value)}
                             >
@@ -863,13 +847,7 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() =>
-                                handleApproveAndSave(
-                                  q.id,
-                                  q.question,
-                                  editedAnswer,
-                                )
-                              }
+                              onClick={() => handleApproveAndSave(q.id, q.question, editedAnswer)}
                               disabled={isSaving || !editedAnswer.trim()}
                             >
                               {isSaving ? (
@@ -894,8 +872,8 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                           </div>
                         </div>
                       ) : (
-                        <div className="rounded-lg border bg-muted/50 px-4 py-3">
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        <div className="bg-muted/50 rounded-lg border px-4 py-3">
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">
                             {suggestion.suggestedAnswer}
                           </p>
                         </div>
@@ -904,30 +882,28 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                       {/* Source evidence */}
                       {suggestion.sourceEvidence && !isEditing && (
                         <div className="rounded-lg border border-sky-300 bg-white px-3 py-2">
-                          <p className="text-xs font-medium text-sky-700 mb-1">
-                            Source Evidence
-                          </p>
-                          <p className="text-xs text-sky-700">
-                            {suggestion.sourceEvidence}
-                          </p>
+                          <p className="mb-1 text-xs font-medium text-sky-700">Source Evidence</p>
+                          <p className="text-xs text-sky-700">{suggestion.sourceEvidence}</p>
                         </div>
                       )}
 
                       {/* Similar answers from bank */}
-                      {suggestion.similarAnswers && suggestion.similarAnswers.length > 0 && !isEditing && (
-                        <div className="rounded-lg border px-3 py-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">
-                            <BookOpen className="h-3 w-3 inline mr-1" />
-                            Similar answers in your Black Box
-                          </p>
-                          {suggestion.similarAnswers.map((sa) => (
-                            <div key={sa.id} className="mt-1 text-xs text-muted-foreground">
-                              <span className="font-medium">{sa.questionPattern}:</span>{' '}
-                              {sa.answerPreview}...
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {suggestion.similarAnswers &&
+                        suggestion.similarAnswers.length > 0 &&
+                        !isEditing && (
+                          <div className="rounded-lg border px-3 py-2">
+                            <p className="text-muted-foreground mb-1 text-xs font-medium">
+                              <BookOpen className="mr-1 inline h-3 w-3" />
+                              Similar answers in your Black Box
+                            </p>
+                            {suggestion.similarAnswers.map((sa) => (
+                              <div key={sa.id} className="text-muted-foreground mt-1 text-xs">
+                                <span className="font-medium">{sa.questionPattern}:</span>{' '}
+                                {sa.answerPreview}...
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
                       {/* Action buttons */}
                       {!isEditing && (
@@ -936,11 +912,7 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                             size="sm"
                             onClick={() => {
                               setSaveCategory('Technical');
-                              handleApproveAndSave(
-                                q.id,
-                                q.question,
-                                suggestion.suggestedAnswer,
-                              );
+                              handleApproveAndSave(q.id, q.question, suggestion.suggestedAnswer);
                             }}
                             disabled={isSaving}
                           >
@@ -985,7 +957,7 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
                   {/* Show final answer if approved */}
                   {q.approved && q.finalAnswer && (
                     <div className="rounded-lg border border-emerald-300 bg-white px-4 py-3">
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-emerald-700">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-emerald-700">
                         {q.finalAnswer}
                       </p>
                     </div>
@@ -998,9 +970,9 @@ function AnswerAssistanceSection({ applicationId, initialQuestions }: AnswerAssi
 
         {/* Empty state */}
         {questions.length === 0 && (
-          <div className="text-center py-6">
-            <Sparkles className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
+          <div className="py-6 text-center">
+            <Sparkles className="text-muted-foreground/30 mx-auto mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-sm">
               Click "Detect Questions" to scan the job description for likely application questions.
             </p>
           </div>

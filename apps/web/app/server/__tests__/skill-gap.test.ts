@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Tests for the skill gap matching logic. These test the pure functions
@@ -12,42 +12,55 @@ import { describe, it, expect } from 'vitest';
 // --- Re-implement the pure functions from skill-gap.ts ---
 
 const SKILL_ALIASES: Record<string, string[]> = {
-  javascript: ['js', 'ecmascript', 'es6', 'es2015', 'es2016', 'es2017', 'es2018', 'es2019', 'es2020', 'es2021', 'es2022', 'es2023'],
+  javascript: [
+    'js',
+    'ecmascript',
+    'es6',
+    'es2015',
+    'es2016',
+    'es2017',
+    'es2018',
+    'es2019',
+    'es2020',
+    'es2021',
+    'es2022',
+    'es2023',
+  ],
   typescript: ['ts'],
-  'react': ['react.js', 'reactjs', 'react js'],
-  'node': ['node.js', 'nodejs', 'node js'],
-  'vue': ['vue.js', 'vuejs', 'vue js'],
-  'angular': ['angular.js', 'angularjs', 'angular js'],
-  'next': ['next.js', 'nextjs', 'next js'],
-  'nuxt': ['nuxt.js', 'nuxtjs', 'nuxt js'],
-  'express': ['express.js', 'expressjs'],
-  'nest': ['nest.js', 'nestjs'],
-  'svelte': ['svelte.js', 'sveltejs'],
-  'postgres': ['postgresql', 'pg', 'psql'],
-  'mongo': ['mongodb', 'mongo db'],
-  'redis': ['redis db'],
-  'mysql': ['my sql'],
-  'graphql': ['graph ql'],
-  'docker': ['docker engine'],
-  'kubernetes': ['k8s', 'kube'],
-  'aws': ['amazon web services'],
-  'gcp': ['google cloud', 'google cloud platform'],
-  'azure': ['microsoft azure'],
+  react: ['react.js', 'reactjs', 'react js'],
+  node: ['node.js', 'nodejs', 'node js'],
+  vue: ['vue.js', 'vuejs', 'vue js'],
+  angular: ['angular.js', 'angularjs', 'angular js'],
+  next: ['next.js', 'nextjs', 'next js'],
+  nuxt: ['nuxt.js', 'nuxtjs', 'nuxt js'],
+  express: ['express.js', 'expressjs'],
+  nest: ['nest.js', 'nestjs'],
+  svelte: ['svelte.js', 'sveltejs'],
+  postgres: ['postgresql', 'pg', 'psql'],
+  mongo: ['mongodb', 'mongo db'],
+  redis: ['redis db'],
+  mysql: ['my sql'],
+  graphql: ['graph ql'],
+  docker: ['docker engine'],
+  kubernetes: ['k8s', 'kube'],
+  aws: ['amazon web services'],
+  gcp: ['google cloud', 'google cloud platform'],
+  azure: ['microsoft azure'],
   'ci/cd': ['cicd', 'ci cd', 'continuous integration', 'continuous deployment'],
-  'css': ['css3'],
-  'html': ['html5'],
-  'python': ['python3', 'py'],
-  'ruby': ['ruby lang'],
-  'golang': ['go lang', 'go'],
-  'rust': ['rust lang'],
-  'csharp': ['c#', 'c sharp'],
-  'cpp': ['c++', 'cplusplus'],
-  'tailwind': ['tailwind css', 'tailwindcss'],
-  'sass': ['scss'],
-  'rest': ['rest api', 'restful', 'rest apis', 'restful api'],
-  'git': ['github', 'gitlab', 'bitbucket'],
-  'terraform': ['tf'],
-  'elasticsearch': ['elastic search', 'elastic'],
+  css: ['css3'],
+  html: ['html5'],
+  python: ['python3', 'py'],
+  ruby: ['ruby lang'],
+  golang: ['go lang', 'go'],
+  rust: ['rust lang'],
+  csharp: ['c#', 'c sharp'],
+  cpp: ['c++', 'cplusplus'],
+  tailwind: ['tailwind css', 'tailwindcss'],
+  sass: ['scss'],
+  rest: ['rest api', 'restful', 'rest apis', 'restful api'],
+  git: ['github', 'gitlab', 'bitbucket'],
+  terraform: ['tf'],
+  elasticsearch: ['elastic search', 'elastic'],
 };
 
 function normalizeSkill(raw: string): string {
@@ -127,13 +140,9 @@ function generateRecommendation(params: {
     if (params.mustHaveMatchPercentage === 100) {
       parts.push(`You match all ${mustHaveTotal} must-have requirements.`);
     } else {
-      parts.push(
-        `You match ${matchedMustHaveCount} of ${mustHaveTotal} must-have skills.`,
-      );
+      parts.push(`You match ${matchedMustHaveCount} of ${mustHaveTotal} must-have skills.`);
       if (missingMustHaveCount > 0 && missingMustHaveCount <= 3) {
-        parts.push(
-          `Consider brushing up on: ${missingMustHave.join(', ')}.`,
-        );
+        parts.push(`Consider brushing up on: ${missingMustHave.join(', ')}.`);
       } else if (missingMustHaveCount > 3) {
         parts.push(
           `Key gaps include: ${missingMustHave.slice(0, 3).join(', ')}, and ${missingMustHaveCount - 3} more.`,
@@ -143,9 +152,7 @@ function generateRecommendation(params: {
   }
 
   if (niceToHaveTotal > 0) {
-    parts.push(
-      `You have ${matchedNiceToHaveCount} of ${niceToHaveTotal} nice-to-have skills.`,
-    );
+    parts.push(`You have ${matchedNiceToHaveCount} of ${niceToHaveTotal} nice-to-have skills.`);
   }
 
   if (extraSkillsCount > 0) {
@@ -171,9 +178,11 @@ function analyzeSkillGap(
   mustHaveSkills: string[],
   niceToHaveSkills: string[],
 ) {
-  const matchedMustHave: { jobSkill: string; candidateSkill: string; confidenceScore: number }[] = [];
+  const matchedMustHave: { jobSkill: string; candidateSkill: string; confidenceScore: number }[] =
+    [];
   const missingMustHave: string[] = [];
-  const matchedNiceToHave: { jobSkill: string; candidateSkill: string; confidenceScore: number }[] = [];
+  const matchedNiceToHave: { jobSkill: string; candidateSkill: string; confidenceScore: number }[] =
+    [];
   const missingNiceToHave: string[] = [];
   const matchedCandidateSkillIds = new Set<string>();
 
@@ -669,11 +678,7 @@ describe('analyzeSkillGap - full analysis', () => {
   ];
 
   it('matches all must-have skills through aliases', () => {
-    const result = analyzeSkillGap(
-      candidateSkills,
-      ['TS', 'React.js', 'Node', 'Postgres'],
-      [],
-    );
+    const result = analyzeSkillGap(candidateSkills, ['TS', 'React.js', 'Node', 'Postgres'], []);
     expect(result.matchedMustHave).toHaveLength(4);
     expect(result.missingMustHave).toHaveLength(0);
     expect(result.mustHaveMatchPercentage).toBe(100);
@@ -691,22 +696,14 @@ describe('analyzeSkillGap - full analysis', () => {
   });
 
   it('handles nice-to-have skills separately', () => {
-    const result = analyzeSkillGap(
-      candidateSkills,
-      ['TypeScript'],
-      ['Python', 'GraphQL'],
-    );
+    const result = analyzeSkillGap(candidateSkills, ['TypeScript'], ['Python', 'GraphQL']);
     expect(result.matchedNiceToHave).toHaveLength(1);
     expect(result.missingNiceToHave).toEqual(['GraphQL']);
     expect(result.niceToHaveMatchPercentage).toBe(50);
   });
 
   it('identifies extra skills not in either list', () => {
-    const result = analyzeSkillGap(
-      candidateSkills,
-      ['TypeScript', 'React'],
-      ['Node.js'],
-    );
+    const result = analyzeSkillGap(candidateSkills, ['TypeScript', 'React'], ['Node.js']);
     // PostgreSQL, Docker, Python are extra
     expect(result.extraSkills).toHaveLength(3);
     expect(result.extraSkills.map((s) => s.name)).toContain('PostgreSQL');
@@ -734,11 +731,7 @@ describe('analyzeSkillGap - full analysis', () => {
   });
 
   it('returns 0% when no skills match', () => {
-    const result = analyzeSkillGap(
-      candidateSkills,
-      ['Haskell', 'Erlang', 'Clojure'],
-      ['Prolog'],
-    );
+    const result = analyzeSkillGap(candidateSkills, ['Haskell', 'Erlang', 'Clojure'], ['Prolog']);
     expect(result.mustHaveMatchPercentage).toBe(0);
     expect(result.niceToHaveMatchPercentage).toBe(0);
     expect(result.overallMatchPercentage).toBe(0);
@@ -759,21 +752,13 @@ describe('analyzeSkillGap - full analysis', () => {
   });
 
   it('generates a recommendation string', () => {
-    const result = analyzeSkillGap(
-      candidateSkills,
-      ['TypeScript', 'React', 'Go'],
-      ['Python'],
-    );
+    const result = analyzeSkillGap(candidateSkills, ['TypeScript', 'React', 'Go'], ['Python']);
     expect(typeof result.recommendation).toBe('string');
     expect(result.recommendation.length).toBeGreaterThan(0);
   });
 
   it('handles empty candidate skills', () => {
-    const result = analyzeSkillGap(
-      [],
-      ['TypeScript', 'React'],
-      ['Python'],
-    );
+    const result = analyzeSkillGap([], ['TypeScript', 'React'], ['Python']);
     expect(result.matchedMustHave).toHaveLength(0);
     expect(result.missingMustHave).toEqual(['TypeScript', 'React']);
     expect(result.missingNiceToHave).toEqual(['Python']);

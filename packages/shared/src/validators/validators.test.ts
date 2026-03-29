@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  tenantSchema,
-  userSchema,
-  candidateSchema,
-  skillSchema,
-  experienceBlockSchema,
-  jobSchema,
+  answerBankSchema,
   applicationSchema,
   applicationStatusSchema,
-  answerBankSchema,
+  candidateSchema,
+  experienceBlockSchema,
+  jobSchema,
   jobSourceSchema,
   preferenceSchema,
+  skillSchema,
+  tenantSchema,
+  userSchema,
 } from './index';
 
 describe('tenantSchema', () => {
@@ -121,7 +121,15 @@ describe('skillSchema', () => {
   });
 
   it('accepts all valid categories', () => {
-    const categories = ['language', 'framework', 'tool', 'platform', 'methodology', 'soft_skill', 'domain'];
+    const categories = [
+      'language',
+      'framework',
+      'tool',
+      'platform',
+      'methodology',
+      'soft_skill',
+      'domain',
+    ];
     categories.forEach((category) => {
       const result = skillSchema.safeParse({ name: 'Test', category, confidenceScore: 50 });
       expect(result.success).toBe(true);
@@ -199,9 +207,17 @@ describe('jobSchema', () => {
 describe('applicationStatusSchema', () => {
   it('accepts all valid statuses', () => {
     const statuses = [
-      'discovered', 'shortlisted', 'resume_generated', 'applied',
-      'recruiter_screen', 'technical', 'onsite', 'final',
-      'rejected', 'offer', 'withdrawn',
+      'discovered',
+      'shortlisted',
+      'resume_generated',
+      'applied',
+      'recruiter_screen',
+      'technical',
+      'onsite',
+      'final',
+      'rejected',
+      'offer',
+      'withdrawn',
     ];
     statuses.forEach((status) => {
       expect(applicationStatusSchema.safeParse(status).success).toBe(true);

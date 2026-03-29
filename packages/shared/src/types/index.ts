@@ -43,7 +43,14 @@ export interface Skill {
   id: string;
   candidateId: string;
   name: string;
-  category: 'language' | 'framework' | 'tool' | 'platform' | 'methodology' | 'soft_skill' | 'domain';
+  category:
+    | 'language'
+    | 'framework'
+    | 'tool'
+    | 'platform'
+    | 'methodology'
+    | 'soft_skill'
+    | 'domain';
   confidenceScore: number; // 0-100
   yearsUsed: number | null;
   lastUsed: Date | null;
@@ -197,10 +204,22 @@ export interface AnswerBankEntry {
   updatedAt: Date;
 }
 
-export type FirecrawlSourceConfig = { baseUrl: string; selectors?: Record<string, string>; schedule?: string };
-export type ApiSourceConfig = { endpoint: string; headers?: Record<string, string>; queryParams?: Record<string, string> };
+export type FirecrawlSourceConfig = {
+  baseUrl: string;
+  selectors?: Record<string, string>;
+  schedule?: string;
+};
+export type ApiSourceConfig = {
+  endpoint: string;
+  headers?: Record<string, string>;
+  queryParams?: Record<string, string>;
+};
 export type RssSourceConfig = { feedUrl: string };
-export type JobSourceConfig = FirecrawlSourceConfig | ApiSourceConfig | RssSourceConfig | Record<string, never>;
+export type JobSourceConfig =
+  | FirecrawlSourceConfig
+  | ApiSourceConfig
+  | RssSourceConfig
+  | Record<string, never>;
 
 export interface JobSource {
   id: string;

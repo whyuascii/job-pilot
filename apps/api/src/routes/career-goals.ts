@@ -1,12 +1,12 @@
+import type Anthropic from '@anthropic-ai/sdk';
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { careerGoals, candidates, jobs, projects, preferences } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { candidates, careerGoals, jobs, preferences, projects } from '@job-pilot/db/schema';
+import { CAREER_GROWTH_PROMPT } from '@job-pilot/mastra/prompts';
 import { getTenantContext } from '../lib/context.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
-import { getClient, loadCandidateProfile, recordLLMRun, parseJsonResponse } from './ai.js';
-import { CAREER_GROWTH_PROMPT } from '@job-pilot/mastra/prompts';
-import type Anthropic from '@anthropic-ai/sdk';
+import { getClient, loadCandidateProfile, parseJsonResponse, recordLLMRun } from './ai.js';
 
 const MODEL = 'claude-sonnet-4-20250514';
 
@@ -30,7 +30,9 @@ router.get('/', async (_req, res, next) => {
     );
 
     res.json(enriched);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/career-goals — save a job as career goal
@@ -66,15 +68,20 @@ router.post('/', async (req, res, next) => {
       return;
     }
 
-    const [goal] = await db.insert(careerGoals).values({
-      jobId,
-      candidateId: candidate.id,
-      tenantId: ctx.tenantId,
-      notes: notes || null,
-    }).returning();
+    const [goal] = await db
+      .insert(careerGoals)
+      .values({
+        jobId,
+        candidateId: candidate.id,
+        tenantId: ctx.tenantId,
+        notes: notes || null,
+      })
+      .returning();
 
     res.json(goal);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/career-goals/toggle-selected — toggle selectedForCoaching
@@ -98,12 +105,15 @@ router.post('/toggle-selected', async (req, res, next) => {
         columns: { id: true },
       });
       if (selectedCount.length >= 10) {
-        res.status(400).json({ error: 'Maximum of 10 roles can be selected for coaching. Deselect one first.' });
+        res
+          .status(400)
+          .json({ error: 'Maximum of 10 roles can be selected for coaching. Deselect one first.' });
         return;
       }
     }
 
-    const [updated] = await db.update(careerGoals)
+    const [updated] = await db
+      .update(careerGoals)
       .set({ selectedForCoaching: selected, updatedAt: new Date() })
       .where(and(eq(careerGoals.id, goalId), eq(careerGoals.tenantId, ctx.tenantId)))
       .returning();
@@ -114,7 +124,9 @@ router.post('/toggle-selected', async (req, res, next) => {
     }
 
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/career-goals/delete — delete career goal
@@ -128,12 +140,14 @@ router.post('/delete', async (req, res, next) => {
       return;
     }
 
-    await db.delete(careerGoals).where(
-      and(eq(careerGoals.id, goalId), eq(careerGoals.tenantId, ctx.tenantId)),
-    );
+    await db
+      .delete(careerGoals)
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.tenantId, ctx.tenantId)));
 
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // GET /api/career-goals/coaching-plan — get stored coaching plan
@@ -149,11 +163,16 @@ router.get('/coaching-plan', async (_req, res, next) => {
     }
 
     const pref = await db.query.preferences.findFirst({
-      where: and(eq(preferences.candidateId, candidate.id), eq(preferences.key, 'careerCoachingPlan')),
+      where: and(
+        eq(preferences.candidateId, candidate.id),
+        eq(preferences.key, 'careerCoachingPlan'),
+      ),
     });
 
     res.json(pref ? JSON.parse(pref.value) : null);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/career-goals/generate-coaching-plan — generate coaching plan from selected goals
@@ -172,14 +191,13 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
 
     // Load only selected career goals
     const goals = await db.query.careerGoals.findMany({
-      where: and(
-        eq(careerGoals.tenantId, ctx.tenantId),
-        eq(careerGoals.selectedForCoaching, true),
-      ),
+      where: and(eq(careerGoals.tenantId, ctx.tenantId), eq(careerGoals.selectedForCoaching, true)),
     });
 
     if (goals.length === 0) {
-      res.status(400).json({ error: 'No goals selected for coaching. Toggle some goals on first.' });
+      res
+        .status(400)
+        .json({ error: 'No goals selected for coaching. Toggle some goals on first.' });
       return;
     }
 
@@ -201,17 +219,39 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
       where: eq(projects.candidateId, candidate.id),
     });
 
-    const profileContext = JSON.stringify({
-      headline: profile.headline,
-      summary: profile.summary,
-      currentTitle: profile.currentTitle,
-      currentCompany: profile.currentCompany,
-      yearsOfExperience: profile.yearsOfExperience,
-      location: profile.location,
-      skills: profile.skills?.map((s: any) => ({ name: s.name, category: s.category, confidenceScore: s.confidenceScore })) || [],
-      experience: profile.experience?.map((e: any) => ({ company: e.company, title: e.title, startDate: e.startDate, endDate: e.endDate, bullets: e.bullets, skills: e.skills })) || [],
-      projects: candidateProjects.map((p: any) => ({ name: p.name, description: p.description, skills: p.skills, highlights: p.highlights })),
-    }, null, 2);
+    const profileContext = JSON.stringify(
+      {
+        headline: profile.headline,
+        summary: profile.summary,
+        currentTitle: profile.currentTitle,
+        currentCompany: profile.currentCompany,
+        yearsOfExperience: profile.yearsOfExperience,
+        location: profile.location,
+        skills:
+          profile.skills?.map((s: any) => ({
+            name: s.name,
+            category: s.category,
+            confidenceScore: s.confidenceScore,
+          })) || [],
+        experience:
+          profile.experience?.map((e: any) => ({
+            company: e.company,
+            title: e.title,
+            startDate: e.startDate,
+            endDate: e.endDate,
+            bullets: e.bullets,
+            skills: e.skills,
+          })) || [],
+        projects: candidateProjects.map((p: any) => ({
+          name: p.name,
+          description: p.description,
+          skills: p.skills,
+          highlights: p.highlights,
+        })),
+      },
+      null,
+      2,
+    );
 
     const jobsContext = JSON.stringify(
       validJobs.map((job: any) => ({
@@ -228,7 +268,8 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
         compensationMin: job.compensationMin,
         compensationMax: job.compensationMax,
       })),
-      null, 2,
+      null,
+      2,
     );
 
     const systemPrompt = `${CAREER_GROWTH_PROMPT}\n\n## CANDIDATE PROFILE\n${profileContext}\n\n## TARGET ROLES (${validJobs.length} saved aspirational jobs)\n${jobsContext}`;
@@ -245,7 +286,12 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
         model: MODEL,
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{ role: 'user', content: `I have ${validJobs.length} aspirational roles saved. Analyze the overall pattern and give me a unified career coaching plan.` }],
+        messages: [
+          {
+            role: 'user',
+            content: `I have ${validJobs.length} aspirational roles saved. Analyze the overall pattern and give me a unified career coaching plan.`,
+          },
+        ],
       });
 
       inputTokens = response.usage?.input_tokens ?? 0;
@@ -263,11 +309,15 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
 
       // Store in preferences
       const existingPref = await db.query.preferences.findFirst({
-        where: and(eq(preferences.candidateId, candidate.id), eq(preferences.key, 'careerCoachingPlan')),
+        where: and(
+          eq(preferences.candidateId, candidate.id),
+          eq(preferences.key, 'careerCoachingPlan'),
+        ),
       });
 
       if (existingPref) {
-        await db.update(preferences)
+        await db
+          .update(preferences)
           .set({ value: JSON.stringify(parsed) })
           .where(eq(preferences.id, existingPref.id));
       } else {
@@ -296,7 +346,9 @@ router.post('/generate-coaching-plan', async (req, res, next) => {
         error: errorMsg,
       });
     }
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

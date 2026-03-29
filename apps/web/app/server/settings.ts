@@ -1,10 +1,11 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import { jobSources } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { getTenantContext } from '~/lib/api';
-import { encrypt, decrypt } from '~/lib/crypto';
+import { decrypt, encrypt } from '~/lib/crypto';
 import { checkRateLimit } from '~/lib/rate-limit';
+
 function createId(): string {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
@@ -45,7 +46,9 @@ async function resolveRawApiKey(service: string, envVar: string): Promise<string
     try {
       return await decrypt(stored);
     } catch {
-      console.warn(`[settings] Failed to decrypt stored key for ${service}, falling back to env var`);
+      console.warn(
+        `[settings] Failed to decrypt stored key for ${service}, falling back to env var`,
+      );
     }
   }
   return process.env[envVar] || null;
@@ -58,7 +61,9 @@ async function resolveRawApiKey(service: string, envVar: string): Promise<string
  * @param service - The service identifier: "anthropic" or "firecrawl"
  * @returns The plaintext API key, or null if not configured
  */
-export async function getDecryptedApiKey(service: 'anthropic' | 'firecrawl'): Promise<string | null> {
+export async function getDecryptedApiKey(
+  service: 'anthropic' | 'firecrawl',
+): Promise<string | null> {
   const envVarMap: Record<string, string> = {
     anthropic: 'ANTHROPIC_API_KEY',
     firecrawl: 'FIRECRAWL_API_KEY',
@@ -87,7 +92,11 @@ export const getApiKeyStatus = createServerFn({ method: 'GET' }).handler(async (
     },
     s3: {
       configured: !!(process.env.S3_ENDPOINT || process.env.AWS_REGION),
-      endpoint: process.env.S3_ENDPOINT ? 'MinIO (local)' : process.env.AWS_REGION ? `AWS (${process.env.AWS_REGION})` : null,
+      endpoint: process.env.S3_ENDPOINT
+        ? 'MinIO (local)'
+        : process.env.AWS_REGION
+          ? `AWS (${process.env.AWS_REGION})`
+          : null,
     },
   };
 });
@@ -96,27 +105,30 @@ export const getApiKeyStatus = createServerFn({ method: 'GET' }).handler(async (
  * Save an API key for a service. The key is encrypted before being stored.
  * Pass an empty string to remove a previously saved key.
  */
-export const saveApiKey = createServerFn({ method: 'POST' }).validator(
-  (data: { service: 'anthropic' | 'firecrawl'; apiKey: string }) => data,
-).handler(async ({ data }) => {
-  await getTenantContext(); // ensure authenticated
+export const saveApiKey = createServerFn({ method: 'POST' })
+  .validator((data: { service: 'anthropic' | 'firecrawl'; apiKey: string }) => data)
+  .handler(async ({ data }) => {
+    await getTenantContext(); // ensure authenticated
 
-  if (!['anthropic', 'firecrawl'].includes(data.service)) {
-    throw new Error(`Unknown service: ${data.service}`);
-  }
+    if (!['anthropic', 'firecrawl'].includes(data.service)) {
+      throw new Error(`Unknown service: ${data.service}`);
+    }
 
-  if (data.apiKey.trim() === '') {
-    // Remove the stored key; will fall back to env var
-    delete encryptedKeyStore[data.service];
-    const remaining = await resolveRawApiKey(data.service, data.service === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'FIRECRAWL_API_KEY');
-    return { success: true, hasKey: !!remaining };
-  }
+    if (data.apiKey.trim() === '') {
+      // Remove the stored key; will fall back to env var
+      delete encryptedKeyStore[data.service];
+      const remaining = await resolveRawApiKey(
+        data.service,
+        data.service === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'FIRECRAWL_API_KEY',
+      );
+      return { success: true, hasKey: !!remaining };
+    }
 
-  // Encrypt and store
-  encryptedKeyStore[data.service] = await encrypt(data.apiKey.trim());
+    // Encrypt and store
+    encryptedKeyStore[data.service] = await encrypt(data.apiKey.trim());
 
-  return { success: true, hasKey: true };
-});
+    return { success: true, hasKey: true };
+  });
 
 /**
  * List all job sources for the current tenant.
@@ -134,61 +146,61 @@ export const listJobSources = createServerFn({ method: 'GET' }).handler(async ()
 /**
  * Add a new job source for the current tenant.
  */
-export const addJobSource = createServerFn({ method: 'POST' }).validator(
-  (data: { name: string; type: string; url?: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const addJobSource = createServerFn({ method: 'POST' })
+  .validator((data: { name: string; type: string; url?: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  const [source] = await db
-    .insert(jobSources)
-    .values({
-      id: createId(),
-      tenantId: ctx.tenantId,
-      name: data.name,
-      type: data.type,
-      config: data.url ? { url: data.url } : {},
-      enabled: true,
-    })
-    .returning();
+    const [source] = await db
+      .insert(jobSources)
+      .values({
+        id: createId(),
+        tenantId: ctx.tenantId,
+        name: data.name,
+        type: data.type,
+        config: data.url ? { url: data.url } : {},
+        enabled: true,
+      })
+      .returning();
 
-  return source;
-});
+    return source;
+  });
 
 /**
  * Delete a job source (must belong to current tenant).
  */
-export const deleteJobSource = createServerFn({ method: 'POST' }).validator(
-  (data: { sourceId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const deleteJobSource = createServerFn({ method: 'POST' })
+  .validator((data: { sourceId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  await db
-    .delete(jobSources)
-    .where(and(eq(jobSources.id, data.sourceId), eq(jobSources.tenantId, ctx.tenantId)));
+    await db
+      .delete(jobSources)
+      .where(and(eq(jobSources.id, data.sourceId), eq(jobSources.tenantId, ctx.tenantId)));
 
-  return { success: true };
-});
+    return { success: true };
+  });
 
 /**
  * Toggle a job source's enabled status.
  */
-export const toggleJobSource = createServerFn({ method: 'POST' }).validator(
-  (data: { sourceId: string; enabled: boolean }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const toggleJobSource = createServerFn({ method: 'POST' })
+  .validator((data: { sourceId: string; enabled: boolean }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  const [updated] = await db
-    .update(jobSources)
-    .set({ enabled: data.enabled })
-    .where(and(eq(jobSources.id, data.sourceId), eq(jobSources.tenantId, ctx.tenantId)))
-    .returning();
+    const [updated] = await db
+      .update(jobSources)
+      .set({ enabled: data.enabled })
+      .where(and(eq(jobSources.id, data.sourceId), eq(jobSources.tenantId, ctx.tenantId)))
+      .returning();
 
-  if (!updated) {
-    throw new Error('Job source not found');
-  }
+    if (!updated) {
+      throw new Error('Job source not found');
+    }
 
-  return updated;
-});
+    return updated;
+  });
 
 // ---------------------------------------------------------------------------
 // Job Source Sync
@@ -210,10 +222,7 @@ async function syncJobSourceInternal(
 ): Promise<SyncResult> {
   // 1. Load the source record
   const source = await db.query.jobSources.findFirst({
-    where: and(
-      eq(jobSources.id, sourceId),
-      eq(jobSources.tenantId, ctx.tenantId),
-    ),
+    where: and(eq(jobSources.id, sourceId), eq(jobSources.tenantId, ctx.tenantId)),
   });
 
   if (!source) {
@@ -269,17 +278,12 @@ async function syncJobSourceInternal(
         }
       }
     } catch (err) {
-      result.errors.push(
-        `${url}: ${err instanceof Error ? err.message : 'Unknown error'}`,
-      );
+      result.errors.push(`${url}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 
   // 3. Update lastSyncAt regardless of individual URL outcomes
-  await db
-    .update(jobSources)
-    .set({ lastSyncAt: new Date() })
-    .where(eq(jobSources.id, source.id));
+  await db.update(jobSources).set({ lastSyncAt: new Date() }).where(eq(jobSources.id, source.id));
 
   return result;
 }
@@ -288,66 +292,65 @@ async function syncJobSourceInternal(
  * Sync a single job source by fetching its URL(s) and ingesting any new jobs.
  * Updates the source's lastSyncAt timestamp on completion.
  */
-export const syncJobSource = createServerFn({ method: 'POST' }).validator(
-  (data: { sourceId: string }) => data,
-).handler(async ({ data }): Promise<SyncResult> => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`syncJobSource:${ctx.tenantId}`, 5);
-  return syncJobSourceInternal(data.sourceId, ctx);
-});
+export const syncJobSource = createServerFn({ method: 'POST' })
+  .validator((data: { sourceId: string }) => data)
+  .handler(async ({ data }): Promise<SyncResult> => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`syncJobSource:${ctx.tenantId}`, 5);
+    return syncJobSourceInternal(data.sourceId, ctx);
+  });
 
 /**
  * Sync all enabled job sources for the current tenant.
  * Processes sources sequentially to avoid rate-limiting.
  * Returns a summary of results per source.
  */
-export const syncAllSources = createServerFn({ method: 'POST' }).handler(async (): Promise<{
-  results: SyncResult[];
-  totalNewJobs: number;
-  totalErrors: number;
-}> => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`syncAllSources:${ctx.tenantId}`, 2);
+export const syncAllSources = createServerFn({ method: 'POST' }).handler(
+  async (): Promise<{
+    results: SyncResult[];
+    totalNewJobs: number;
+    totalErrors: number;
+  }> => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`syncAllSources:${ctx.tenantId}`, 2);
 
-  // Load all enabled sources with URLs
-  const sources = await db.query.jobSources.findMany({
-    where: and(
-      eq(jobSources.tenantId, ctx.tenantId),
-      eq(jobSources.enabled, true),
-    ),
-  });
+    // Load all enabled sources with URLs
+    const sources = await db.query.jobSources.findMany({
+      where: and(eq(jobSources.tenantId, ctx.tenantId), eq(jobSources.enabled, true)),
+    });
 
-  const sourcesWithUrls = sources.filter((s) => {
-    const config = s.config as { url?: string; urls?: string[] };
-    return config.url || (config.urls && config.urls.length > 0);
-  });
+    const sourcesWithUrls = sources.filter((s) => {
+      const config = s.config as { url?: string; urls?: string[] };
+      return config.url || (config.urls && config.urls.length > 0);
+    });
 
-  if (sourcesWithUrls.length === 0) {
-    return { results: [], totalNewJobs: 0, totalErrors: 0 };
-  }
-
-  const results: SyncResult[] = [];
-
-  // Process each source sequentially
-  for (const source of sourcesWithUrls) {
-    try {
-      const result = await syncJobSourceInternal(source.id, ctx);
-      results.push(result);
-    } catch (err) {
-      results.push({
-        sourceId: source.id,
-        sourceName: source.name,
-        jobsFound: 0,
-        newJobs: 0,
-        duplicates: 0,
-        errors: [err instanceof Error ? err.message : 'Unknown error'],
-      });
+    if (sourcesWithUrls.length === 0) {
+      return { results: [], totalNewJobs: 0, totalErrors: 0 };
     }
-  }
 
-  return {
-    results,
-    totalNewJobs: results.reduce((sum, r) => sum + r.newJobs, 0),
-    totalErrors: results.reduce((sum, r) => sum + r.errors.length, 0),
-  };
-});
+    const results: SyncResult[] = [];
+
+    // Process each source sequentially
+    for (const source of sourcesWithUrls) {
+      try {
+        const result = await syncJobSourceInternal(source.id, ctx);
+        results.push(result);
+      } catch (err) {
+        results.push({
+          sourceId: source.id,
+          sourceName: source.name,
+          jobsFound: 0,
+          newJobs: 0,
+          duplicates: 0,
+          errors: [err instanceof Error ? err.message : 'Unknown error'],
+        });
+      }
+    }
+
+    return {
+      results,
+      totalNewJobs: results.reduce((sum, r) => sum + r.newJobs, 0),
+      totalErrors: results.reduce((sum, r) => sum + r.errors.length, 0),
+    };
+  },
+);

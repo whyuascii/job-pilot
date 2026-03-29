@@ -53,17 +53,19 @@ export { RESUME_INTERVIEW_PROMPT, RESUME_INTERVIEW_PROMPT_VERSION } from './resu
 
 /** All prompt versions for audit logging */
 export const PROMPT_VERSIONS = {
-  jobParser: () => import('./job-parser.js').then(m => m.JOB_PARSER_PROMPT_VERSION),
-  scoring: () => import('./scoring.js').then(m => m.SCORING_PROMPT_VERSION),
-  resumeParser: () => import('./resume-parser.js').then(m => m.RESUME_PARSER_PROMPT_VERSION),
-  resumeTailor: () => import('./resume-tailor.js').then(m => m.RESUME_TAILORING_PROMPT_VERSION),
-  profileCoach: () => import('./profile-coach.js').then(m => m.PROFILE_COACH_PROMPT_VERSION),
-  answerDetect: () => import('./answer-detect.js').then(m => m.ANSWER_DETECT_PROMPT_VERSION),
-  answerSuggest: () => import('./answer-suggest.js').then(m => m.ANSWER_SUGGEST_PROMPT_VERSION),
-  careerGrowth: () => import('./career-growth.js').then(m => m.CAREER_GROWTH_PROMPT_VERSION),
-  profileAnalysis: () => import('./profile-analysis.js').then(m => m.PROFILE_ANALYSIS_PROMPT_VERSION),
-  coverLetter: () => import('./cover-letter.js').then(m => m.COVER_LETTER_PROMPT_VERSION),
-  whyCompany: () => import('./why-company.js').then(m => m.WHY_COMPANY_PROMPT_VERSION),
-  ghostwriter: () => import('./ghostwriter.js').then(m => m.GHOSTWRITER_PROMPT_VERSION),
-  resumeInterview: () => import('./resume-interview.js').then(m => m.RESUME_INTERVIEW_PROMPT_VERSION),
+  jobParser: () => import('./job-parser.js').then((m) => m.JOB_PARSER_PROMPT_VERSION),
+  scoring: () => import('./scoring.js').then((m) => m.SCORING_PROMPT_VERSION),
+  resumeParser: () => import('./resume-parser.js').then((m) => m.RESUME_PARSER_PROMPT_VERSION),
+  resumeTailor: () => import('./resume-tailor.js').then((m) => m.RESUME_TAILORING_PROMPT_VERSION),
+  profileCoach: () => import('./profile-coach.js').then((m) => m.PROFILE_COACH_PROMPT_VERSION),
+  answerDetect: () => import('./answer-detect.js').then((m) => m.ANSWER_DETECT_PROMPT_VERSION),
+  answerSuggest: () => import('./answer-suggest.js').then((m) => m.ANSWER_SUGGEST_PROMPT_VERSION),
+  careerGrowth: () => import('./career-growth.js').then((m) => m.CAREER_GROWTH_PROMPT_VERSION),
+  profileAnalysis: () =>
+    import('./profile-analysis.js').then((m) => m.PROFILE_ANALYSIS_PROMPT_VERSION),
+  coverLetter: () => import('./cover-letter.js').then((m) => m.COVER_LETTER_PROMPT_VERSION),
+  whyCompany: () => import('./why-company.js').then((m) => m.WHY_COMPANY_PROMPT_VERSION),
+  ghostwriter: () => import('./ghostwriter.js').then((m) => m.GHOSTWRITER_PROMPT_VERSION),
+  resumeInterview: () =>
+    import('./resume-interview.js').then((m) => m.RESUME_INTERVIEW_PROMPT_VERSION),
 } as const;

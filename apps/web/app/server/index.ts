@@ -1,14 +1,6 @@
-export {
-  getCandidate,
-  updateCandidate,
-} from './candidates';
+export { getCandidate, updateCandidate } from './candidates';
 
-export {
-  listJobs,
-  getJob,
-  createJob,
-  deleteJob,
-} from './jobs';
+export { listJobs, getJob, createJob, deleteJob } from './jobs';
 
 export {
   listApplications,
@@ -26,41 +18,15 @@ export {
   getResumeDownloadUrl,
 } from './resumes';
 
-export {
-  listSkills,
-  addSkill,
-  updateSkill,
-  deleteSkill,
-  bulkAddSkills,
-} from './skills';
+export { listSkills, addSkill, updateSkill, deleteSkill, bulkAddSkills } from './skills';
 
-export {
-  listExperience,
-  addExperience,
-  updateExperience,
-  deleteExperience,
-} from './experience';
+export { listExperience, addExperience, updateExperience, deleteExperience } from './experience';
 
-export {
-  listProjects,
-  addProject,
-  updateProject,
-  deleteProject,
-} from './projects';
+export { listProjects, addProject, updateProject, deleteProject } from './projects';
 
-export {
-  listPreferences,
-  addPreference,
-  updatePreference,
-  deletePreference,
-} from './preferences';
+export { listPreferences, addPreference, updatePreference, deletePreference } from './preferences';
 
-export {
-  listAnswers,
-  addAnswer,
-  updateAnswer,
-  deleteAnswer,
-} from './answers';
+export { listAnswers, addAnswer, updateAnswer, deleteAnswer } from './answers';
 
 export {
   ingestJobFromUrl,

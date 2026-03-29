@@ -69,7 +69,7 @@ function ScoreIndicator({
         </svg>
         <span className={cn('font-bold', getScoreColor(score, maxScore))}>{pct}</span>
       </div>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs font-medium">{label}</span>
       <span className={cn('text-xs font-semibold', getScoreColor(score, maxScore))}>
         {getScoreLabel(score, maxScore)}
       </span>

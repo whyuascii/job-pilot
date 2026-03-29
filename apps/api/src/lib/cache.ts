@@ -45,21 +45,12 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function cacheSet(
-  key: string,
-  value: unknown,
-  ttlSeconds: number,
-): Promise<void> {
+export async function cacheSet(key: string, value: unknown, ttlSeconds: number): Promise<void> {
   try {
     const redis = await getClient();
     if (!redis) return;
 
-    await redis.set(
-      `${KEY_PREFIX}${key}`,
-      JSON.stringify(value),
-      'EX',
-      ttlSeconds,
-    );
+    await redis.set(`${KEY_PREFIX}${key}`, JSON.stringify(value), 'EX', ttlSeconds);
   } catch {
     // best-effort
   }
@@ -85,13 +76,7 @@ export async function cacheDeletePattern(pattern: string): Promise<void> {
     let cursor = '0';
 
     do {
-      const [nextCursor, keys] = await redis.scan(
-        cursor,
-        'MATCH',
-        fullPattern,
-        'COUNT',
-        100,
-      );
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', fullPattern, 'COUNT', 100);
       cursor = nextCursor;
       if (keys.length > 0) {
         await redis.del(...keys);

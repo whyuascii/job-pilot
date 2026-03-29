@@ -1,15 +1,15 @@
 import * as React from 'react';
 import { Link } from '@tanstack/react-router';
 import {
-  Mail,
-  Ghost,
   ArrowUpCircle,
-  Plus,
   Check,
-  X,
-  ExternalLink,
   Clock,
+  ExternalLink,
+  Ghost,
+  Mail,
+  Plus,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { Badge, Button } from '@job-pilot/ui';
 
@@ -52,11 +52,13 @@ function getItemIcon(type: ActivityFeedItem['type']) {
     case 'status_change':
       return <ArrowUpCircle className="h-4 w-4 text-indigo-500" />;
     default:
-      return <Clock className="h-4 w-4 text-muted-foreground" />;
+      return <Clock className="text-muted-foreground h-4 w-4" />;
   }
 }
 
-function getItemBadgeVariant(type: ActivityFeedItem['type']): 'default' | 'secondary' | 'destructive' {
+function getItemBadgeVariant(
+  type: ActivityFeedItem['type'],
+): 'default' | 'secondary' | 'destructive' {
   switch (type) {
     case 'unreviewed_email':
       return 'default';
@@ -100,7 +102,7 @@ function UnreviewedEmailActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+        className="h-7 px-2 text-xs text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
         disabled={loading === item.id}
         onClick={() => onConfirm(item.id, item.type, 'confirm_status')}
       >
@@ -110,7 +112,7 @@ function UnreviewedEmailActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
         disabled={loading === item.id}
         onClick={() => onConfirm(item.id, item.type, 'dismiss')}
       >
@@ -133,7 +135,12 @@ function GhostedAlertActions({
   return (
     <div className="flex items-center gap-1.5">
       {item.metadata?.applicationId ? (
-        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50" asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+          asChild
+        >
           <Link
             to="/applications/$applicationId"
             params={{ applicationId: item.metadata.applicationId }}
@@ -146,7 +153,7 @@ function GhostedAlertActions({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          className="h-7 px-2 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
           disabled={loading === item.id}
           onClick={() => onConfirm(item.id, item.type, 'follow_up')}
         >
@@ -157,7 +164,7 @@ function GhostedAlertActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
         disabled={loading === item.id}
         onClick={() => onConfirm(item.id, item.type, 'dismiss')}
       >
@@ -184,7 +191,7 @@ function AutoDetectedActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+        className="h-7 px-2 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700"
         disabled={loading === item.id}
         onClick={() => onQuickAdd()}
       >
@@ -194,7 +201,7 @@ function AutoDetectedActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
         disabled={loading === item.id}
         onClick={() => onConfirm(item.id, item.type, 'dismiss')}
       >
@@ -229,7 +236,7 @@ export function ActivityFeed({ items, onConfirm, onQuickAdd }: ActivityFeedProps
   );
 
   return (
-    <div className="rounded-xl border bg-card shadow">
+    <div className="bg-card rounded-xl border shadow">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <h3 className="text-sm font-semibold">Activity Feed</h3>
@@ -243,15 +250,15 @@ export function ActivityFeed({ items, onConfirm, onQuickAdd }: ActivityFeedProps
       <div className="max-h-[600px] overflow-y-auto">
         {sortedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Clock className="h-8 w-8 text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">No new activity</p>
+            <Clock className="text-muted-foreground/40 mb-2 h-8 w-8" />
+            <p className="text-muted-foreground text-sm">No new activity</p>
           </div>
         ) : (
           <ul className="divide-y">
             {sortedItems.map((item) => (
               <li
                 key={item.id}
-                className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-accent/50"
+                className="hover:bg-accent/50 flex items-start gap-3 px-4 py-3 transition-colors"
               >
                 {/* Icon */}
                 <div className="mt-0.5 shrink-0">{getItemIcon(item.type)}</div>
@@ -261,21 +268,19 @@ export function ActivityFeed({ items, onConfirm, onQuickAdd }: ActivityFeedProps
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium leading-tight truncate">
-                          {item.title}
-                        </p>
+                        <p className="truncate text-sm font-medium leading-tight">{item.title}</p>
                         <Badge
                           variant={getItemBadgeVariant(item.type)}
-                          className="shrink-0 text-[10px] px-1.5 py-0"
+                          className="shrink-0 px-1.5 py-0 text-[10px]"
                         >
                           {getItemLabel(item.type)}
                         </Badge>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
                         {item.description}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[10px] text-muted-foreground/60 mt-0.5">
+                    <span className="text-muted-foreground/60 mt-0.5 shrink-0 text-[10px]">
                       {timeAgo(item.timestamp)}
                     </span>
                   </div>
@@ -316,7 +321,7 @@ export function ActivityFeed({ items, onConfirm, onQuickAdd }: ActivityFeedProps
       {/* Footer */}
       {sortedItems.length > 0 && (
         <div className="border-t px-4 py-2">
-          <p className="text-center text-[10px] text-muted-foreground/60">
+          <p className="text-muted-foreground/60 text-center text-[10px]">
             Showing {sortedItems.length} of {items.length} items
           </p>
         </div>

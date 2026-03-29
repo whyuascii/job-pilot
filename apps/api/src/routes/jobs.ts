@@ -1,22 +1,22 @@
+import {
+  and,
+  asc as ascFn,
+  desc,
+  desc as descFn,
+  eq,
+  getTableColumns,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { jobs, jobScores } from '@job-pilot/db/schema';
-import {
-  eq,
-  and,
-  desc,
-  sql,
-  gte,
-  lte,
-  ilike,
-  inArray,
-  isNull,
-  isNotNull,
-  or,
-  asc as ascFn,
-  desc as descFn,
-  getTableColumns,
-} from 'drizzle-orm';
 import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
@@ -35,15 +35,24 @@ router.get('/', async (req, res, next) => {
     // Parse query params with defaults
     const q = (req.query.q as string | undefined)?.trim() || undefined;
     const remote = req.query.remote
-      ? (req.query.remote as string).split(',').map(s => s.trim()).filter(Boolean)
+      ? (req.query.remote as string)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : undefined;
     const minScore = req.query.minScore ? Number(req.query.minScore) : undefined;
     const recommendation = req.query.recommendation
-      ? (req.query.recommendation as string).split(',').map(s => s.trim()).filter(Boolean)
+      ? (req.query.recommendation as string)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : undefined;
     const hasScore = req.query.hasScore as 'scored' | 'unscored' | undefined;
     const employmentType = req.query.employmentType
-      ? (req.query.employmentType as string).split(',').map(s => s.trim()).filter(Boolean)
+      ? (req.query.employmentType as string)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : undefined;
     const minComp = req.query.minComp ? Number(req.query.minComp) : undefined;
     const maxComp = req.query.maxComp ? Number(req.query.maxComp) : undefined;
@@ -55,12 +64,13 @@ router.get('/', async (req, res, next) => {
     const sortBy = (req.query.sortBy as string) || 'score';
     const sortDir = (req.query.sortDir as string) || 'desc';
     const page = Math.max(1, req.query.page ? Number(req.query.page) : 1);
-    const pageSize = Math.min(100, Math.max(1, req.query.pageSize ? Number(req.query.pageSize) : 50));
+    const pageSize = Math.min(
+      100,
+      Math.max(1, req.query.pageSize ? Number(req.query.pageSize) : 50),
+    );
 
     // Build conditions array
-    const conditions: ReturnType<typeof eq>[] = [
-      eq(jobs.tenantId, ctx.tenantId),
-    ];
+    const conditions: ReturnType<typeof eq>[] = [eq(jobs.tenantId, ctx.tenantId)];
 
     // Text search: OR across title, company, location, mustHaveSkills::text, niceToHaveSkills::text
     if (q) {
@@ -186,7 +196,7 @@ router.get('/', async (req, res, next) => {
       .offset(offset);
 
     // Transform rows into job + score shape
-    const items = rows.map(row => {
+    const items = rows.map((row) => {
       const {
         scoreId,
         scoreJobId,
@@ -222,7 +232,9 @@ router.get('/', async (req, res, next) => {
     });
 
     res.json({ items, total, page, pageSize });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // GET /api/jobs/:jobId
@@ -239,7 +251,9 @@ router.get('/:jobId', async (req, res, next) => {
     });
 
     res.json({ ...job, score: score ?? null });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/jobs
@@ -273,7 +287,9 @@ router.post('/', async (req, res, next) => {
       })
       .returning();
     res.json(job);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/jobs/delete
@@ -283,7 +299,9 @@ router.post('/delete', async (req, res, next) => {
     const { jobId } = req.body;
     await db.delete(jobs).where(and(eq(jobs.id, jobId), eq(jobs.tenantId, ctx.tenantId)));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

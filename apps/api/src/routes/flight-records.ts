@@ -1,7 +1,7 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { flightRecords, jobs, applications, jobScores, candidates } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { applications, candidates, flightRecords, jobs, jobScores } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 const router = Router();
@@ -33,31 +33,36 @@ router.get('/', async (_req, res, next) => {
     });
 
     // Build a set of applicationIds that already have flight records
-    const appIdsWithRecords = new Set(records.map(r => r.applicationId));
+    const appIdsWithRecords = new Set(records.map((r) => r.applicationId));
 
     // Fetch all relevant jobs in one query
-    const allJobIds = [...new Set([
-      ...records.map(r => r.jobId),
-      ...allApps.map(a => a.jobId),
-    ])];
-    const jobList = allJobIds.length > 0
-      ? await db.query.jobs.findMany({
-          where: eq(jobs.tenantId, ctx.tenantId),
-        }).then(all => all.filter(j => allJobIds.includes(j.id)))
-      : [];
-    const jobMap = Object.fromEntries(jobList.map(j => [j.id, j]));
+    const allJobIds = [
+      ...new Set([...records.map((r) => r.jobId), ...allApps.map((a) => a.jobId)]),
+    ];
+    const jobList =
+      allJobIds.length > 0
+        ? await db.query.jobs
+            .findMany({
+              where: eq(jobs.tenantId, ctx.tenantId),
+            })
+            .then((all) => all.filter((j) => allJobIds.includes(j.id)))
+        : [];
+    const jobMap = Object.fromEntries(jobList.map((j) => [j.id, j]));
 
     // Fetch scores for applications without flight records
-    const appsWithoutRecords = allApps.filter(a => !appIdsWithRecords.has(a.id));
-    const scoreList = appsWithoutRecords.length > 0
-      ? await db.query.jobScores.findMany({
-          where: eq(jobScores.candidateId, candidate.id),
-        }).then(all => all.filter(s => appsWithoutRecords.some(a => a.jobId === s.jobId)))
-      : [];
-    const scoreMap = Object.fromEntries(scoreList.map(s => [s.jobId, s]));
+    const appsWithoutRecords = allApps.filter((a) => !appIdsWithRecords.has(a.id));
+    const scoreList =
+      appsWithoutRecords.length > 0
+        ? await db.query.jobScores
+            .findMany({
+              where: eq(jobScores.candidateId, candidate.id),
+            })
+            .then((all) => all.filter((s) => appsWithoutRecords.some((a) => a.jobId === s.jobId)))
+        : [];
+    const scoreMap = Object.fromEntries(scoreList.map((s) => [s.jobId, s]));
 
     // Build unified list: flight records first
-    const result: any[] = records.map(r => ({
+    const result: any[] = records.map((r) => ({
       id: r.id,
       applicationId: r.applicationId,
       jobId: r.jobId,
@@ -82,18 +87,22 @@ router.get('/', async (_req, res, next) => {
         jobId: app.jobId,
         jobTitle: job?.title ?? 'Unknown',
         jobCompany: job?.company ?? 'Unknown',
-        scoreSnapshot: score ? {
-          overallScore: score.overallScore,
-          fitScore: score.fitScore,
-          competitivenessScore: score.competitivenessScore,
-          recommendation: score.recommendation,
-        } : null,
-        jobSnapshot: job ? {
-          title: job.title,
-          company: job.company,
-          location: job.location,
-          mustHaveSkills: (job.mustHaveSkills as string[]) ?? [],
-        } : null,
+        scoreSnapshot: score
+          ? {
+              overallScore: score.overallScore,
+              fitScore: score.fitScore,
+              competitivenessScore: score.competitivenessScore,
+              recommendation: score.recommendation,
+            }
+          : null,
+        jobSnapshot: job
+          ? {
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              mustHaveSkills: (job.mustHaveSkills as string[]) ?? [],
+            }
+          : null,
         resumeSnapshot: null,
         coverLetterSnapshot: null,
         appliedAt: app.appliedAt,
@@ -111,7 +120,9 @@ router.get('/', async (_req, res, next) => {
     });
 
     res.json(result);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Get single flight record with full snapshots
@@ -123,14 +134,19 @@ router.get('/:id', async (req, res, next) => {
     });
     if (!record) throw new Error('Flight record not found');
 
-    const job = await db.query.jobs.findFirst({ where: eq(jobs.id, record.jobId), columns: { id: true, title: true, company: true } });
+    const job = await db.query.jobs.findFirst({
+      where: eq(jobs.id, record.jobId),
+      columns: { id: true, title: true, company: true },
+    });
 
     res.json({
       ...record,
       jobTitle: job?.title ?? 'Unknown',
       jobCompany: job?.company ?? 'Unknown',
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

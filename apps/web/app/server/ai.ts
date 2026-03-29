@@ -1,13 +1,30 @@
-import { createServerFn } from '@tanstack/react-start';
-import { db } from '@job-pilot/db';
-import { jobs, jobScores, candidates, skills, experienceBlocks, preferences, resumes, projects, llmRuns, tailoredResumes } from '@job-pilot/db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { getTenantContext } from '~/lib/api';
-import { getDownloadUrl } from '~/lib/s3';
 import Anthropic from '@anthropic-ai/sdk';
+import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq, sql } from 'drizzle-orm';
+import { db } from '@job-pilot/db';
+import {
+  candidates,
+  experienceBlocks,
+  jobs,
+  jobScores,
+  llmRuns,
+  preferences,
+  projects,
+  resumes,
+  skills,
+  tailoredResumes,
+} from '@job-pilot/db/schema';
+import {
+  JOB_PARSER_PROMPT,
+  RESUME_PARSER_PDF_INSTRUCTION,
+  RESUME_PARSER_PROMPT,
+  RESUME_TAILORING_PROMPT,
+  SCORING_PROMPT,
+} from '@job-pilot/mastra/prompts';
+import { getTenantContext } from '~/lib/api';
 import { checkRateLimit } from '~/lib/rate-limit';
+import { getDownloadUrl } from '~/lib/s3';
 import { getDecryptedApiKey } from './settings';
-import { JOB_PARSER_PROMPT, SCORING_PROMPT, RESUME_PARSER_PROMPT, RESUME_TAILORING_PROMPT, RESUME_PARSER_PDF_INSTRUCTION } from '@job-pilot/mastra/prompts';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -23,37 +40,40 @@ function createId(): string {
 
 export async function getClient(): Promise<Anthropic> {
   const apiKey = await getDecryptedApiKey('anthropic');
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured. Add it to your .env file or set it in Settings.');
+  if (!apiKey)
+    throw new Error(
+      'ANTHROPIC_API_KEY not configured. Add it to your .env file or set it in Settings.',
+    );
   return new Anthropic({ apiKey });
 }
 
 /** Strip HTML tags and collapse whitespace to produce plain text. */
 function htmlToText(html: string): string {
-  return html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    // Preserve link URLs before stripping tags
-    .replace(/<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      // Preserve link URLs before stripping tags
+      .replace(/<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 /** Get the candidate profile for the currently authenticated user. */
 async function getCurrentCandidate(ctx: { tenantId: string; userId: string }) {
   const candidate = await db.query.candidates.findFirst({
-    where: and(
-      eq(candidates.tenantId, ctx.tenantId),
-      eq(candidates.userId, ctx.userId),
-    ),
+    where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
   });
-  if (!candidate) throw new Error('No candidate profile found. Create one before using AI features.');
+  if (!candidate)
+    throw new Error('No candidate profile found. Create one before using AI features.');
   return candidate;
 }
 
@@ -212,7 +232,10 @@ interface ScoreResult {
 // ---------------------------------------------------------------------------
 
 /** Call Claude to parse a job description from raw text. */
-async function callParseLLM(rawText: string, auditCtx?: { tenantId: string; jobId?: string }): Promise<ParsedJob> {
+async function callParseLLM(
+  rawText: string,
+  auditCtx?: { tenantId: string; jobId?: string },
+): Promise<ParsedJob> {
   const client = await getClient();
   const startTime = Date.now();
   let success = false;
@@ -262,7 +285,21 @@ async function callParseLLM(rawText: string, auditCtx?: { tenantId: string; jobI
 
 /** Call Claude to score a job against a candidate profile. */
 async function callScoreLLM(
-  job: { title: string; company: string; location: string; remotePolicy: string; compensationMin: number | null; compensationMax: number | null; compensationType: string; employmentType: string; yearsRequired: number | null; mustHaveSkills: string[]; niceToHaveSkills: string[]; domain: string | null; rawDescription: string },
+  job: {
+    title: string;
+    company: string;
+    location: string;
+    remotePolicy: string;
+    compensationMin: number | null;
+    compensationMax: number | null;
+    compensationType: string;
+    employmentType: string;
+    yearsRequired: number | null;
+    mustHaveSkills: string[];
+    niceToHaveSkills: string[];
+    domain: string | null;
+    rawDescription: string;
+  },
   profile: Awaited<ReturnType<typeof loadCandidateProfile>>,
   auditCtx?: { tenantId: string; candidateId?: string; jobId?: string },
 ): Promise<ScoreResult> {
@@ -274,52 +311,60 @@ async function callScoreLLM(
   let outputTokens = 0;
 
   const userContent = `## JOB
-${JSON.stringify({
-  title: job.title,
-  company: job.company,
-  location: job.location,
-  remotePolicy: job.remotePolicy,
-  compensationMin: job.compensationMin,
-  compensationMax: job.compensationMax,
-  compensationType: job.compensationType,
-  employmentType: job.employmentType,
-  yearsRequired: job.yearsRequired,
-  mustHaveSkills: job.mustHaveSkills,
-  niceToHaveSkills: job.niceToHaveSkills,
-  domain: job.domain,
-  description: job.rawDescription.slice(0, 3000),
-}, null, 2)}
+${JSON.stringify(
+  {
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    remotePolicy: job.remotePolicy,
+    compensationMin: job.compensationMin,
+    compensationMax: job.compensationMax,
+    compensationType: job.compensationType,
+    employmentType: job.employmentType,
+    yearsRequired: job.yearsRequired,
+    mustHaveSkills: job.mustHaveSkills,
+    niceToHaveSkills: job.niceToHaveSkills,
+    domain: job.domain,
+    description: job.rawDescription.slice(0, 3000),
+  },
+  null,
+  2,
+)}
 
 ## CANDIDATE
-${JSON.stringify({
-  currentTitle: profile.currentTitle,
-  currentCompany: profile.currentCompany,
-  yearsOfExperience: profile.yearsOfExperience,
-  location: profile.location,
-  remotePreference: profile.remotePreference,
-  salaryMin: profile.salaryMin,
-  salaryMax: profile.salaryMax,
-  salaryCurrency: profile.salaryCurrency,
-  visaRequired: profile.visaRequired,
-  skills: profile.skills.map((s) => ({
-    name: s.name,
-    category: s.category,
-    confidenceScore: s.confidenceScore,
-    yearsUsed: s.yearsUsed,
-  })),
-  experience: profile.experience.map((e) => ({
-    company: e.company,
-    title: e.title,
-    description: e.description,
-    skills: e.skills,
-    current: e.current,
-  })),
-  preferences: profile.preferences.map((p) => ({
-    key: p.key,
-    value: p.value,
-    category: p.category,
-  })),
-}, null, 2)}`;
+${JSON.stringify(
+  {
+    currentTitle: profile.currentTitle,
+    currentCompany: profile.currentCompany,
+    yearsOfExperience: profile.yearsOfExperience,
+    location: profile.location,
+    remotePreference: profile.remotePreference,
+    salaryMin: profile.salaryMin,
+    salaryMax: profile.salaryMax,
+    salaryCurrency: profile.salaryCurrency,
+    visaRequired: profile.visaRequired,
+    skills: profile.skills.map((s) => ({
+      name: s.name,
+      category: s.category,
+      confidenceScore: s.confidenceScore,
+      yearsUsed: s.yearsUsed,
+    })),
+    experience: profile.experience.map((e) => ({
+      company: e.company,
+      title: e.title,
+      description: e.description,
+      skills: e.skills,
+      current: e.current,
+    })),
+    preferences: profile.preferences.map((p) => ({
+      key: p.key,
+      value: p.value,
+      category: p.category,
+    })),
+  },
+  null,
+  2,
+)}`;
 
   try {
     const message = await client.messages.create({
@@ -382,12 +427,7 @@ async function scoreJobInternal(jobId: string, ctx: { tenantId: string; userId: 
   // Upsert: delete any existing score for this job+candidate, then insert fresh
   await db
     .delete(jobScores)
-    .where(
-      and(
-        eq(jobScores.jobId, jobId),
-        eq(jobScores.candidateId, candidate.id),
-      ),
-    );
+    .where(and(eq(jobScores.jobId, jobId), eq(jobScores.candidateId, candidate.id)));
 
   const scoreId = createId();
   const [score] = await db
@@ -429,13 +469,15 @@ async function fetchWithFirecrawl(url: string, apiKey: string): Promise<string> 
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({ url, formats: ['markdown'] }),
     });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new Error(`Firecrawl API error: ${response.status} ${response.statusText}${body ? ` - ${body.slice(0, 200)}` : ''}`);
+      throw new Error(
+        `Firecrawl API error: ${response.status} ${response.statusText}${body ? ` - ${body.slice(0, 200)}` : ''}`,
+      );
     }
     const data = await response.json();
     const markdown = data?.data?.markdown;
@@ -457,8 +499,9 @@ async function fetchDirect(url: string): Promise<string> {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
     });
     if (!response.ok) {
@@ -475,7 +518,11 @@ async function fetchDirect(url: string): Promise<string> {
  * Detect if a URL points to a search results page and extract individual job URLs.
  * Returns an array of job URLs if it's a search page, or empty array if it's a single posting.
  */
-async function extractJobUrlsFromPage(url: string, rawText: string, auditCtx?: { tenantId: string }): Promise<string[]> {
+async function extractJobUrlsFromPage(
+  url: string,
+  rawText: string,
+  auditCtx?: { tenantId: string },
+): Promise<string[]> {
   // Only attempt extraction for known job board search page patterns
   const searchPagePatterns = [
     /linkedin\.com\/jobs\/search/i,
@@ -514,7 +561,12 @@ Rules:
 - For Lever: look for individual position URLs
 - If no job URLs found or this is NOT a search results page, return { "jobUrls": [], "isSearchPage": false }
 - Maximum 25 URLs per page to avoid excessive API calls`,
-      messages: [{ role: 'user', content: `URL: ${url}\n\nPage content (first 8000 chars):\n${rawText.slice(0, 8000)}` }],
+      messages: [
+        {
+          role: 'user',
+          content: `URL: ${url}\n\nPage content (first 8000 chars):\n${rawText.slice(0, 8000)}`,
+        },
+      ],
     });
 
     const inputTokens = message.usage?.input_tokens ?? 0;
@@ -550,13 +602,18 @@ Rules:
 }
 
 /** Internal ingestion logic shared by ingestJobFromUrl and sync functions. */
-export async function ingestJobFromUrlInternal(url: string, ctx: { tenantId: string; userId: string }) {
+export async function ingestJobFromUrlInternal(
+  url: string,
+  ctx: { tenantId: string; userId: string },
+) {
   // 0. Deduplicate by URL first (fast check before expensive fetch+parse)
   const existingByUrl = await db.query.jobs.findFirst({
     where: and(eq(jobs.tenantId, ctx.tenantId), eq(jobs.sourceUrl, url)),
   });
   if (existingByUrl) {
-    const existingScore = await db.query.jobScores.findFirst({ where: eq(jobScores.jobId, existingByUrl.id) });
+    const existingScore = await db.query.jobScores.findFirst({
+      where: eq(jobScores.jobId, existingByUrl.id),
+    });
     return { ...existingByUrl, score: existingScore ?? null, deduplicated: true };
   }
 
@@ -670,108 +727,114 @@ export async function ingestJobFromUrlInternal(url: string, ctx: { tenantId: str
  * Ingest a job from a URL: fetch the page, parse with Claude, deduplicate,
  * save to DB, and auto-score.
  */
-export const ingestJobFromUrl = createServerFn({ method: 'POST' }).validator(
-  (data: { url: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`ingestJobFromUrl:${ctx.tenantId}`, 10);
-  return ingestJobFromUrlInternal(data.url, ctx);
-});
+export const ingestJobFromUrl = createServerFn({ method: 'POST' })
+  .validator((data: { url: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`ingestJobFromUrl:${ctx.tenantId}`, 10);
+    return ingestJobFromUrlInternal(data.url, ctx);
+  });
 
 /**
  * Parse a raw job description text with Claude. Returns structured data
  * without saving to the database (useful for manual paste / preview).
  */
-export const parseJobDescription = createServerFn({ method: 'POST' }).validator(
-  (data: { text: string }) => data,
-).handler(async ({ data }) => {
-  // Ensure the user is authenticated even for parsing
-  const ctx = await getTenantContext();
+export const parseJobDescription = createServerFn({ method: 'POST' })
+  .validator((data: { text: string }) => data)
+  .handler(async ({ data }) => {
+    // Ensure the user is authenticated even for parsing
+    const ctx = await getTenantContext();
 
-  if (!data.text || data.text.trim().length < 50) {
-    throw new Error('Job description text is too short. Provide at least 50 characters.');
-  }
+    if (!data.text || data.text.trim().length < 50) {
+      throw new Error('Job description text is too short. Provide at least 50 characters.');
+    }
 
-  const parsed = await callParseLLM(data.text.trim(), { tenantId: ctx.tenantId });
-  return parsed;
-});
+    const parsed = await callParseLLM(data.text.trim(), { tenantId: ctx.tenantId });
+    return parsed;
+  });
 
 /**
  * Ingest a job from raw pasted text: parse with Claude, deduplicate,
  * save to DB, and auto-score. No URL fetch needed.
  */
-export const ingestJobFromText = createServerFn({ method: 'POST' }).validator(
-  (data: { text: string; sourceLabel?: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`ingestJobFromUrl:${ctx.tenantId}`, 10);
+export const ingestJobFromText = createServerFn({ method: 'POST' })
+  .validator((data: { text: string; sourceLabel?: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`ingestJobFromUrl:${ctx.tenantId}`, 10);
 
-  if (!data.text || data.text.trim().length < 50) {
-    throw new Error('Job description text is too short. Provide at least 50 characters.');
-  }
+    if (!data.text || data.text.trim().length < 50) {
+      throw new Error('Job description text is too short. Provide at least 50 characters.');
+    }
 
-  const rawText = data.text.trim();
-  const parsed = await callParseLLM(rawText, { tenantId: ctx.tenantId });
+    const rawText = data.text.trim();
+    const parsed = await callParseLLM(rawText, { tenantId: ctx.tenantId });
 
-  // Deduplicate by content
-  const existing = await db.query.jobs.findFirst({
-    where: and(
-      eq(jobs.tenantId, ctx.tenantId),
-      eq(jobs.company, parsed.company),
-      eq(jobs.title, parsed.title),
-      eq(jobs.location, parsed.location),
-    ),
+    // Deduplicate by content
+    const existing = await db.query.jobs.findFirst({
+      where: and(
+        eq(jobs.tenantId, ctx.tenantId),
+        eq(jobs.company, parsed.company),
+        eq(jobs.title, parsed.title),
+        eq(jobs.location, parsed.location),
+      ),
+    });
+    if (existing) {
+      const existingScore = await db.query.jobScores.findFirst({
+        where: eq(jobScores.jobId, existing.id),
+      });
+      return { ...existing, score: existingScore ?? null, deduplicated: true };
+    }
+
+    const jobId = createId();
+    const applyUrl = parsed.applyUrl && parsed.applyUrl.startsWith('http') ? parsed.applyUrl : '';
+    const [job] = await db
+      .insert(jobs)
+      .values({
+        id: jobId,
+        tenantId: ctx.tenantId,
+        company: parsed.company,
+        title: parsed.title,
+        location: parsed.location,
+        remotePolicy: parsed.remotePolicy,
+        compensationMin: parsed.compensationMin,
+        compensationMax: parsed.compensationMax,
+        compensationCurrency: parsed.compensationCurrency,
+        compensationType: parsed.compensationType,
+        employmentType: parsed.employmentType,
+        yearsRequired: parsed.yearsRequired,
+        mustHaveSkills: parsed.mustHaveSkills,
+        niceToHaveSkills: parsed.niceToHaveSkills,
+        domain: parsed.domain,
+        sponsorship: parsed.sponsorship,
+        applyUrl: applyUrl || `pasted:${data.sourceLabel || 'manual'}`,
+        sourceUrl: `pasted:${data.sourceLabel || 'manual'}:${Date.now()}`,
+        rawDescription: rawText,
+        parsedDescription: parsed.description,
+      })
+      .returning();
+
+    let score = null;
+    try {
+      score = await scoreJobInternal(jobId, ctx);
+    } catch {
+      /* best-effort */
+    }
+    return { ...job, score, deduplicated: false };
   });
-  if (existing) {
-    const existingScore = await db.query.jobScores.findFirst({ where: eq(jobScores.jobId, existing.id) });
-    return { ...existing, score: existingScore ?? null, deduplicated: true };
-  }
-
-  const jobId = createId();
-  const applyUrl = parsed.applyUrl && parsed.applyUrl.startsWith('http') ? parsed.applyUrl : '';
-  const [job] = await db
-    .insert(jobs)
-    .values({
-      id: jobId,
-      tenantId: ctx.tenantId,
-      company: parsed.company,
-      title: parsed.title,
-      location: parsed.location,
-      remotePolicy: parsed.remotePolicy,
-      compensationMin: parsed.compensationMin,
-      compensationMax: parsed.compensationMax,
-      compensationCurrency: parsed.compensationCurrency,
-      compensationType: parsed.compensationType,
-      employmentType: parsed.employmentType,
-      yearsRequired: parsed.yearsRequired,
-      mustHaveSkills: parsed.mustHaveSkills,
-      niceToHaveSkills: parsed.niceToHaveSkills,
-      domain: parsed.domain,
-      sponsorship: parsed.sponsorship,
-      applyUrl: applyUrl || `pasted:${data.sourceLabel || 'manual'}`,
-      sourceUrl: `pasted:${data.sourceLabel || 'manual'}:${Date.now()}`,
-      rawDescription: rawText,
-      parsedDescription: parsed.description,
-    })
-    .returning();
-
-  let score = null;
-  try { score = await scoreJobInternal(jobId, ctx); } catch { /* best-effort */ }
-  return { ...job, score, deduplicated: false };
-});
 
 /**
  * Score a specific job against the current candidate's profile.
  * Uses a 2-pass Claude analysis for fit and competitiveness.
  */
-export const scoreJob = createServerFn({ method: 'POST' }).validator(
-  (data: { jobId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`scoreJob:${ctx.tenantId}`, 20);
-  const score = await scoreJobInternal(data.jobId, ctx);
-  return score;
-});
+export const scoreJob = createServerFn({ method: 'POST' })
+  .validator((data: { jobId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`scoreJob:${ctx.tenantId}`, 20);
+    const score = await scoreJobInternal(data.jobId, ctx);
+    return score;
+  });
 
 /**
  * Rescore all jobs for the current tenant/candidate.
@@ -810,7 +873,11 @@ export const rescoreAllJobs = createServerFn({ method: 'POST' }).handler(async (
     }
   }
 
-  return { count: scoredCount, total: allJobs.length, errors: errors.length > 0 ? errors : undefined };
+  return {
+    count: scoredCount,
+    total: allJobs.length,
+    errors: errors.length > 0 ? errors : undefined,
+  };
 });
 
 // ---------------------------------------------------------------------------
@@ -840,144 +907,141 @@ async function callResumeParserLLM(resumeText: string): Promise<ParsedResume> {
  * extracts structured profile data, and stores the parsed content on
  * the resume record. Returns the parsed data for preview/confirmation.
  */
-export const parseResume = createServerFn({ method: 'POST' }).validator(
-  (data: { resumeId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`parseResume:${ctx.tenantId}`, 10);
-  const candidate = await getCurrentCandidate(ctx);
+export const parseResume = createServerFn({ method: 'POST' })
+  .validator((data: { resumeId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`parseResume:${ctx.tenantId}`, 10);
+    const candidate = await getCurrentCandidate(ctx);
 
-  // 1. Load the resume record
-  const resume = await db.query.resumes.findFirst({
-    where: and(
-      eq(resumes.id, data.resumeId),
-      eq(resumes.candidateId, candidate.id),
-      eq(resumes.tenantId, ctx.tenantId),
-    ),
+    // 1. Load the resume record
+    const resume = await db.query.resumes.findFirst({
+      where: and(
+        eq(resumes.id, data.resumeId),
+        eq(resumes.candidateId, candidate.id),
+        eq(resumes.tenantId, ctx.tenantId),
+      ),
+    });
+
+    if (!resume) {
+      throw new Error('Resume not found');
+    }
+
+    // 2. Download the file content from S3
+    const downloadUrl = await getDownloadUrl(resume.storageKey);
+    const response = await fetch(downloadUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download resume file: ${response.status}`);
+    }
+
+    const fileContent = await response.text();
+
+    if (!fileContent || fileContent.trim().length < 20) {
+      throw new Error('Resume file appears to be empty or too short to parse.');
+    }
+
+    // 3. Send to Claude for structured extraction
+    const parsed = await callResumeParserLLM(fileContent.trim());
+
+    // 4. Store the parsed content on the resume record
+    await db
+      .update(resumes)
+      .set({
+        parsedContent: parsed,
+        updatedAt: new Date(),
+      })
+      .where(eq(resumes.id, resume.id));
+
+    return parsed;
   });
-
-  if (!resume) {
-    throw new Error('Resume not found');
-  }
-
-  // 2. Download the file content from S3
-  const downloadUrl = await getDownloadUrl(resume.storageKey);
-  const response = await fetch(downloadUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to download resume file: ${response.status}`);
-  }
-
-  const fileContent = await response.text();
-
-  if (!fileContent || fileContent.trim().length < 20) {
-    throw new Error('Resume file appears to be empty or too short to parse.');
-  }
-
-  // 3. Send to Claude for structured extraction
-  const parsed = await callResumeParserLLM(fileContent.trim());
-
-  // 4. Store the parsed content on the resume record
-  await db
-    .update(resumes)
-    .set({
-      parsedContent: parsed,
-      updatedAt: new Date(),
-    })
-    .where(eq(resumes.id, resume.id));
-
-  return parsed;
-});
 
 /**
  * Apply parsed resume data to the candidate profile. Updates the candidate's
  * basic info, bulk inserts skills, experience blocks, and projects.
  */
-export const applyParsedResume = createServerFn({ method: 'POST' }).validator(
-  (data: {
-    resumeId: string;
-    parsedData: ParsedResume;
-  }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`applyParsedResume:${ctx.tenantId}`, 10);
-  const candidate = await getCurrentCandidate(ctx);
+export const applyParsedResume = createServerFn({ method: 'POST' })
+  .validator((data: { resumeId: string; parsedData: ParsedResume }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`applyParsedResume:${ctx.tenantId}`, 10);
+    const candidate = await getCurrentCandidate(ctx);
 
-  // Verify the resume belongs to this candidate
-  const resume = await db.query.resumes.findFirst({
-    where: and(
-      eq(resumes.id, data.resumeId),
-      eq(resumes.candidateId, candidate.id),
-      eq(resumes.tenantId, ctx.tenantId),
-    ),
+    // Verify the resume belongs to this candidate
+    const resume = await db.query.resumes.findFirst({
+      where: and(
+        eq(resumes.id, data.resumeId),
+        eq(resumes.candidateId, candidate.id),
+        eq(resumes.tenantId, ctx.tenantId),
+      ),
+    });
+
+    if (!resume) {
+      throw new Error('Resume not found');
+    }
+
+    const parsed = data.parsedData;
+
+    // 1. Update candidate basic info
+    await db
+      .update(candidates)
+      .set({
+        headline: parsed.headline || candidate.headline,
+        summary: parsed.summary || candidate.summary,
+        yearsOfExperience: parsed.yearsOfExperience ?? candidate.yearsOfExperience,
+        currentTitle: parsed.currentTitle || candidate.currentTitle,
+        currentCompany: parsed.currentCompany ?? candidate.currentCompany,
+        location: parsed.location || candidate.location,
+        updatedAt: new Date(),
+      })
+      .where(eq(candidates.id, candidate.id));
+
+    // 2. Bulk insert skills
+    if (parsed.skills.length > 0) {
+      const skillValues = parsed.skills.map((s) => ({
+        candidateId: candidate.id,
+        name: s.name,
+        category: s.category,
+        confidenceScore: s.confidenceScore ?? 50,
+        yearsUsed: s.yearsUsed,
+      }));
+
+      await db.insert(skills).values(skillValues);
+    }
+
+    // 3. Bulk insert experience blocks
+    if (parsed.experience.length > 0) {
+      const experienceValues = parsed.experience.map((exp) => ({
+        candidateId: candidate.id,
+        company: exp.company,
+        title: exp.title,
+        location: exp.location || '',
+        startDate: new Date(exp.startDate),
+        endDate: exp.endDate ? new Date(exp.endDate) : undefined,
+        current: exp.current ?? false,
+        description: exp.description || '',
+        bullets: exp.bullets ?? [],
+        skills: exp.skills ?? [],
+      }));
+
+      await db.insert(experienceBlocks).values(experienceValues);
+    }
+
+    // 4. Bulk insert projects
+    if (parsed.projects.length > 0) {
+      const projectValues = parsed.projects.map((proj) => ({
+        candidateId: candidate.id,
+        name: proj.name,
+        description: proj.description || '',
+        url: proj.url,
+        skills: proj.skills ?? [],
+        highlights: proj.highlights ?? [],
+      }));
+
+      await db.insert(projects).values(projectValues);
+    }
+
+    return { success: true };
   });
-
-  if (!resume) {
-    throw new Error('Resume not found');
-  }
-
-  const parsed = data.parsedData;
-
-  // 1. Update candidate basic info
-  await db
-    .update(candidates)
-    .set({
-      headline: parsed.headline || candidate.headline,
-      summary: parsed.summary || candidate.summary,
-      yearsOfExperience: parsed.yearsOfExperience ?? candidate.yearsOfExperience,
-      currentTitle: parsed.currentTitle || candidate.currentTitle,
-      currentCompany: parsed.currentCompany ?? candidate.currentCompany,
-      location: parsed.location || candidate.location,
-      updatedAt: new Date(),
-    })
-    .where(eq(candidates.id, candidate.id));
-
-  // 2. Bulk insert skills
-  if (parsed.skills.length > 0) {
-    const skillValues = parsed.skills.map((s) => ({
-      candidateId: candidate.id,
-      name: s.name,
-      category: s.category,
-      confidenceScore: s.confidenceScore ?? 50,
-      yearsUsed: s.yearsUsed,
-    }));
-
-    await db.insert(skills).values(skillValues);
-  }
-
-  // 3. Bulk insert experience blocks
-  if (parsed.experience.length > 0) {
-    const experienceValues = parsed.experience.map((exp) => ({
-      candidateId: candidate.id,
-      company: exp.company,
-      title: exp.title,
-      location: exp.location || '',
-      startDate: new Date(exp.startDate),
-      endDate: exp.endDate ? new Date(exp.endDate) : undefined,
-      current: exp.current ?? false,
-      description: exp.description || '',
-      bullets: exp.bullets ?? [],
-      skills: exp.skills ?? [],
-    }));
-
-    await db.insert(experienceBlocks).values(experienceValues);
-  }
-
-  // 4. Bulk insert projects
-  if (parsed.projects.length > 0) {
-    const projectValues = parsed.projects.map((proj) => ({
-      candidateId: candidate.id,
-      name: proj.name,
-      description: proj.description || '',
-      url: proj.url,
-      skills: proj.skills ?? [],
-      highlights: proj.highlights ?? [],
-    }));
-
-    await db.insert(projects).values(projectValues);
-  }
-
-  return { success: true };
-});
 
 // ---------------------------------------------------------------------------
 // Resume Tailoring
@@ -1036,56 +1100,72 @@ async function callTailorResumeLLM(
   let outputTokens = 0;
 
   const userContent = `## JOB
-${JSON.stringify({
-  title: job.title,
-  company: job.company,
-  location: job.location,
-  remotePolicy: job.remotePolicy,
-  compensationMin: job.compensationMin,
-  compensationMax: job.compensationMax,
-  compensationType: job.compensationType,
-  employmentType: job.employmentType,
-  yearsRequired: job.yearsRequired,
-  mustHaveSkills: job.mustHaveSkills,
-  niceToHaveSkills: job.niceToHaveSkills,
-  domain: job.domain,
-  description: job.rawDescription.slice(0, 3000),
-}, null, 2)}
+${JSON.stringify(
+  {
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    remotePolicy: job.remotePolicy,
+    compensationMin: job.compensationMin,
+    compensationMax: job.compensationMax,
+    compensationType: job.compensationType,
+    employmentType: job.employmentType,
+    yearsRequired: job.yearsRequired,
+    mustHaveSkills: job.mustHaveSkills,
+    niceToHaveSkills: job.niceToHaveSkills,
+    domain: job.domain,
+    description: job.rawDescription.slice(0, 3000),
+  },
+  null,
+  2,
+)}
 
 ## CANDIDATE
-${JSON.stringify({
-  legalName: profile.legalName,
-  preferredName: profile.preferredName,
-  currentTitle: profile.currentTitle,
-  currentCompany: profile.currentCompany,
-  headline: profile.headline,
-  summary: profile.summary,
-  yearsOfExperience: profile.yearsOfExperience,
-  location: profile.location,
-  skills: profile.skills.map((s) => ({
-    name: s.name,
-    category: s.category,
-    confidenceScore: s.confidenceScore,
-    yearsUsed: s.yearsUsed,
-  })),
-  experience: profile.experience.map((e) => ({
-    company: e.company,
-    title: e.title,
-    startDate: e.startDate,
-    endDate: e.endDate,
-    current: e.current,
-    description: e.description,
-    bullets: e.bullets,
-    skills: e.skills,
-  })),
-}, null, 2)}
+${JSON.stringify(
+  {
+    legalName: profile.legalName,
+    preferredName: profile.preferredName,
+    currentTitle: profile.currentTitle,
+    currentCompany: profile.currentCompany,
+    headline: profile.headline,
+    summary: profile.summary,
+    yearsOfExperience: profile.yearsOfExperience,
+    location: profile.location,
+    skills: profile.skills.map((s) => ({
+      name: s.name,
+      category: s.category,
+      confidenceScore: s.confidenceScore,
+      yearsUsed: s.yearsUsed,
+    })),
+    experience: profile.experience.map((e) => ({
+      company: e.company,
+      title: e.title,
+      startDate: e.startDate,
+      endDate: e.endDate,
+      current: e.current,
+      description: e.description,
+      bullets: e.bullets,
+      skills: e.skills,
+    })),
+  },
+  null,
+  2,
+)}
 
-${scoreData ? `## EXISTING SCORE ANALYSIS
-${JSON.stringify({
-  overallScore: scoreData.overallScore,
-  recommendation: scoreData.recommendation,
-  reasoning: scoreData.reasoning,
-}, null, 2)}` : ''}
+${
+  scoreData
+    ? `## EXISTING SCORE ANALYSIS
+${JSON.stringify(
+  {
+    overallScore: scoreData.overallScore,
+    recommendation: scoreData.recommendation,
+    reasoning: scoreData.reasoning,
+  },
+  null,
+  2,
+)}`
+    : ''
+}
 
 Generate a tailored resume that emphasizes the candidate's most relevant qualifications for this specific role.`;
 
@@ -1153,10 +1233,7 @@ export const tailorResume = createServerFn({ method: 'POST' })
 
     // 3. Load existing score (if any)
     const existingScore = await db.query.jobScores.findFirst({
-      where: and(
-        eq(jobScores.jobId, data.jobId),
-        eq(jobScores.candidateId, candidate.id),
-      ),
+      where: and(eq(jobScores.jobId, data.jobId), eq(jobScores.candidateId, candidate.id)),
     });
 
     const scoreData = existingScore
@@ -1217,10 +1294,7 @@ export const getTailoredResume = createServerFn({ method: 'GET' })
     const ctx = await getTenantContext();
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) return null;
@@ -1252,10 +1326,7 @@ export const getOriginalProfile = createServerFn({ method: 'GET' })
     const ctx = await getTenantContext();
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) return null;

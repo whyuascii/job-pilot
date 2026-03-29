@@ -1,21 +1,21 @@
 import * as React from 'react';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
-  Plane,
+  AlertTriangle,
+  BookOpen,
   Calendar,
   Clock,
-  AlertTriangle,
-  TrendingDown,
   Compass,
+  Plane,
+  TrendingDown,
   User,
-  BookOpen,
 } from 'lucide-react';
-import { Button, Skeleton, Badge } from '@job-pilot/ui';
-import { api } from '~/lib/api-client';
+import { Badge, Button, Skeleton } from '@job-pilot/ui';
 import { ActiveMissions } from '~/components/active-missions';
 import { ActivityFeed } from '~/components/activity-feed';
 import { PipelineSnapshot } from '~/components/pipeline-snapshot';
 import { QuickAddForm } from '~/components/quick-add-form';
+import { api } from '~/lib/api-client';
 
 function DashboardSkeleton() {
   return (
@@ -47,7 +47,12 @@ function ControlTowerPage() {
   const router = useRouter();
   const [quickAddOpen, setQuickAddOpen] = React.useState(false);
 
-  async function handleActivityConfirm(itemId: string, itemType: string, action: string, actionData?: any) {
+  async function handleActivityConfirm(
+    itemId: string,
+    itemType: string,
+    action: string,
+    actionData?: any,
+  ) {
     await api.activity.confirm({ action, itemId, itemType, data: actionData });
     router.invalidate();
   }
@@ -126,48 +131,38 @@ function ControlTowerPage() {
 
 function SummaryBar({ summary }: { summary: any }) {
   const startDate = summary.searchStartDate
-    ? new Date(summary.searchStartDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? new Date(summary.searchStartDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
     : null;
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow">
+    <div className="bg-card rounded-xl border p-4 shadow">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         {/* Date range */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4" />
           {startDate ? (
-            <span>{startDate} — {today} <span className="font-medium text-foreground">{summary.searchDays}d</span></span>
+            <span>
+              {startDate} — {today}{' '}
+              <span className="text-foreground font-medium">{summary.searchDays}d</span>
+            </span>
           ) : (
             <span>Starting today</span>
           )}
         </div>
 
         {/* Divider */}
-        <div className="hidden sm:block h-6 w-px bg-border" />
+        <div className="bg-border hidden h-6 w-px sm:block" />
 
         {/* Stats */}
         <div className="flex flex-wrap items-center gap-4">
-          <SummaryStat
-            value={summary.total}
-            label="Total"
-            className="text-foreground"
-          />
-          <SummaryStat
-            value={summary.pending}
-            label="Pending"
-            className="text-amber-600"
-          />
-          <SummaryStat
-            value={summary.rejected}
-            label="Rejected"
-            className="text-red-500"
-          />
-          <SummaryStat
-            value={summary.inProgress}
-            label="In Progress"
-            className="text-sky-600"
-          />
+          <SummaryStat value={summary.total} label="Total" className="text-foreground" />
+          <SummaryStat value={summary.pending} label="Pending" className="text-amber-600" />
+          <SummaryStat value={summary.rejected} label="Rejected" className="text-red-500" />
+          <SummaryStat value={summary.inProgress} label="In Progress" className="text-sky-600" />
           <SummaryStat
             value={summary.declined}
             label="Declined"
@@ -179,31 +174,39 @@ function SummaryBar({ summary }: { summary: any }) {
   );
 }
 
-function SummaryStat({ value, label, className }: { value: number; label: string; className?: string }) {
+function SummaryStat({
+  value,
+  label,
+  className,
+}: {
+  value: number;
+  label: string;
+  className?: string;
+}) {
   return (
     <Link
       to="/applications"
-      className="group flex items-baseline gap-1.5 hover:opacity-80 transition-opacity"
+      className="group flex items-baseline gap-1.5 transition-opacity hover:opacity-80"
     >
       <span className={`text-xl font-bold ${className}`}>{value}</span>
-      <span className="text-xs text-muted-foreground group-hover:underline">{label}</span>
+      <span className="text-muted-foreground text-xs group-hover:underline">{label}</span>
     </Link>
   );
 }
 
 function EmptyDashboard({ onQuickAdd }: { onQuickAdd: () => void }) {
   return (
-    <div className="rounded-xl border bg-card p-10 shadow">
+    <div className="bg-card rounded-xl border p-10 shadow">
       <div className="flex flex-col items-center justify-center text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-50">
           <Plane className="h-8 w-8 text-sky-500" />
         </div>
-        <h2 className="text-lg font-semibold mb-1">Welcome to Control Tower</h2>
-        <p className="text-sm text-muted-foreground max-w-md mb-6">
-          Your job search command center will come alive as you track applications.
-          Get started by adding your first job or logging an external application.
+        <h2 className="mb-1 text-lg font-semibold">Welcome to Control Tower</h2>
+        <p className="text-muted-foreground mb-6 max-w-md text-sm">
+          Your job search command center will come alive as you track applications. Get started by
+          adding your first job or logging an external application.
         </p>
-        <div className="flex flex-col gap-2 w-full max-w-xs">
+        <div className="flex w-full max-w-xs flex-col gap-2">
           <Button variant="default" size="sm" className="w-full gap-2" onClick={onQuickAdd}>
             <Plane className="h-3.5 w-3.5" />
             Quick Add Application

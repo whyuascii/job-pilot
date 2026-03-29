@@ -1,73 +1,74 @@
 import * as React from 'react';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import {
-  User,
+  Ban,
   Briefcase,
-  Code,
-  Upload,
-  FolderOpen,
-  Settings2,
-  Plus,
-  Pencil,
-  Trash2,
-  Save,
-  X,
-  Check,
-  Star,
-  FileText,
-  Download,
-  MapPin,
-  Calendar,
   Building2,
-  Globe,
-  DollarSign,
-  Sliders,
-  Loader2,
-  Sparkles,
+  Calendar,
+  Check,
   ChevronDown,
   ChevronUp,
+  Code,
+  DollarSign,
+  Download,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  Github,
+  Globe,
   Link2,
   Linkedin,
-  Github,
-  ExternalLink,
-  Ban,
-  Printer,
+  Loader2,
   Mail,
+  MapPin,
+  Pencil,
   Phone,
+  Plus,
+  Printer,
+  Save,
+  Settings2,
+  Sliders,
+  Sparkles,
+  Star,
+  Trash2,
+  Upload,
+  User,
+  X,
 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Input,
-  Label,
-  Badge,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Separator,
-  Skeleton,
-  Textarea,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
+  Input,
+  Label,
+  Separator,
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
 } from '@job-pilot/ui';
-import { api } from '~/lib/api-client';
 import { ProfileCoachPanel } from '~/components/profile-coach';
+import { api } from '~/lib/api-client';
+import { captureEvent } from '~/lib/posthog';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
@@ -97,14 +98,15 @@ function ProfileSkeleton() {
 
 export const Route = createFileRoute('/profile')({
   loader: async () => {
-    const [candidate, resumeList, skillsList, experienceList, projectsList, preferencesList] = await Promise.all([
-      api.candidates.get(),
-      api.resumes.list(),
-      api.skills.list().catch(() => []),
-      api.experience.list().catch(() => []),
-      api.projects.list().catch(() => []),
-      api.preferences.list().catch(() => []),
-    ]);
+    const [candidate, resumeList, skillsList, experienceList, projectsList, preferencesList] =
+      await Promise.all([
+        api.candidates.get(),
+        api.resumes.list(),
+        api.skills.list().catch(() => []),
+        api.experience.list().catch(() => []),
+        api.projects.list().catch(() => []),
+        api.preferences.list().catch(() => []),
+      ]);
     return {
       candidate,
       resumes: resumeList,
@@ -185,9 +187,7 @@ function formatDisplayDate(dateStr: string | Date | null | undefined): string {
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
-function categoryBadgeVariant(
-  category: string
-): 'default' | 'secondary' | 'outline' {
+function categoryBadgeVariant(category: string): 'default' | 'secondary' | 'outline' {
   switch (category) {
     case 'language':
     case 'framework':
@@ -230,13 +230,11 @@ function ProfilePage() {
       {!candidate ? (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-20">
-            <User className="h-16 w-16 text-muted-foreground/20 mb-4" />
-            <h3 className="font-semibold text-lg mb-1">
-              No profile found
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-md text-center">
-              It looks like your candidate profile hasn't been created yet.
-              This usually happens automatically when you sign up.
+            <User className="text-muted-foreground/20 mb-4 h-16 w-16" />
+            <h3 className="mb-1 text-lg font-semibold">No profile found</h3>
+            <p className="text-muted-foreground max-w-md text-center text-sm">
+              It looks like your candidate profile hasn't been created yet. This usually happens
+              automatically when you sign up.
             </p>
           </CardContent>
         </Card>
@@ -245,7 +243,7 @@ function ProfilePage() {
           {/* Main Content */}
           <div className="min-w-0">
             <Tabs defaultValue="overview">
-              <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1">
+              <TabsList className="h-auto w-full flex-wrap justify-start gap-1 p-1">
                 <TabsTrigger value="overview" className="gap-1.5">
                   <User className="h-3.5 w-3.5" />
                   Overview
@@ -287,8 +285,13 @@ function ProfilePage() {
           </div>
 
           {/* AI Coach + Resume Sidebar */}
-          <div className="lg:order-last space-y-4">
-            <ProfileCoachPanel candidate={candidate} skills={skills} experience={experience} projects={projects} />
+          <div className="space-y-4 lg:order-last">
+            <ProfileCoachPanel
+              candidate={candidate}
+              skills={skills}
+              experience={experience}
+              projects={projects}
+            />
             <ResumeLibrary />
             <ResumeSidebar resumes={resumes} />
           </div>
@@ -379,7 +382,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
     <Card className="rounded-xl shadow">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <User className="h-5 w-5 text-muted-foreground" />
+          <User className="text-muted-foreground h-5 w-5" />
           <CardTitle>Basic Information</CardTitle>
         </div>
         <CardDescription>
@@ -389,33 +392,27 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
       <CardContent>
         {success && <SuccessBanner message="Profile updated successfully." />}
         {error && (
-          <div className="rounded-lg border border-red-300 bg-white px-4 py-3 text-sm text-red-700 mb-4">
+          <div className="mb-4 rounded-lg border border-red-300 bg-white px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSave} className="space-y-6 mt-4">
+        <form onSubmit={handleSave} className="mt-4 space-y-6">
           {/* Contact Information */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="email">
-                <Mail className="inline h-3.5 w-3.5 mr-1" />
+                <Mail className="mr-1 inline h-3.5 w-3.5" />
                 Email Address
               </Label>
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
+              <Input id="email" type="email" value={form.email} disabled className="bg-muted" />
+              <p className="text-muted-foreground text-xs">
                 Set from your login email — update in account settings
               </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">
-                <Phone className="inline h-3.5 w-3.5 mr-1" />
+                <Phone className="mr-1 inline h-3.5 w-3.5" />
                 Phone Number
               </Label>
               <Input
@@ -426,9 +423,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 value={form.phone}
                 onChange={(e) => updateField('phone', e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Used for job applications
-              </p>
+              <p className="text-muted-foreground text-xs">Used for job applications</p>
             </div>
           </div>
 
@@ -436,7 +431,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="legalName">
-                <User className="inline h-3.5 w-3.5 mr-1" />
+                <User className="mr-1 inline h-3.5 w-3.5" />
                 Legal Name
               </Label>
               <Input
@@ -446,14 +441,12 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 value={form.legalName}
                 onChange={(e) => updateField('legalName', e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Full legal name used on resumes and applications
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="preferredName">
-                Preferred / Nickname
-              </Label>
+              <Label htmlFor="preferredName">Preferred / Nickname</Label>
               <Input
                 id="preferredName"
                 placeholder="e.g. Johnny, Mike"
@@ -461,7 +454,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 value={form.preferredName}
                 onChange={(e) => updateField('preferredName', e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Optional — how you prefer to be addressed
               </p>
             </div>
@@ -477,9 +470,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
               value={form.headline}
               onChange={(e) => updateField('headline', e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              {form.headline.length}/200 characters
-            </p>
+            <p className="text-muted-foreground text-xs">{form.headline.length}/200 characters</p>
           </div>
 
           {/* Summary */}
@@ -489,21 +480,19 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
               id="summary"
               rows={5}
               maxLength={5000}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="A brief professional summary..."
               value={form.summary}
               onChange={(e) => updateField('summary', e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              {form.summary.length}/5000 characters
-            </p>
+            <p className="text-muted-foreground text-xs">{form.summary.length}/5000 characters</p>
           </div>
 
           {/* Title + Company */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="currentTitle">
-                <Briefcase className="inline h-3.5 w-3.5 mr-1" />
+                <Briefcase className="mr-1 inline h-3.5 w-3.5" />
                 Current Title
               </Label>
               <Input
@@ -515,7 +504,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="currentCompany">
-                <Building2 className="inline h-3.5 w-3.5 mr-1" />
+                <Building2 className="mr-1 inline h-3.5 w-3.5" />
                 Current Company (optional)
               </Label>
               <Input
@@ -537,14 +526,12 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 min={0}
                 max={50}
                 value={form.yearsOfExperience}
-                onChange={(e) =>
-                  updateField('yearsOfExperience', e.target.value)
-                }
+                onChange={(e) => updateField('yearsOfExperience', e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="location">
-                <MapPin className="inline h-3.5 w-3.5 mr-1" />
+                <MapPin className="mr-1 inline h-3.5 w-3.5" />
                 Location
               </Label>
               <Input
@@ -559,12 +546,12 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
           {/* Remote Preference */}
           <div className="space-y-2">
             <Label htmlFor="remotePreference">
-              <Globe className="inline h-3.5 w-3.5 mr-1" />
+              <Globe className="mr-1 inline h-3.5 w-3.5" />
               Remote Preference
             </Label>
             <select
               id="remotePreference"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
               value={form.remotePreference}
               onChange={(e) => updateField('remotePreference', e.target.value)}
             >
@@ -579,7 +566,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
           {/* Salary Range */}
           <div className="space-y-2">
             <Label>
-              <DollarSign className="inline h-3.5 w-3.5 mr-1" />
+              <DollarSign className="mr-1 inline h-3.5 w-3.5" />
               Salary Range
             </Label>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -593,7 +580,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                   value={form.salaryMin}
                   onChange={(e) => updateField('salaryMin', e.target.value)}
                 />
-                <p className="text-[10px] text-muted-foreground">Required</p>
+                <p className="text-muted-foreground text-[10px]">Required</p>
               </div>
               <div className="space-y-1">
                 <Input
@@ -603,10 +590,10 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                   value={form.salaryMax}
                   onChange={(e) => updateField('salaryMax', e.target.value)}
                 />
-                <p className="text-[10px] text-muted-foreground">Optional</p>
+                <p className="text-muted-foreground text-[10px]">Optional</p>
               </div>
               <select
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="border-input bg-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
                 value={form.salaryCurrency}
                 onChange={(e) => updateField('salaryCurrency', e.target.value)}
               >
@@ -624,7 +611,7 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
             <input
               id="visaRequired"
               type="checkbox"
-              className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+              className="border-input text-primary focus:ring-ring h-4 w-4 rounded"
               checked={form.visaRequired}
               onChange={(e) => updateField('visaRequired', e.target.checked)}
             />
@@ -641,7 +628,10 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
             </Label>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="linkedinUrl" className="text-xs text-muted-foreground flex items-center gap-1">
+                <Label
+                  htmlFor="linkedinUrl"
+                  className="text-muted-foreground flex items-center gap-1 text-xs"
+                >
                   <Linkedin className="h-3 w-3" />
                   LinkedIn
                 </Label>
@@ -654,7 +644,10 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="githubUrl" className="text-xs text-muted-foreground flex items-center gap-1">
+                <Label
+                  htmlFor="githubUrl"
+                  className="text-muted-foreground flex items-center gap-1 text-xs"
+                >
                   <Github className="h-3 w-3" />
                   GitHub
                 </Label>
@@ -667,7 +660,10 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="websiteUrl" className="text-xs text-muted-foreground flex items-center gap-1">
+                <Label
+                  htmlFor="websiteUrl"
+                  className="text-muted-foreground flex items-center gap-1 text-xs"
+                >
                   <Globe className="h-3 w-3" />
                   Website
                 </Label>
@@ -680,7 +676,10 @@ function OverviewTab({ candidate }: { candidate: Candidate }) {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="portfolioUrl" className="text-xs text-muted-foreground flex items-center gap-1">
+                <Label
+                  htmlFor="portfolioUrl"
+                  className="text-muted-foreground flex items-center gap-1 text-xs"
+                >
                   <ExternalLink className="h-3 w-3" />
                   Portfolio
                 </Label>
@@ -821,7 +820,7 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-muted-foreground" />
+          <Briefcase className="text-muted-foreground h-5 w-5" />
           <h2 className="text-lg font-semibold">Experience</h2>
           <Badge variant="secondary">{experience.length}</Badge>
         </div>
@@ -835,7 +834,7 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
 
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Experience</DialogTitle>
             <DialogDescription>Add a new experience entry to your profile.</DialogDescription>
@@ -853,9 +852,9 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
       {experience.length === 0 ? (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Briefcase className="h-12 w-12 text-muted-foreground/20 mb-3" />
-            <p className="font-medium mb-1">No experience added yet</p>
-            <p className="text-sm text-muted-foreground mb-4">
+            <Briefcase className="text-muted-foreground/20 mb-3 h-12 w-12" />
+            <p className="mb-1 font-medium">No experience added yet</p>
+            <p className="text-muted-foreground mb-4 text-sm">
               Add your work history to strengthen your applications.
             </p>
             <Button size="sm" onClick={() => setShowAdd(true)}>
@@ -867,85 +866,72 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
       ) : (
         experience.map((exp) => (
           <Card key={exp.id} className="rounded-xl shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold">{exp.title}</h3>
-                      {exp.current && (
-                        <Badge variant="success">Current</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Building2 className="h-3.5 w-3.5" />
-                        {exp.company}
-                      </span>
-                      {exp.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {exp.location}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDisplayDate(exp.startDate)} &mdash;{' '}
-                        {exp.current
-                          ? 'Present'
-                          : formatDisplayDate(exp.endDate)}
-                      </span>
-                    </div>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold">{exp.title}</h3>
+                    {exp.current && <Badge variant="success">Current</Badge>}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingId(exp.id)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeletingId(exp.id)}
-                      aria-label={`Delete experience at ${exp.company}`}
-                      className="hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                  <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="flex items-center gap-1">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {exp.company}
+                    </span>
+                    {exp.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {exp.location}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDisplayDate(exp.startDate)} &mdash;{' '}
+                      {exp.current ? 'Present' : formatDisplayDate(exp.endDate)}
+                    </span>
                   </div>
                 </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => setEditingId(exp.id)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeletingId(exp.id)}
+                    aria-label={`Delete experience at ${exp.company}`}
+                    className="hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              </div>
 
-                {exp.description && (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {exp.description}
-                  </p>
-                )}
+              {exp.description && (
+                <p className="text-muted-foreground mt-3 text-sm">{exp.description}</p>
+              )}
 
-                {(exp.bullets as string[])?.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {(exp.bullets as string[]).map((bullet, i) => (
-                      <li
-                        key={i}
-                        className="text-sm text-muted-foreground flex items-start gap-2"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              {(exp.bullets as string[])?.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {(exp.bullets as string[]).map((bullet, i) => (
+                    <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-                {(exp.skills as string[])?.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {(exp.skills as string[]).map((skill) => (
-                      <Badge key={skill} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+              {(exp.skills as string[])?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {(exp.skills as string[]).map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
         ))
       )}
@@ -954,8 +940,13 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
       {(() => {
         const editingExp = experience.find((e) => e.id === editingId);
         return (
-          <Dialog open={editingId !== null} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Dialog
+            open={editingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Experience</DialogTitle>
                 <DialogDescription>Update this experience entry.</DialogDescription>
@@ -990,7 +981,12 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
       {(() => {
         const deletingExp = experience.find((e) => e.id === deletingId);
         return (
-          <AlertDialog open={deletingId !== null} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <AlertDialog
+            open={deletingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDeletingId(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Experience?</AlertDialogTitle>
@@ -1003,7 +999,9 @@ function ExperienceTab({ experience }: { experience: Experience[] }) {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => { if (deletingId) handleDelete(deletingId); }}
+                  onClick={() => {
+                    if (deletingId) handleDelete(deletingId);
+                  }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Delete
@@ -1110,7 +1108,7 @@ function ExperienceForm({
         <input
           type="checkbox"
           id="current-role"
-          className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
+          className="border-input text-primary focus:ring-ring h-4 w-4 rounded"
           checked={form.current}
           onChange={(e) => {
             updateField('current', e.target.checked);
@@ -1124,7 +1122,7 @@ function ExperienceForm({
         <Label>Description</Label>
         <textarea
           rows={3}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           placeholder="Brief description of your role..."
           value={form.description}
           onChange={(e) => updateField('description', e.target.value)}
@@ -1149,12 +1147,7 @@ function ExperienceForm({
                 onChange={(e) => updateBullet(i, e.target.value)}
               />
               {form.bullets.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeBullet(i)}
-                >
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeBullet(i)}>
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -1292,7 +1285,7 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Code className="h-5 w-5 text-muted-foreground" />
+          <Code className="text-muted-foreground h-5 w-5" />
           <h2 className="text-lg font-semibold">Skills</h2>
         </div>
         <Button size="sm" onClick={() => setShowAdd(true)}>
@@ -1302,16 +1295,16 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
       </div>
 
       {/* Summary */}
-      <p className="text-sm text-muted-foreground">
-        {skills.length} skill{skills.length !== 1 ? 's' : ''} across{' '}
-        {uniqueCategories} categor{uniqueCategories !== 1 ? 'ies' : 'y'}
+      <p className="text-muted-foreground text-sm">
+        {skills.length} skill{skills.length !== 1 ? 's' : ''} across {uniqueCategories} categor
+        {uniqueCategories !== 1 ? 'ies' : 'y'}
       </p>
 
       {success && <SuccessBanner message={success} />}
 
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Skill</DialogTitle>
             <DialogDescription>Add a new skill to your profile.</DialogDescription>
@@ -1329,9 +1322,9 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
       {skills.length === 0 && (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Code className="h-12 w-12 text-muted-foreground/20 mb-3" />
-            <p className="font-medium mb-1">No skills added yet</p>
-            <p className="text-sm text-muted-foreground mb-4">
+            <Code className="text-muted-foreground/20 mb-3 h-12 w-12" />
+            <p className="mb-1 font-medium">No skills added yet</p>
+            <p className="text-muted-foreground mb-4 text-sm">
               Add your technical and professional skills.
             </p>
             <Button size="sm" onClick={() => setShowAdd(true)}>
@@ -1355,55 +1348,47 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
             <CardContent className="space-y-3">
               {catSkills.map((skill) => (
                 <div key={skill.id}>
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">
-                              {skill.name}
-                            </span>
-                            <Badge variant={categoryBadgeVariant(catValue)}>
-                              {catLabel}
-                            </Badge>
-                            {skill.yearsUsed != null && (
-                              <span className="text-xs text-muted-foreground">
-                                {skill.yearsUsed} yr{skill.yearsUsed !== 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-                          {/* Confidence Bar */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-sky-500 rounded-full transition-all"
-                                style={{
-                                  width: `${skill.confidenceScore ?? 50}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground w-8 text-right">
-                              {skill.confidenceScore ?? 50}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingId(skill.id)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeletingId(skill.id)}
-                            aria-label={`Delete skill ${skill.name}`}
-                            className="hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-sm font-medium">{skill.name}</span>
+                        <Badge variant={categoryBadgeVariant(catValue)}>{catLabel}</Badge>
+                        {skill.yearsUsed != null && (
+                          <span className="text-muted-foreground text-xs">
+                            {skill.yearsUsed} yr{skill.yearsUsed !== 1 ? 's' : ''}
+                          </span>
+                        )}
                       </div>
+                      {/* Confidence Bar */}
+                      <div className="flex items-center gap-2">
+                        <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+                          <div
+                            className="h-full rounded-full bg-sky-500 transition-all"
+                            style={{
+                              width: `${skill.confidenceScore ?? 50}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-muted-foreground w-8 text-right text-xs">
+                          {skill.confidenceScore ?? 50}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setEditingId(skill.id)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingId(skill.id)}
+                        aria-label={`Delete skill ${skill.name}`}
+                        className="hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -1415,8 +1400,13 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
       {(() => {
         const editingSkill = skills.find((s) => s.id === editingId);
         return (
-          <Dialog open={editingId !== null} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <Dialog
+            open={editingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Skill</DialogTitle>
                 <DialogDescription>Update this skill entry.</DialogDescription>
@@ -1444,7 +1434,12 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
       {(() => {
         const deletingSkill = skills.find((s) => s.id === deletingId);
         return (
-          <AlertDialog open={deletingId !== null} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <AlertDialog
+            open={deletingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDeletingId(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Skill?</AlertDialogTitle>
@@ -1457,7 +1452,9 @@ function SkillsTab({ skills }: { skills: Skill[] }) {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => { if (deletingId) handleDelete(deletingId); }}
+                  onClick={() => {
+                    if (deletingId) handleDelete(deletingId);
+                  }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Delete
@@ -1502,7 +1499,7 @@ function SkillForm({
         <div className="space-y-2">
           <Label>Category</Label>
           <select
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="border-input bg-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
             value={form.category}
             onChange={(e) => updateField('category', e.target.value)}
           >
@@ -1517,20 +1514,16 @@ function SkillForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>
-            Confidence Score: {form.confidenceScore}%
-          </Label>
+          <Label>Confidence Score: {form.confidenceScore}%</Label>
           <input
             type="range"
             min={0}
             max={100}
             value={form.confidenceScore}
-            onChange={(e) =>
-              updateField('confidenceScore', Number(e.target.value))
-            }
-            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-sky-500"
+            onChange={(e) => updateField('confidenceScore', Number(e.target.value))}
+            className="bg-muted h-2 w-full cursor-pointer appearance-none rounded-lg accent-sky-500"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Beginner</span>
             <span>Expert</span>
           </div>
@@ -1555,11 +1548,7 @@ function SkillForm({
           <X className="h-4 w-4" />
           Cancel
         </Button>
-        <Button
-          type="button"
-          disabled={loading || !form.name}
-          onClick={() => onSubmit(form)}
-        >
+        <Button type="button" disabled={loading || !form.name} onClick={() => onSubmit(form)}>
           <Save className="h-4 w-4" />
           {loading ? 'Saving...' : 'Save'}
         </Button>
@@ -1664,7 +1653,7 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FolderOpen className="h-5 w-5 text-muted-foreground" />
+          <FolderOpen className="text-muted-foreground h-5 w-5" />
           <h2 className="text-lg font-semibold">Projects</h2>
           <Badge variant="secondary">{projects.length}</Badge>
         </div>
@@ -1678,7 +1667,7 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
 
       {/* Add Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Project</DialogTitle>
             <DialogDescription>Add a new project to your profile.</DialogDescription>
@@ -1696,9 +1685,9 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
       {projects.length === 0 && (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <FolderOpen className="h-12 w-12 text-muted-foreground/20 mb-3" />
-            <p className="font-medium mb-1">No projects yet</p>
-            <p className="text-sm text-muted-foreground mb-4">
+            <FolderOpen className="text-muted-foreground/20 mb-3 h-12 w-12" />
+            <p className="mb-1 font-medium">No projects yet</p>
+            <p className="text-muted-foreground mb-4 text-sm">
               Showcase your side projects and portfolio work.
             </p>
             <Button size="sm" onClick={() => setShowAdd(true)}>
@@ -1712,73 +1701,64 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
       {/* Project Cards */}
       {projects.map((project) => (
         <Card key={project.id} className="rounded-xl shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold">{project.name}</h3>
-                    {project.url && (
-                      <a
-                        href={project.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-sky-600 hover:underline flex items-center gap-1"
-                      >
-                        <Globe className="h-3.5 w-3.5" />
-                        Link
-                      </a>
-                    )}
-                  </div>
-                  {project.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {project.description}
-                    </p>
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold">{project.name}</h3>
+                  {project.url && (
+                    <a
+                      href={project.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-sm text-sky-600 hover:underline"
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                      Link
+                    </a>
                   )}
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setEditingId(project.id)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeletingId(project.id)}
-                    aria-label={`Delete project ${project.name}`}
-                    className="hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
+                {project.description && (
+                  <p className="text-muted-foreground mt-1 text-sm">{project.description}</p>
+                )}
               </div>
+              <div className="flex shrink-0 gap-1">
+                <Button variant="ghost" size="icon" onClick={() => setEditingId(project.id)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeletingId(project.id)}
+                  aria-label={`Delete project ${project.name}`}
+                  className="hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
 
-              {(project.highlights as string[])?.length > 0 && (
-                <ul className="mt-3 space-y-1">
-                  {(project.highlights as string[]).map((highlight, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-muted-foreground flex items-start gap-2"
-                    >
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-              )}
+            {(project.highlights as string[])?.length > 0 && (
+              <ul className="mt-3 space-y-1">
+                {(project.highlights as string[]).map((highlight, i) => (
+                  <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
+                    {highlight}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-              {(project.skills as string[])?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {(project.skills as string[]).map((skill) => (
-                    <Badge key={skill} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </CardContent>
+            {(project.skills as string[])?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {(project.skills as string[]).map((skill) => (
+                  <Badge key={skill} variant="secondary">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
         </Card>
       ))}
 
@@ -1786,8 +1766,13 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
       {(() => {
         const editingProject = projects.find((p) => p.id === editingId);
         return (
-          <Dialog open={editingId !== null} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Dialog
+            open={editingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Project</DialogTitle>
                 <DialogDescription>Update this project entry.</DialogDescription>
@@ -1818,7 +1803,12 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
       {(() => {
         const deletingProject = projects.find((p) => p.id === deletingId);
         return (
-          <AlertDialog open={deletingId !== null} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <AlertDialog
+            open={deletingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDeletingId(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Project?</AlertDialogTitle>
@@ -1831,7 +1821,9 @@ function ProjectsTab({ projects }: { projects: Project[] }) {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => { if (deletingId) handleDelete(deletingId); }}
+                  onClick={() => {
+                    if (deletingId) handleDelete(deletingId);
+                  }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Delete
@@ -1899,7 +1891,7 @@ function ProjectForm({
         <Label>Description *</Label>
         <textarea
           rows={3}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           placeholder="Describe your project..."
           value={form.description}
           onChange={(e) => updateField('description', e.target.value)}
@@ -1929,12 +1921,7 @@ function ProjectForm({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Highlights</Label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={addHighlight}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={addHighlight}>
             <Plus className="h-3.5 w-3.5" />
             Add Highlight
           </Button>
@@ -1996,7 +1983,13 @@ const emptyPreferenceForm: PreferenceFormState = {
   category: 'role',
 };
 
-function PreferencesTab({ preferences, candidate }: { preferences: Preference[]; candidate: Candidate }) {
+function PreferencesTab({
+  preferences,
+  candidate,
+}: {
+  preferences: Preference[];
+  candidate: Candidate;
+}) {
   const router = useRouter();
   const [showAdd, setShowAdd] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -2114,7 +2107,7 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Settings2 className="h-5 w-5 text-muted-foreground" />
+        <Settings2 className="text-muted-foreground h-5 w-5" />
         <h2 className="text-lg font-semibold">Preferences</h2>
       </div>
 
@@ -2128,7 +2121,8 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
             <CardTitle className="text-base">Avoided Companies</CardTitle>
           </div>
           <CardDescription>
-            Companies you don't want to apply to. Jobs from these companies will be flagged with a warning.
+            Companies you don't want to apply to. Jobs from these companies will be flagged with a
+            warning.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -2137,7 +2131,12 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
               placeholder="Company name..."
               value={newCompany}
               onChange={(e) => setNewCompany(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddAvoidedCompany(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddAvoidedCompany();
+                }
+              }}
               disabled={savingAvoided}
             />
             <Button
@@ -2153,16 +2152,12 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
           {avoidedCompanies.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {avoidedCompanies.map((company) => (
-                <Badge
-                  key={company}
-                  variant="secondary"
-                  className="gap-1 pr-1 text-sm"
-                >
+                <Badge key={company} variant="secondary" className="gap-1 pr-1 text-sm">
                   {company}
                   <button
                     type="button"
                     onClick={() => handleRemoveAvoidedCompany(company)}
-                    className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    className="hover:bg-destructive/20 hover:text-destructive focus:ring-ring ml-0.5 rounded-full p-0.5 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1"
                     aria-label={`Remove ${company} from avoided companies`}
                     disabled={savingAvoided}
                   >
@@ -2172,7 +2167,7 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No companies avoided yet. Add companies you want to skip during your job search.
             </p>
           )}
@@ -2184,15 +2179,18 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sliders className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sliders className="text-muted-foreground h-4 w-4" />
                 Custom Preferences
                 {preferences.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">{preferences.length}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {preferences.length}
+                  </Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Additional job search criteria and personal notes. These inform AI scoring and tailoring.
+                Additional job search criteria and personal notes. These inform AI scoring and
+                tailoring.
               </CardDescription>
             </div>
             <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
@@ -2204,7 +2202,7 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
         <CardContent className="space-y-3">
           {/* Add Dialog */}
           <Dialog open={showAdd} onOpenChange={setShowAdd}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Preference</DialogTitle>
                 <DialogDescription>Add a new job search preference.</DialogDescription>
@@ -2221,9 +2219,10 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
           {/* Empty State */}
           {preferences.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Sliders className="h-10 w-10 text-muted-foreground/20 mb-2" />
-              <p className="text-sm text-muted-foreground mb-3">
-                No custom preferences set yet. Add criteria like preferred team size, tech stack requirements, or culture fit notes.
+              <Sliders className="text-muted-foreground/20 mb-2 h-10 w-10" />
+              <p className="text-muted-foreground mb-3 text-sm">
+                No custom preferences set yet. Add criteria like preferred team size, tech stack
+                requirements, or culture fit notes.
               </p>
               <Button size="sm" variant="outline" onClick={() => setShowAdd(true)}>
                 <Plus className="h-4 w-4" />
@@ -2239,35 +2238,37 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
 
             return (
               <div key={catValue} className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{catLabel}</h4>
+                <h4 className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                  {catLabel}
+                </h4>
                 {catPrefs.map((pref) => (
                   <div key={pref.id} className="rounded-md border p-3">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="min-w-0">
-                            <span className="text-sm font-medium">{pref.key}</span>
-                            <p className="text-sm text-muted-foreground mt-0.5">{pref.value}</p>
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => setEditingId(pref.id)}
-                              aria-label={`Edit ${pref.key}`}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => setDeletingId(pref.id)}
-                              aria-label={`Delete ${pref.key}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium">{pref.key}</span>
+                        <p className="text-muted-foreground mt-0.5 text-sm">{pref.value}</p>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditingId(pref.id)}
+                          aria-label={`Edit ${pref.key}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive h-8 w-8"
+                          onClick={() => setDeletingId(pref.id)}
+                          aria-label={`Delete ${pref.key}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2280,8 +2281,13 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
       {(() => {
         const editingPref = preferences.find((p) => p.id === editingId);
         return (
-          <Dialog open={editingId !== null} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <Dialog
+            open={editingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Preference</DialogTitle>
                 <DialogDescription>Update this preference entry.</DialogDescription>
@@ -2308,7 +2314,12 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
       {(() => {
         const deletingPref = preferences.find((p) => p.id === deletingId);
         return (
-          <AlertDialog open={deletingId !== null} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <AlertDialog
+            open={deletingId !== null}
+            onOpenChange={(open) => {
+              if (!open) setDeletingId(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Preference?</AlertDialogTitle>
@@ -2321,7 +2332,9 @@ function PreferencesTab({ preferences, candidate }: { preferences: Preference[];
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => { if (deletingId) handleDelete(deletingId); }}
+                  onClick={() => {
+                    if (deletingId) handleDelete(deletingId);
+                  }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Delete
@@ -2374,7 +2387,7 @@ function PreferenceForm({
         <div className="space-y-2">
           <Label>Category</Label>
           <select
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="border-input bg-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
             value={form.category}
             onChange={(e) => updateField('category', e.target.value)}
           >
@@ -2462,32 +2475,40 @@ function ResumeParsePreview({
   // Editable local state initialized from parsed data
   const [editData, setEditData] = React.useState<ParsedResumeData>(() => ({
     ...parsedData,
-    skills: parsedData.skills.map(s => ({ ...s })),
-    experience: parsedData.experience.map(e => ({ ...e, bullets: [...e.bullets], skills: [...e.skills] })),
-    projects: parsedData.projects.map(p => ({ ...p, skills: [...p.skills], highlights: [...p.highlights] })),
+    skills: parsedData.skills.map((s) => ({ ...s })),
+    experience: parsedData.experience.map((e) => ({
+      ...e,
+      bullets: [...e.bullets],
+      skills: [...e.skills],
+    })),
+    projects: parsedData.projects.map((p) => ({
+      ...p,
+      skills: [...p.skills],
+      highlights: [...p.highlights],
+    })),
   }));
 
   function updateProfile(field: keyof ParsedResumeData, value: unknown) {
-    setEditData(prev => ({ ...prev, [field]: value }));
+    setEditData((prev) => ({ ...prev, [field]: value }));
   }
 
   function removeSkill(index: number) {
-    setEditData(prev => ({ ...prev, skills: prev.skills.filter((_, i) => i !== index) }));
+    setEditData((prev) => ({ ...prev, skills: prev.skills.filter((_, i) => i !== index) }));
   }
 
   function removeExperience(index: number) {
-    setEditData(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
+    setEditData((prev) => ({ ...prev, experience: prev.experience.filter((_, i) => i !== index) }));
   }
 
   function updateExperience(index: number, field: string, value: unknown) {
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
-      experience: prev.experience.map((e, i) => i === index ? { ...e, [field]: value } : e),
+      experience: prev.experience.map((e, i) => (i === index ? { ...e, [field]: value } : e)),
     }));
   }
 
   function updateExperienceBullet(expIndex: number, bulletIndex: number, value: string) {
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
       experience: prev.experience.map((e, i) => {
         if (i !== expIndex) return e;
@@ -2499,7 +2520,7 @@ function ResumeParsePreview({
   }
 
   function removeExperienceBullet(expIndex: number, bulletIndex: number) {
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
       experience: prev.experience.map((e, i) => {
         if (i !== expIndex) return e;
@@ -2509,13 +2530,13 @@ function ResumeParsePreview({
   }
 
   function removeProject(index: number) {
-    setEditData(prev => ({ ...prev, projects: prev.projects.filter((_, i) => i !== index) }));
+    setEditData((prev) => ({ ...prev, projects: prev.projects.filter((_, i) => i !== index) }));
   }
 
   function updateProject(index: number, field: string, value: unknown) {
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
-      projects: prev.projects.map((p, i) => i === index ? { ...p, [field]: value } : p),
+      projects: prev.projects.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
     }));
   }
 
@@ -2537,7 +2558,7 @@ function ResumeParsePreview({
   }
 
   return (
-    <div className="rounded-xl border border-sky-300 bg-white p-4 space-y-4">
+    <div className="space-y-4 rounded-xl border border-sky-300 bg-white p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-sky-600" />
@@ -2548,7 +2569,9 @@ function ResumeParsePreview({
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground">Review and edit the parsed data below before applying it to your profile.</p>
+      <p className="text-muted-foreground text-xs">
+        Review and edit the parsed data below before applying it to your profile.
+      </p>
 
       {error && (
         <div className="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-red-700">
@@ -2556,19 +2579,12 @@ function ResumeParsePreview({
         </div>
       )}
 
-      {applied && (
-        <SuccessBanner message="Resume data applied to your profile successfully." />
-      )}
+      {applied && <SuccessBanner message="Resume data applied to your profile successfully." />}
 
       {/* Actions - shown at top for visibility */}
       {!applied ? (
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            disabled={applying}
-            onClick={handleApply}
-            className="flex-1"
-          >
+          <Button size="sm" disabled={applying} onClick={handleApply} className="flex-1">
             {applying ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -2595,61 +2611,63 @@ function ResumeParsePreview({
 
       {/* Editable Profile Fields */}
       <div className="space-y-2">
-        <div className="text-xs text-muted-foreground uppercase font-medium tracking-wider">Profile</div>
-        <div className="rounded-lg bg-background/60 p-3 space-y-3">
+        <div className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+          Profile
+        </div>
+        <div className="bg-background/60 space-y-3 rounded-lg p-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Headline</Label>
+            <Label className="text-muted-foreground text-xs">Headline</Label>
             <Input
               value={editData.headline}
-              onChange={e => updateProfile('headline', e.target.value)}
+              onChange={(e) => updateProfile('headline', e.target.value)}
               className="h-8 text-sm"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Title</Label>
+              <Label className="text-muted-foreground text-xs">Title</Label>
               <Input
                 value={editData.currentTitle}
-                onChange={e => updateProfile('currentTitle', e.target.value)}
+                onChange={(e) => updateProfile('currentTitle', e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Company</Label>
+              <Label className="text-muted-foreground text-xs">Company</Label>
               <Input
                 value={editData.currentCompany || ''}
-                onChange={e => updateProfile('currentCompany', e.target.value || null)}
+                onChange={(e) => updateProfile('currentCompany', e.target.value || null)}
                 className="h-8 text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Location</Label>
+              <Label className="text-muted-foreground text-xs">Location</Label>
               <Input
                 value={editData.location}
-                onChange={e => updateProfile('location', e.target.value)}
+                onChange={(e) => updateProfile('location', e.target.value)}
                 className="h-8 text-sm"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Years of Experience</Label>
+              <Label className="text-muted-foreground text-xs">Years of Experience</Label>
               <Input
                 type="number"
                 min={0}
                 value={editData.yearsOfExperience}
-                onChange={e => updateProfile('yearsOfExperience', parseInt(e.target.value) || 0)}
+                onChange={(e) => updateProfile('yearsOfExperience', parseInt(e.target.value) || 0)}
                 className="h-8 text-sm"
               />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Summary</Label>
+            <Label className="text-muted-foreground text-xs">Summary</Label>
             <Textarea
               value={editData.summary}
-              onChange={e => updateProfile('summary', e.target.value)}
+              onChange={(e) => updateProfile('summary', e.target.value)}
               rows={3}
-              className="text-sm resize-none"
+              className="resize-none text-sm"
             />
           </div>
         </div>
@@ -2660,7 +2678,7 @@ function ResumeParsePreview({
         <div>
           <button
             type="button"
-            className="flex items-center gap-1 text-xs text-muted-foreground uppercase font-medium tracking-wider hover:text-foreground transition-colors w-full mb-2"
+            className="text-muted-foreground hover:text-foreground mb-2 flex w-full items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors"
             onClick={() => setShowSkills(!showSkills)}
           >
             {showSkills ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -2669,10 +2687,10 @@ function ResumeParsePreview({
           {showSkills && (
             <div className="flex flex-wrap gap-1.5">
               {editData.skills.map((skill, i) => (
-                <Badge key={i} variant="secondary" className="text-xs py-1 pr-1 gap-1">
+                <Badge key={i} variant="secondary" className="gap-1 py-1 pr-1 text-xs">
                   {skill.name}
                   {skill.category && (
-                    <span className="opacity-50 capitalize">({skill.category})</span>
+                    <span className="capitalize opacity-50">({skill.category})</span>
                   )}
                   {skill.yearsUsed != null && (
                     <span className="text-sky-600">{skill.yearsUsed}y</span>
@@ -2680,7 +2698,7 @@ function ResumeParsePreview({
                   <button
                     type="button"
                     onClick={() => removeSkill(i)}
-                    className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors"
+                    className="hover:bg-destructive/20 hover:text-destructive ml-0.5 rounded-full p-0.5 transition-colors"
                     aria-label={`Remove ${skill.name}`}
                   >
                     <X className="h-3 w-3" />
@@ -2697,34 +2715,41 @@ function ResumeParsePreview({
         <div>
           <button
             type="button"
-            className="flex items-center gap-1 text-xs text-muted-foreground uppercase font-medium tracking-wider hover:text-foreground transition-colors w-full mb-2"
+            className="text-muted-foreground hover:text-foreground mb-2 flex w-full items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors"
             onClick={() => setShowExperience(!showExperience)}
           >
-            {showExperience ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showExperience ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
             Experience ({editData.experience.length})
           </button>
           {showExperience && (
             <div className="space-y-3">
               {editData.experience.map((exp, i) => (
-                <div key={i} className="rounded-lg bg-background/60 p-3 border-l-2 border-sky-400 space-y-2">
+                <div
+                  key={i}
+                  className="bg-background/60 space-y-2 rounded-lg border-l-2 border-sky-400 p-3"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 space-y-2">
                       <Input
                         value={exp.title}
-                        onChange={e => updateExperience(i, 'title', e.target.value)}
+                        onChange={(e) => updateExperience(i, 'title', e.target.value)}
                         placeholder="Job title"
                         className="h-7 text-sm font-semibold"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <Input
                           value={exp.company}
-                          onChange={e => updateExperience(i, 'company', e.target.value)}
+                          onChange={(e) => updateExperience(i, 'company', e.target.value)}
                           placeholder="Company"
                           className="h-7 text-xs"
                         />
                         <Input
                           value={exp.location}
-                          onChange={e => updateExperience(i, 'location', e.target.value)}
+                          onChange={(e) => updateExperience(i, 'location', e.target.value)}
                           placeholder="Location"
                           className="h-7 text-xs"
                         />
@@ -2733,7 +2758,7 @@ function ResumeParsePreview({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 shrink-0 text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10 h-7 w-7 shrink-0"
                       onClick={() => removeExperience(i)}
                       aria-label={`Remove ${exp.title} at ${exp.company}`}
                     >
@@ -2741,26 +2766,26 @@ function ResumeParsePreview({
                     </Button>
                   </div>
                   {exp.startDate && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {formatDisplayDate(exp.startDate)} &mdash;{' '}
                       {exp.current ? 'Present' : formatDisplayDate(exp.endDate)}
                     </p>
                   )}
                   {exp.bullets && exp.bullets.length > 0 && (
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Bullets</Label>
+                      <Label className="text-muted-foreground text-xs">Bullets</Label>
                       {exp.bullets.map((bullet, j) => (
                         <div key={j} className="flex items-start gap-1">
                           <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-sky-400" />
                           <Input
                             value={bullet}
-                            onChange={e => updateExperienceBullet(i, j, e.target.value)}
-                            className="h-7 text-xs flex-1"
+                            onChange={(e) => updateExperienceBullet(i, j, e.target.value)}
+                            className="h-7 flex-1 text-xs"
                           />
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                            className="text-muted-foreground hover:text-destructive h-7 w-7 shrink-0"
                             onClick={() => removeExperienceBullet(i, j)}
                             aria-label="Remove bullet"
                           >
@@ -2773,7 +2798,7 @@ function ResumeParsePreview({
                   {exp.skills && exp.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {exp.skills.map((skill, j) => (
-                        <Badge key={j} variant="outline" className="text-[10px] py-0">
+                        <Badge key={j} variant="outline" className="py-0 text-[10px]">
                           {skill}
                         </Badge>
                       ))}
@@ -2791,7 +2816,7 @@ function ResumeParsePreview({
         <div>
           <button
             type="button"
-            className="flex items-center gap-1 text-xs text-muted-foreground uppercase font-medium tracking-wider hover:text-foreground transition-colors w-full mb-2"
+            className="text-muted-foreground hover:text-foreground mb-2 flex w-full items-center gap-1 text-xs font-medium uppercase tracking-wider transition-colors"
             onClick={() => setShowProjects(!showProjects)}
           >
             {showProjects ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -2800,18 +2825,21 @@ function ResumeParsePreview({
           {showProjects && (
             <div className="space-y-2">
               {editData.projects.map((proj, i) => (
-                <div key={i} className="rounded-lg bg-background/60 p-3 border-l-2 border-sky-400 space-y-2">
+                <div
+                  key={i}
+                  className="bg-background/60 space-y-2 rounded-lg border-l-2 border-sky-400 p-3"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <Input
                       value={proj.name}
-                      onChange={e => updateProject(i, 'name', e.target.value)}
+                      onChange={(e) => updateProject(i, 'name', e.target.value)}
                       placeholder="Project name"
-                      className="h-7 text-sm font-semibold flex-1"
+                      className="h-7 flex-1 text-sm font-semibold"
                     />
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 shrink-0 text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10 h-7 w-7 shrink-0"
                       onClick={() => removeProject(i)}
                       aria-label={`Remove ${proj.name}`}
                     >
@@ -2820,15 +2848,15 @@ function ResumeParsePreview({
                   </div>
                   <Textarea
                     value={proj.description}
-                    onChange={e => updateProject(i, 'description', e.target.value)}
+                    onChange={(e) => updateProject(i, 'description', e.target.value)}
                     placeholder="Description"
                     rows={2}
-                    className="text-xs resize-none"
+                    className="resize-none text-xs"
                   />
                   {proj.skills && proj.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {proj.skills.map((skill, j) => (
-                        <Badge key={j} variant="outline" className="text-[10px] py-0">
+                        <Badge key={j} variant="outline" className="py-0 text-[10px]">
                           {skill}
                         </Badge>
                       ))}
@@ -2907,12 +2935,11 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
         contentType: file.type,
       });
 
+      captureEvent('resume_uploaded', { fileName: file.name, contentType: file.type });
       showSuccess('Resume uploaded successfully.');
       router.invalidate();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to upload resume'
-      );
+      setError(err instanceof Error ? err.message : 'Failed to upload resume');
     } finally {
       setUploading(false);
     }
@@ -2974,6 +3001,7 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
     setParsedResult(null);
     try {
       const result = await api.ai.parseResume({ resumeId });
+      captureEvent('resume_parsed', { resumeId });
       setParsedResult({ resumeId, data: result as ParsedResumeData });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to parse resume.');
@@ -2996,15 +3024,13 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
   }
 
   return (
-    <Card className="rounded-xl shadow sticky top-6">
+    <Card className="sticky top-6 rounded-xl shadow">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-muted-foreground" />
+          <FileText className="text-muted-foreground h-5 w-5" />
           <CardTitle className="text-base">Resumes</CardTitle>
         </div>
-        <CardDescription>
-          Upload and manage your resume files.
-        </CardDescription>
+        <CardDescription>Upload and manage your resume files.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
@@ -3025,10 +3051,10 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
 
         {/* Upload Zone */}
         <div
-          className={`flex flex-col items-center rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer ${
+          className={`flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed p-6 transition-colors ${
             dragOver
               ? 'border-sky-500 bg-white'
-              : 'border-muted-foreground/25 hover:border-sky-400 hover:bg-muted/50'
+              : 'border-muted-foreground/25 hover:bg-muted/50 hover:border-sky-400'
           } ${uploading ? 'pointer-events-none opacity-60' : ''}`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -3045,17 +3071,13 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
             className="hidden"
             onChange={handleFileSelect}
           />
-          <Upload className="h-8 w-8 text-muted-foreground/40 mb-2" />
+          <Upload className="text-muted-foreground/40 mb-2 h-8 w-8" />
           {uploading ? (
-            <p className="text-sm text-muted-foreground text-center">
-              Uploading...
-            </p>
+            <p className="text-muted-foreground text-center text-sm">Uploading...</p>
           ) : (
             <>
-              <p className="text-sm font-medium text-center">
-                Drop a resume here
-              </p>
-              <p className="text-xs text-muted-foreground text-center mt-1">
+              <p className="text-center text-sm font-medium">Drop a resume here</p>
+              <p className="text-muted-foreground mt-1 text-center text-xs">
                 PDF, DOCX, or TXT (max 10MB)
               </p>
             </>
@@ -3067,16 +3089,11 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
           <div className="space-y-3">
             <Separator />
             {resumes.map((resume) => (
-              <div
-                key={resume.id}
-                className="rounded-lg border bg-muted/30 p-3 space-y-2"
-              >
+              <div key={resume.id} className="bg-muted/30 space-y-2 rounded-lg border p-3">
                 {/* Delete Confirmation */}
                 {deletingId === resume.id && (
                   <div className="rounded-lg border border-red-300 bg-white p-3">
-                    <p className="text-xs font-medium text-red-700 mb-2">
-                      Delete this resume?
-                    </p>
+                    <p className="mb-2 text-xs font-medium text-red-700">Delete this resume?</p>
                     <div className="flex gap-2">
                       <Button
                         variant="destructive"
@@ -3086,11 +3103,7 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
                       >
                         Delete
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDeletingId(null)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => setDeletingId(null)}>
                         Cancel
                       </Button>
                     </div>
@@ -3102,27 +3115,23 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
                   <div className="rounded-lg border border-sky-300 bg-white p-3">
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin text-sky-600" />
-                      <p className="text-xs font-medium text-sky-700">
-                        Analyzing flight manual...
-                      </p>
+                      <p className="text-xs font-medium text-sky-700">Analyzing flight manual...</p>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {resume.isPreferred && (
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                        <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
                       )}
-                      <p className="text-sm font-medium truncate">
-                        {resume.name}
-                      </p>
+                      <p className="truncate text-sm font-medium">{resume.name}</p>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       {getTypeBadge(resume.type)}
                       {resume.createdAt && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {new Date(resume.createdAt).toLocaleDateString()}
                         </span>
                       )}
@@ -3130,7 +3139,7 @@ function ResumeSidebar({ resumes }: { resumes: Resume[] }) {
                   </div>
                 </div>
 
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex flex-wrap gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -3205,7 +3214,8 @@ function ResumeLibrary() {
   }
 
   React.useEffect(() => {
-    api.ai.getResumeLibrary()
+    api.ai
+      .getResumeLibrary()
       .then(setTailoredResumes)
       .catch(() => setTailoredResumes([]))
       .finally(() => setLoading(false));
@@ -3215,11 +3225,14 @@ function ResumeLibrary() {
   if (tailoredResumes.length === 0) return null;
 
   // Group by job
-  const byJob = tailoredResumes.reduce((acc: Record<string, any[]>, r: any) => {
-    if (!acc[r.jobId]) acc[r.jobId] = [];
-    acc[r.jobId].push(r);
-    return acc;
-  }, {} as Record<string, any[]>);
+  const byJob = tailoredResumes.reduce(
+    (acc: Record<string, any[]>, r: any) => {
+      if (!acc[r.jobId]) acc[r.jobId] = [];
+      acc[r.jobId].push(r);
+      return acc;
+    },
+    {} as Record<string, any[]>,
+  );
 
   const jobEntries = Object.entries(byJob);
 
@@ -3228,11 +3241,17 @@ function ResumeLibrary() {
       <CardHeader className="cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 text-muted-foreground" />
+            <FolderOpen className="text-muted-foreground h-5 w-5" />
             <CardTitle className="text-base">Resume Library</CardTitle>
-            <Badge variant="secondary" className="text-xs">{tailoredResumes.length}</Badge>
+            <Badge variant="secondary" className="text-xs">
+              {tailoredResumes.length}
+            </Badge>
           </div>
-          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          {expanded ? (
+            <ChevronUp className="text-muted-foreground h-4 w-4" />
+          ) : (
+            <ChevronDown className="text-muted-foreground h-4 w-4" />
+          )}
         </div>
         <CardDescription>
           All tailored resume versions across your job applications.
@@ -3243,11 +3262,11 @@ function ResumeLibrary() {
           {jobEntries.map(([jobId, versions]) => {
             const latest = versions[0]; // Already sorted by createdAt desc
             return (
-              <div key={jobId} className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div key={jobId} className="bg-muted/30 space-y-2 rounded-lg border p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{latest.jobTitle}</p>
-                    <p className="text-xs text-muted-foreground">{latest.jobCompany}</p>
+                    <p className="truncate text-sm font-medium">{latest.jobTitle}</p>
+                    <p className="text-muted-foreground text-xs">{latest.jobCompany}</p>
                   </div>
                   <Badge variant="outline" className="shrink-0 text-[10px]">
                     {versions.length} version{versions.length > 1 ? 's' : ''}
@@ -3258,19 +3277,19 @@ function ResumeLibrary() {
                   {versions.map((v: any) => (
                     <div
                       key={v.id}
-                      className="flex items-center justify-between rounded px-2 py-1.5 text-xs hover:bg-muted/60 transition-colors group"
+                      className="hover:bg-muted/60 group flex items-center justify-between rounded px-2 py-1.5 text-xs transition-colors"
                     >
                       <a
                         href={`/jobs/${v.jobId}`}
-                        className="flex items-center gap-2 min-w-0 flex-1"
+                        className="flex min-w-0 flex-1 items-center gap-2"
                       >
-                        <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <FileText className="text-muted-foreground h-3 w-3 shrink-0" />
                         <span className="truncate">v{v.version}</span>
                         {v.skillCount > 0 && (
                           <span className="text-muted-foreground">{v.skillCount} skills</span>
                         )}
                       </a>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         <span className="text-muted-foreground">
                           {new Date(v.createdAt).toLocaleDateString()}
                         </span>
@@ -3293,7 +3312,7 @@ function ResumeLibrary() {
                   ))}
                 </div>
                 {latest.summary && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                  <p className="text-muted-foreground line-clamp-2 text-xs italic">
                     {latest.summary}...
                   </p>
                 )}

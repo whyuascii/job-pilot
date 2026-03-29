@@ -1,9 +1,30 @@
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lte,
+  min,
+  notInArray,
+  or,
+  sql,
+} from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { jobs, applications, jobScores, candidates, outcomes, tailoredResumes, recruiterMessages } from '@job-pilot/db/schema';
-import { eq, and, desc, count, sql, gte, notInArray, min, isNull, isNotNull, lte, or } from 'drizzle-orm';
-import { getTenantContext } from '../lib/context.js';
+import {
+  applications,
+  candidates,
+  jobs,
+  jobScores,
+  outcomes,
+  recruiterMessages,
+  tailoredResumes,
+} from '@job-pilot/db/schema';
 import { cacheGet, cacheSet } from '../lib/cache.js';
+import { getTenantContext } from '../lib/context.js';
 
 const TERMINAL_STATUSES = ['rejected', 'withdrawn', 'accepted', 'offer_declined'];
 const INTERVIEW_STAGES = ['interview', 'phone_screen', 'final_round', 'offer', 'accepted'];
@@ -31,7 +52,10 @@ router.get('/stats', async (_req, res, next) => {
     const ctx = getTenantContext();
     const cacheKey = `dashboard:${ctx.tenantId}:stats`;
     const cached = await cacheGet(cacheKey);
-    if (cached) { res.json(cached); return; }
+    if (cached) {
+      res.json(cached);
+      return;
+    }
 
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -48,42 +72,61 @@ router.get('/stats', async (_req, res, next) => {
       recentOutcomes,
     ] = await Promise.all([
       db.select({ count: count() }).from(jobs).where(eq(jobs.tenantId, ctx.tenantId)),
-      db.select({ count: count() }).from(applications).where(eq(applications.tenantId, ctx.tenantId)),
-      db.select({ count: count() }).from(applications).where(
-        and(eq(applications.tenantId, ctx.tenantId), notInArray(applications.status, TERMINAL_STATUSES)),
-      ),
-      db.select({ count: count() }).from(outcomes)
+      db
+        .select({ count: count() })
+        .from(applications)
+        .where(eq(applications.tenantId, ctx.tenantId)),
+      db
+        .select({ count: count() })
+        .from(applications)
+        .where(
+          and(
+            eq(applications.tenantId, ctx.tenantId),
+            notInArray(applications.status, TERMINAL_STATUSES),
+          ),
+        ),
+      db
+        .select({ count: count() })
+        .from(outcomes)
         .innerJoin(applications, eq(outcomes.applicationId, applications.id))
-        .where(and(
-          eq(applications.tenantId, ctx.tenantId),
-          sql`${outcomes.stage} = ANY(ARRAY['interview', 'phone_screen', 'final_round', 'offer', 'accepted'])`,
-        )),
-      db.select({ count: count() }).from(tailoredResumes).where(eq(tailoredResumes.tenantId, ctx.tenantId)),
+        .where(
+          and(
+            eq(applications.tenantId, ctx.tenantId),
+            sql`${outcomes.stage} = ANY(ARRAY['interview', 'phone_screen', 'final_round', 'offer', 'accepted'])`,
+          ),
+        ),
+      db
+        .select({ count: count() })
+        .from(tailoredResumes)
+        .where(eq(tailoredResumes.tenantId, ctx.tenantId)),
       db.query.jobs.findMany({
         where: and(eq(jobs.tenantId, ctx.tenantId), gte(jobs.createdAt, sevenDaysAgo)),
         orderBy: [desc(jobs.createdAt)],
         limit: 10,
       }),
-      db.select({ status: applications.status, count: count() })
+      db
+        .select({ status: applications.status, count: count() })
         .from(applications)
         .where(eq(applications.tenantId, ctx.tenantId))
         .groupBy(applications.status),
-      db.select({
-        overallScore: jobScores.overallScore,
-        fitScore: jobScores.fitScore,
-        competitivenessScore: jobScores.competitivenessScore,
-        recommendation: jobScores.recommendation,
-      })
+      db
+        .select({
+          overallScore: jobScores.overallScore,
+          fitScore: jobScores.fitScore,
+          competitivenessScore: jobScores.competitivenessScore,
+          recommendation: jobScores.recommendation,
+        })
         .from(jobScores)
         .innerJoin(jobs, eq(jobScores.jobId, jobs.id))
         .where(eq(jobs.tenantId, ctx.tenantId)),
-      db.select({
-        id: outcomes.id,
-        stage: outcomes.stage,
-        notes: outcomes.notes,
-        occurredAt: outcomes.occurredAt,
-        applicationId: outcomes.applicationId,
-      })
+      db
+        .select({
+          id: outcomes.id,
+          stage: outcomes.stage,
+          notes: outcomes.notes,
+          occurredAt: outcomes.occurredAt,
+          applicationId: outcomes.applicationId,
+        })
         .from(outcomes)
         .innerJoin(applications, eq(outcomes.applicationId, applications.id))
         .where(eq(applications.tenantId, ctx.tenantId))
@@ -158,7 +201,9 @@ router.get('/stats', async (_req, res, next) => {
 
     await cacheSet(cacheKey, result, 300);
     res.json(result);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -169,7 +214,10 @@ router.get('/control-tower', async (_req, res, next) => {
     const ctx = getTenantContext();
     const cacheKey = `dashboard:${ctx.tenantId}:control-tower`;
     const cached = await cacheGet(cacheKey);
-    if (cached) { res.json(cached); return; }
+    if (cached) {
+      res.json(cached);
+      return;
+    }
 
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -178,79 +226,74 @@ router.get('/control-tower', async (_req, res, next) => {
     // -----------------------------------------------------------------------
     // Parallel data fetches
     // -----------------------------------------------------------------------
-    const [
-      allApps,
-      unreviewedEmails,
-      recentOutcomeRows,
-      earliestApplied,
-    ] = await Promise.all([
+    const [allApps, unreviewedEmails, recentOutcomeRows, earliestApplied] = await Promise.all([
       // All applications for this tenant, joined with jobs and scores
-      db.select({
-        id: applications.id,
-        jobId: applications.jobId,
-        status: applications.status,
-        subStatus: applications.subStatus,
-        statusNote: applications.statusNote,
-        appliedAt: applications.appliedAt,
-        lastActivityAt: applications.lastActivityAt,
-        rejectedAt: applications.rejectedAt,
-        declinedByUser: applications.declinedByUser,
-        compMin: applications.compMin,
-        compMax: applications.compMax,
-        equityDetails: applications.equityDetails,
-        candidateId: applications.candidateId,
-        jobTitle: jobs.title,
-        jobCompany: jobs.company,
-        score: jobScores.overallScore,
-      })
+      db
+        .select({
+          id: applications.id,
+          jobId: applications.jobId,
+          status: applications.status,
+          subStatus: applications.subStatus,
+          statusNote: applications.statusNote,
+          appliedAt: applications.appliedAt,
+          lastActivityAt: applications.lastActivityAt,
+          rejectedAt: applications.rejectedAt,
+          declinedByUser: applications.declinedByUser,
+          compMin: applications.compMin,
+          compMax: applications.compMax,
+          equityDetails: applications.equityDetails,
+          candidateId: applications.candidateId,
+          jobTitle: jobs.title,
+          jobCompany: jobs.company,
+          score: jobScores.overallScore,
+        })
         .from(applications)
         .innerJoin(jobs, eq(applications.jobId, jobs.id))
-        .leftJoin(jobScores, and(
-          eq(jobScores.jobId, applications.jobId),
-          eq(jobScores.candidateId, applications.candidateId),
-        ))
+        .leftJoin(
+          jobScores,
+          and(
+            eq(jobScores.jobId, applications.jobId),
+            eq(jobScores.candidateId, applications.candidateId),
+          ),
+        )
         .where(eq(applications.tenantId, ctx.tenantId)),
 
       // Unreviewed recruiter emails
-      db.select({
-        id: recruiterMessages.id,
-        from: recruiterMessages.from,
-        subject: recruiterMessages.subject,
-        receivedAt: recruiterMessages.receivedAt,
-        applicationId: recruiterMessages.applicationId,
-      })
+      db
+        .select({
+          id: recruiterMessages.id,
+          from: recruiterMessages.from,
+          subject: recruiterMessages.subject,
+          receivedAt: recruiterMessages.receivedAt,
+          applicationId: recruiterMessages.applicationId,
+        })
         .from(recruiterMessages)
-        .where(and(
-          eq(recruiterMessages.tenantId, ctx.tenantId),
-          eq(recruiterMessages.parsed, false),
-        ))
+        .where(
+          and(eq(recruiterMessages.tenantId, ctx.tenantId), eq(recruiterMessages.parsed, false)),
+        )
         .orderBy(desc(recruiterMessages.receivedAt))
         .limit(20),
 
       // Recent outcomes (last 7 days)
-      db.select({
-        id: outcomes.id,
-        stage: outcomes.stage,
-        notes: outcomes.notes,
-        occurredAt: outcomes.occurredAt,
-        applicationId: outcomes.applicationId,
-      })
+      db
+        .select({
+          id: outcomes.id,
+          stage: outcomes.stage,
+          notes: outcomes.notes,
+          occurredAt: outcomes.occurredAt,
+          applicationId: outcomes.applicationId,
+        })
         .from(outcomes)
         .innerJoin(applications, eq(outcomes.applicationId, applications.id))
-        .where(and(
-          eq(applications.tenantId, ctx.tenantId),
-          gte(outcomes.occurredAt, sevenDaysAgo),
-        ))
+        .where(and(eq(applications.tenantId, ctx.tenantId), gte(outcomes.occurredAt, sevenDaysAgo)))
         .orderBy(desc(outcomes.occurredAt))
         .limit(20),
 
       // Earliest appliedAt for searchStartDate
-      db.select({ earliest: min(applications.appliedAt) })
+      db
+        .select({ earliest: min(applications.appliedAt) })
         .from(applications)
-        .where(and(
-          eq(applications.tenantId, ctx.tenantId),
-          isNotNull(applications.appliedAt),
-        )),
+        .where(and(eq(applications.tenantId, ctx.tenantId), isNotNull(applications.appliedAt))),
     ]);
 
     // -----------------------------------------------------------------------
@@ -304,7 +347,9 @@ router.get('/control-tower', async (_req, res, next) => {
 
     const activeMissions = activeApps.map((app) => {
       const lastActivity = app.lastActivityAt ? new Date(app.lastActivityAt) : now;
-      const daysSinceActivity = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+      const daysSinceActivity = Math.floor(
+        (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24),
+      );
       return {
         id: app.id,
         jobId: app.jobId,
@@ -354,7 +399,9 @@ router.get('/control-tower', async (_req, res, next) => {
     // 2. Ghosted alerts from active applications
     for (const app of activeApps) {
       const lastActivity = app.lastActivityAt ? new Date(app.lastActivityAt) : now;
-      const daysSince = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+      const daysSince = Math.floor(
+        (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24),
+      );
       if (daysSince > GHOSTED_THRESHOLD_DAYS) {
         activityFeed.push({
           id: `ghosted_${app.id}`,
@@ -413,25 +460,28 @@ router.get('/control-tower', async (_req, res, next) => {
     for (const app of allApps) {
       if (app.rejectedAt && app.appliedAt) {
         const days = Math.floor(
-          (new Date(app.rejectedAt).getTime() - new Date(app.appliedAt).getTime()) / (1000 * 60 * 60 * 24),
+          (new Date(app.rejectedAt).getTime() - new Date(app.appliedAt).getTime()) /
+            (1000 * 60 * 60 * 24),
         );
         if (days >= 0) rejectionDays.push(days);
       }
     }
 
     const rejectionStats = {
-      avgDays: rejectionDays.length > 0
-        ? Math.round(rejectionDays.reduce((sum, d) => sum + d, 0) / rejectionDays.length)
-        : 0,
-      fastest: rejectionDays.length > 0
-        ? Math.min(...rejectionDays)
-        : 0,
+      avgDays:
+        rejectionDays.length > 0
+          ? Math.round(rejectionDays.reduce((sum, d) => sum + d, 0) / rejectionDays.length)
+          : 0,
+      fastest: rejectionDays.length > 0 ? Math.min(...rejectionDays) : 0,
       count: rejectionDays.length,
     };
 
     // Compensation summary (only active, non-rejected apps with comp data)
     const activeWithComp = allApps.filter(
-      (app) => !INACTIVE_STATUSES.includes(app.status) && !app.declinedByUser && (app.compMin !== null || app.compMax !== null),
+      (app) =>
+        !INACTIVE_STATUSES.includes(app.status) &&
+        !app.declinedByUser &&
+        (app.compMin !== null || app.compMax !== null),
     );
 
     let minSalary: number | null = null;
@@ -486,7 +536,9 @@ router.get('/control-tower', async (_req, res, next) => {
 
     await cacheSet(cacheKey, result, 120); // 2-minute cache for control tower
     res.json(result);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

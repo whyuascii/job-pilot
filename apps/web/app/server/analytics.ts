@@ -1,7 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
-import { applications, outcomes, jobs, jobScores, jobSources, tailoredResumes } from '@job-pilot/db/schema';
-import { eq, and, count, sql, desc, isNotNull } from 'drizzle-orm';
+import {
+  applications,
+  jobs,
+  jobScores,
+  jobSources,
+  outcomes,
+  tailoredResumes,
+} from '@job-pilot/db/schema';
 import { getTenantContext } from '~/lib/api';
 
 /**
@@ -59,9 +66,10 @@ export const getFunnelAnalytics = createServerFn({ method: 'GET' }).handler(
       .map((stage) => ({
         stage,
         count: statusMap[stage] ?? 0,
-        percentage: totalApplications > 0
-          ? Math.round(((statusMap[stage] ?? 0) / totalApplications) * 100)
-          : 0,
+        percentage:
+          totalApplications > 0
+            ? Math.round(((statusMap[stage] ?? 0) / totalApplications) * 100)
+            : 0,
       }));
 
     // ----- 2. Conversion rates between consecutive stages -----
@@ -79,14 +87,8 @@ export const getFunnelAnalytics = createServerFn({ method: 'GET' }).handler(
       const stagesAtOrAfterTo = [...STAGE_ORDER.slice(i + 1), 'rejected', 'withdrawn'];
 
       // Count via outcomes table for more accurate transitions
-      const fromCount = stagesAtOrAfterFrom.reduce(
-        (sum, s) => sum + (statusMap[s] ?? 0),
-        0,
-      );
-      const toCount = stagesAtOrAfterTo.reduce(
-        (sum, s) => sum + (statusMap[s] ?? 0),
-        0,
-      );
+      const fromCount = stagesAtOrAfterFrom.reduce((sum, s) => sum + (statusMap[s] ?? 0), 0);
+      const toCount = stagesAtOrAfterTo.reduce((sum, s) => sum + (statusMap[s] ?? 0), 0);
 
       conversionRates.push({
         from: fromStage,
@@ -124,14 +126,11 @@ export const getFunnelAnalytics = createServerFn({ method: 'GET' }).handler(
     const stageDurations: Record<string, number[]> = {};
     for (const appOutcomes of Object.values(outcomesByApp)) {
       // Sort by occurredAt
-      appOutcomes.sort(
-        (a, b) => a.occurredAt.getTime() - b.occurredAt.getTime(),
-      );
+      appOutcomes.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
       for (let i = 0; i < appOutcomes.length - 1; i++) {
         const stage = appOutcomes[i].stage;
         const daysInStage =
-          (appOutcomes[i + 1].occurredAt.getTime() -
-            appOutcomes[i].occurredAt.getTime()) /
+          (appOutcomes[i + 1].occurredAt.getTime() - appOutcomes[i].occurredAt.getTime()) /
           (1000 * 60 * 60 * 24);
         if (!stageDurations[stage]) {
           stageDurations[stage] = [];
@@ -165,13 +164,7 @@ export const getFunnelAnalytics = createServerFn({ method: 'GET' }).handler(
       .limit(10);
 
     // For each top company, compute the advance rate (past applied stage)
-    const advancedStages = [
-      'recruiter_screen',
-      'technical',
-      'onsite',
-      'final',
-      'offer',
-    ];
+    const advancedStages = ['recruiter_screen', 'technical', 'onsite', 'final', 'offer'];
     const companyAdvanced = await db
       .select({
         company: jobs.company,
@@ -233,13 +226,7 @@ export const getFunnelAnalytics = createServerFn({ method: 'GET' }).handler(
  * Stages that count as "successful" outcomes — the application progressed
  * to a meaningful interview or offer stage.
  */
-const SUCCESS_STAGES = [
-  'recruiter_screen',
-  'technical',
-  'onsite',
-  'final',
-  'offer',
-] as const;
+const SUCCESS_STAGES = ['recruiter_screen', 'technical', 'onsite', 'final', 'offer'] as const;
 
 export type ScoreDimension = {
   dimension: string;
@@ -273,10 +260,10 @@ export const getScoreCorrelationAnalytics = createServerFn({ method: 'GET' }).ha
       })
       .from(applications)
       .innerJoin(jobs, eq(applications.jobId, jobs.id))
-      .innerJoin(jobScores, and(
-        eq(jobScores.jobId, jobs.id),
-        eq(jobScores.candidateId, applications.candidateId),
-      ))
+      .innerJoin(
+        jobScores,
+        and(eq(jobScores.jobId, jobs.id), eq(jobScores.candidateId, applications.candidateId)),
+      )
       .where(eq(applications.tenantId, ctx.tenantId));
 
     if (allAppScores.length === 0) {
@@ -288,9 +275,7 @@ export const getScoreCorrelationAnalytics = createServerFn({ method: 'GET' }).ha
       };
     }
 
-    const successfulApps = allAppScores.filter((a) =>
-      SUCCESS_STAGES.includes(a.status as any),
-    );
+    const successfulApps = allAppScores.filter((a) => SUCCESS_STAGES.includes(a.status as any));
 
     // Fit breakdown dimension keys and labels
     const fitKeys: { key: string; label: string }[] = [
@@ -431,9 +416,7 @@ export const getSourceEffectivenessAnalytics = createServerFn({ method: 'GET' })
         totalApplications: row.total,
         advancedApplications: advMap[row.company] ?? 0,
         responseRate:
-          row.total > 0
-            ? Math.round(((advMap[row.company] ?? 0) / row.total) * 100)
-            : 0,
+          row.total > 0 ? Math.round(((advMap[row.company] ?? 0) / row.total) * 100) : 0,
       }))
       .sort((a, b) => b.responseRate - a.responseRate)
       .slice(0, 10);
@@ -459,12 +442,7 @@ export const getSourceEffectivenessAnalytics = createServerFn({ method: 'GET' })
       })
       .from(applications)
       .innerJoin(jobs, eq(applications.jobId, jobs.id))
-      .where(
-        and(
-          eq(applications.tenantId, ctx.tenantId),
-          isNotNull(jobs.sourceId),
-        ),
-      )
+      .where(and(eq(applications.tenantId, ctx.tenantId), isNotNull(jobs.sourceId)))
       .groupBy(jobs.sourceId);
 
     // Interview-stage applications per source
@@ -496,12 +474,7 @@ export const getSourceEffectivenessAnalytics = createServerFn({ method: 'GET' })
       })
       .from(jobScores)
       .innerJoin(jobs, eq(jobScores.jobId, jobs.id))
-      .where(
-        and(
-          eq(jobs.tenantId, ctx.tenantId),
-          isNotNull(jobs.sourceId),
-        ),
-      )
+      .where(and(eq(jobs.tenantId, ctx.tenantId), isNotNull(jobs.sourceId)))
       .groupBy(jobs.sourceId);
 
     // Build maps

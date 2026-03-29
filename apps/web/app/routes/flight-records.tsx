@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Plane, FileText, Building2, Calendar, Target, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button, Card, CardContent, Badge, Separator } from '@job-pilot/ui';
-import { api } from '~/lib/api-client';
+import { Building2, Calendar, ChevronDown, ChevronUp, FileText, Plane, Target } from 'lucide-react';
+import { Badge, Button, Card, CardContent, Separator } from '@job-pilot/ui';
 import { FlightRecordViewer } from '~/components/flight-record-viewer';
+import { api } from '~/lib/api-client';
 
 export const Route = createFileRoute('/flight-records')({
   loader: async () => {
@@ -27,13 +27,15 @@ function FlightRecordSummaryCard({ record }: { record: any }) {
         {/* Summary row — always visible */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left hover:bg-accent/50 transition-colors rounded-t-xl"
+          className="hover:bg-accent/50 flex w-full items-center justify-between gap-4 rounded-t-xl px-4 py-3 text-left transition-colors"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <FileText className={`h-4 w-4 shrink-0 ${record.hasFlightRecord ? 'text-sky-500' : 'text-muted-foreground'}`} />
+          <div className="flex min-w-0 items-center gap-3">
+            <FileText
+              className={`h-4 w-4 shrink-0 ${record.hasFlightRecord ? 'text-sky-500' : 'text-muted-foreground'}`}
+            />
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{jobTitle}</p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <p className="truncate text-sm font-medium">{jobTitle}</p>
+              <div className="text-muted-foreground flex items-center gap-2 text-xs">
                 <span className="flex items-center gap-1">
                   <Building2 className="h-3 w-3" />
                   {jobCompany}
@@ -45,7 +47,7 @@ function FlightRecordSummaryCard({ record }: { record: any }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {record.status && !record.hasFlightRecord && (
               <Badge variant="secondary" className="text-[10px] capitalize">
                 {record.status}
@@ -53,16 +55,20 @@ function FlightRecordSummaryCard({ record }: { record: any }) {
             )}
             {score != null && (
               <Badge variant={score >= 60 ? 'success' : score >= 40 ? 'default' : 'warning'}>
-                <Target className="h-3 w-3 mr-1" />
+                <Target className="mr-1 h-3 w-3" />
                 {Math.round(score)}%
               </Badge>
             )}
             {record.scoreSnapshot?.recommendation && (
-              <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
+              <Badge variant="secondary" className="hidden text-[10px] sm:inline-flex">
                 {record.scoreSnapshot.recommendation}
               </Badge>
             )}
-            {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            {expanded ? (
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
+            ) : (
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
+            )}
           </div>
         </button>
 
@@ -78,29 +84,40 @@ function FlightRecordSummaryCard({ record }: { record: any }) {
                   <div className="flex items-center gap-4 rounded-md border px-3 py-2 text-sm">
                     <span className="text-muted-foreground">Score:</span>
                     {record.scoreSnapshot.overallScore != null && (
-                      <span className="font-semibold">{Math.round(record.scoreSnapshot.overallScore)}% overall</span>
+                      <span className="font-semibold">
+                        {Math.round(record.scoreSnapshot.overallScore)}% overall
+                      </span>
                     )}
                     {record.scoreSnapshot.fitScore != null && (
-                      <span className="text-muted-foreground">Fit: {Math.round(record.scoreSnapshot.fitScore)}%</span>
+                      <span className="text-muted-foreground">
+                        Fit: {Math.round(record.scoreSnapshot.fitScore)}%
+                      </span>
                     )}
                     {record.scoreSnapshot.competitivenessScore != null && (
-                      <span className="text-muted-foreground">Competitive: {Math.round(record.scoreSnapshot.competitivenessScore)}%</span>
+                      <span className="text-muted-foreground">
+                        Competitive: {Math.round(record.scoreSnapshot.competitivenessScore)}%
+                      </span>
                     )}
                   </div>
                 )}
                 {/* Job skills */}
                 {record.jobSnapshot?.mustHaveSkills?.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Required Skills</p>
+                    <p className="text-muted-foreground mb-1 text-xs font-medium">
+                      Required Skills
+                    </p>
                     <div className="flex flex-wrap gap-1">
                       {record.jobSnapshot.mustHaveSkills.map((skill: string) => (
-                        <Badge key={skill} variant="secondary" className="text-[10px]">{skill}</Badge>
+                        <Badge key={skill} variant="secondary" className="text-[10px]">
+                          {skill}
+                        </Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground italic">
-                  No snapshot captured. Use "Mark Applied" in the Application Assist drawer to capture a full snapshot with tailored resume and cover letter.
+                <p className="text-muted-foreground text-xs italic">
+                  No snapshot captured. Use "Mark Applied" in the Application Assist drawer to
+                  capture a full snapshot with tailored resume and cover letter.
                 </p>
               </div>
             )}
@@ -124,7 +141,7 @@ function FlightRecordsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Flight Records</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Your application history — snapshots of resume, cover letter, score, and job data.
             </p>
           </div>
@@ -137,10 +154,10 @@ function FlightRecordsPage() {
       {records.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-16">
-            <FileText className="h-12 w-12 text-muted-foreground/30" />
-            <div className="text-center space-y-1">
+            <FileText className="text-muted-foreground/30 h-12 w-12" />
+            <div className="space-y-1 text-center">
               <p className="font-semibold">No applications yet</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Apply to jobs or create applications to start building your flight log.
               </p>
             </div>
@@ -151,7 +168,7 @@ function FlightRecordsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {records.length} flight record{records.length !== 1 ? 's' : ''}
           </p>
           {records.map((record: any) => (

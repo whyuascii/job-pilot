@@ -1,9 +1,17 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { jobSources, apiKeys, jobs, jobScores, candidates, skills, experienceBlocks } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import {
+  apiKeys,
+  candidates,
+  experienceBlocks,
+  jobs,
+  jobScores,
+  jobSources,
+  skills,
+} from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
-import { encrypt, decrypt } from '../lib/crypto.js';
+import { decrypt, encrypt } from '../lib/crypto.js';
 import { checkRateLimit } from '../lib/rate-limit.js';
 
 function createId(): string {
@@ -40,7 +48,9 @@ async function resolveRawApiKey(service: string, tenantId: string): Promise<stri
   return process.env[ENV_VAR_MAP[service]] || null;
 }
 
-export async function getDecryptedApiKey(service: 'anthropic' | 'firecrawl' | 'adzuna' | 'serpapi'): Promise<string | null> {
+export async function getDecryptedApiKey(
+  service: 'anthropic' | 'firecrawl' | 'adzuna' | 'serpapi',
+): Promise<string | null> {
   try {
     const ctx = getTenantContext();
     return resolveRawApiKey(service, ctx.tenantId);
@@ -82,25 +92,32 @@ async function ingestScrapedJob(
 
   // Deduplicate by company + title
   const existing = await db.query.jobs.findFirst({
-    where: and(eq(jobs.tenantId, ctx.tenantId), eq(jobs.company, job.company), eq(jobs.title, job.title)),
+    where: and(
+      eq(jobs.tenantId, ctx.tenantId),
+      eq(jobs.company, job.company),
+      eq(jobs.title, job.title),
+    ),
   });
   if (existing) return { deduplicated: true, jobId: existing.id };
 
-  const [inserted] = await db.insert(jobs).values({
-    tenantId: ctx.tenantId,
-    company: job.company,
-    title: job.title,
-    location: job.location || '',
-    remotePolicy: job.remotePolicy || 'unknown',
-    employmentType: job.employmentType || 'full_time',
-    compensationMin: job.salaryMin ?? null,
-    compensationMax: job.salaryMax ?? null,
-    compensationCurrency: job.salaryCurrency || null,
-    applyUrl: job.url || '',
-    sourceUrl: job.url || `scraped:${job.source}:${Date.now()}`,
-    rawDescription: job.description || '',
-    sourceId: sourceId ?? null,
-  }).returning();
+  const [inserted] = await db
+    .insert(jobs)
+    .values({
+      tenantId: ctx.tenantId,
+      company: job.company,
+      title: job.title,
+      location: job.location || '',
+      remotePolicy: job.remotePolicy || 'unknown',
+      employmentType: job.employmentType || 'full_time',
+      compensationMin: job.salaryMin ?? null,
+      compensationMax: job.salaryMax ?? null,
+      compensationCurrency: job.salaryCurrency || null,
+      applyUrl: job.url || '',
+      sourceUrl: job.url || `scraped:${job.source}:${Date.now()}`,
+      rawDescription: job.description || '',
+      sourceId: sourceId ?? null,
+    })
+    .returning();
 
   return { deduplicated: false, jobId: inserted.id };
 }
@@ -112,12 +129,27 @@ async function ingestScrapedJob(
 async function syncSource(
   source: any,
   ctx: { tenantId: string; userId: string },
-): Promise<{ sourceId: string; sourceName: string; jobsFound: number; newJobs: number; duplicates: number; errors: string[] }> {
+): Promise<{
+  sourceId: string;
+  sourceName: string;
+  jobsFound: number;
+  newJobs: number;
+  duplicates: number;
+  errors: string[];
+}> {
   const config = source.config as any;
-  const result = { sourceId: source.id, sourceName: source.name, jobsFound: 0, newJobs: 0, duplicates: 0, errors: [] as string[] };
+  const result = {
+    sourceId: source.id,
+    sourceName: source.name,
+    jobsFound: 0,
+    newJobs: 0,
+    duplicates: 0,
+    errors: [] as string[],
+  };
 
   // --- Search-based sync (supports multiple search terms) ---
-  const searchTerms: string[] = config.searchTerms || (config.searchTerm ? [config.searchTerm] : []);
+  const searchTerms: string[] =
+    config.searchTerms || (config.searchTerm ? [config.searchTerm] : []);
 
   if (searchTerms.length > 0) {
     const searchType = source.type;
@@ -129,50 +161,78 @@ async function syncSource(
           const serpApiKey = await resolveRawApiKey('serpapi', ctx.tenantId);
           if (!serpApiKey) throw new Error('SerpAPI key not configured. Add it in Settings.');
           const { searchWithSerpApi } = await import('../lib/job-scrapers.js');
-          const scraped = await searchWithSerpApi({
-            searchTerm: term,
-            location: config.location,
-            country: config.country || 'us',
-            language: config.language || 'en',
-            maxPages: config.maxPages || 3,
-          }, serpApiKey);
+          const scraped = await searchWithSerpApi(
+            {
+              searchTerm: term,
+              location: config.location,
+              country: config.country || 'us',
+              language: config.language || 'en',
+              maxPages: config.maxPages || 3,
+            },
+            serpApiKey,
+          );
           result.jobsFound += scraped.length;
           for (const job of scraped) {
-            if (job.url && seenUrls.has(job.url)) { result.duplicates++; continue; }
+            if (job.url && seenUrls.has(job.url)) {
+              result.duplicates++;
+              continue;
+            }
             if (job.url) seenUrls.add(job.url);
             try {
               const { deduplicated } = await ingestScrapedJob(job, ctx, source.id);
-              if (deduplicated) result.duplicates++; else result.newJobs++;
-            } catch (err) { result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`); }
+              if (deduplicated) result.duplicates++;
+              else result.newJobs++;
+            } catch (err) {
+              result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`);
+            }
           }
-        } catch (err) { result.errors.push(`SerpAPI (${term}): ${err instanceof Error ? err.message : 'Unknown'}`); }
+        } catch (err) {
+          result.errors.push(
+            `SerpAPI (${term}): ${err instanceof Error ? err.message : 'Unknown'}`,
+          );
+        }
       } else if (searchType === 'adzuna') {
         try {
           const adzunaKey = await resolveRawApiKey('adzuna', ctx.tenantId);
-          if (!adzunaKey) throw new Error('Adzuna API key not configured. Add it in Settings (format: appId:appKey).');
-          const { searchWithAdzuna, parseAdzunaCredentials } = await import('../lib/job-scrapers.js');
+          if (!adzunaKey)
+            throw new Error(
+              'Adzuna API key not configured. Add it in Settings (format: appId:appKey).',
+            );
+          const { searchWithAdzuna, parseAdzunaCredentials } =
+            await import('../lib/job-scrapers.js');
           const creds = parseAdzunaCredentials(adzunaKey);
           if (!creds) throw new Error('Invalid Adzuna API key format. Expected "appId:appKey".');
-          const scraped = await searchWithAdzuna({
-            searchTerm: term,
-            location: config.location,
-            country: config.country || 'us',
-            resultsPerPage: Math.min(config.resultsPerPage || 50, 25),
-            maxDaysOld: config.maxDaysOld || 30,
-            salaryMin: config.salaryMin,
-            fullTime: config.fullTime,
-            sortBy: config.sortBy || 'date',
-          }, creds);
+          const scraped = await searchWithAdzuna(
+            {
+              searchTerm: term,
+              location: config.location,
+              country: config.country || 'us',
+              resultsPerPage: Math.min(config.resultsPerPage || 50, 25),
+              maxDaysOld: config.maxDaysOld || 30,
+              salaryMin: config.salaryMin,
+              fullTime: config.fullTime,
+              sortBy: config.sortBy || 'date',
+            },
+            creds,
+          );
           result.jobsFound += scraped.length;
           for (const job of scraped) {
-            if (job.url && seenUrls.has(job.url)) { result.duplicates++; continue; }
+            if (job.url && seenUrls.has(job.url)) {
+              result.duplicates++;
+              continue;
+            }
             if (job.url) seenUrls.add(job.url);
             try {
               const { deduplicated } = await ingestScrapedJob(job, ctx, source.id);
-              if (deduplicated) result.duplicates++; else result.newJobs++;
-            } catch (err) { result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`); }
+              if (deduplicated) result.duplicates++;
+              else result.newJobs++;
+            } catch (err) {
+              result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`);
+            }
           }
-        } catch (err) { result.errors.push(`Adzuna (${term}): ${err instanceof Error ? err.message : 'Unknown'}`); }
+        } catch (err) {
+          result.errors.push(`Adzuna (${term}): ${err instanceof Error ? err.message : 'Unknown'}`);
+        }
       } else if (searchType === 'linkedin' || searchType === 'indeed') {
         try {
           const { searchWithTsJobspy } = await import('../lib/job-scrapers.js');
@@ -187,14 +247,24 @@ async function syncSource(
           });
           result.jobsFound += scraped.length;
           for (const job of scraped) {
-            if (job.url && seenUrls.has(job.url)) { result.duplicates++; continue; }
+            if (job.url && seenUrls.has(job.url)) {
+              result.duplicates++;
+              continue;
+            }
             if (job.url) seenUrls.add(job.url);
             try {
               const { deduplicated } = await ingestScrapedJob(job, ctx, source.id);
-              if (deduplicated) result.duplicates++; else result.newJobs++;
-            } catch (err) { result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`); }
+              if (deduplicated) result.duplicates++;
+              else result.newJobs++;
+            } catch (err) {
+              result.errors.push(`${job.title}: ${err instanceof Error ? err.message : 'Unknown'}`);
+            }
           }
-        } catch (err) { result.errors.push(`ts-jobspy (${term}): ${err instanceof Error ? err.message : 'Unknown'}`); }
+        } catch (err) {
+          result.errors.push(
+            `ts-jobspy (${term}): ${err instanceof Error ? err.message : 'Unknown'}`,
+          );
+        }
       }
     }
   }
@@ -213,13 +283,17 @@ async function syncSource(
           const extracted = (ingested as any).jobs || [];
           result.jobsFound += extracted.length;
           for (const job of extracted) {
-            if ((job as any).deduplicated) result.duplicates++; else result.newJobs++;
+            if ((job as any).deduplicated) result.duplicates++;
+            else result.newJobs++;
           }
         } else {
           result.jobsFound++;
-          if ((ingested as any).deduplicated) result.duplicates++; else result.newJobs++;
+          if ((ingested as any).deduplicated) result.duplicates++;
+          else result.newJobs++;
         }
-      } catch (err) { result.errors.push(`${url}: ${err instanceof Error ? err.message : 'Unknown'}`); }
+      } catch (err) {
+        result.errors.push(`${url}: ${err instanceof Error ? err.message : 'Unknown'}`);
+      }
     }
   }
 
@@ -249,7 +323,9 @@ async function generateDiverseSearchTerms(
   if (title) terms.add(title);
 
   // 2. Strip seniority for broader base title
-  const baseTitle = title.replace(/^(senior|sr\.?|junior|jr\.?|lead|principal|staff|chief|head of)\s+/i, '').trim();
+  const baseTitle = title
+    .replace(/^(senior|sr\.?|junior|jr\.?|lead|principal|staff|chief|head of)\s+/i, '')
+    .trim();
   if (baseTitle && baseTitle.toLowerCase() !== title.toLowerCase()) {
     terms.add(baseTitle);
   }
@@ -297,7 +373,7 @@ async function generateDiverseSearchTerms(
 
   // 5. Skill + role combos (top technical skills only)
   const techSkills = topSkills
-    .filter(s => ['language', 'framework', 'tool', 'platform'].includes(s.category))
+    .filter((s) => ['language', 'framework', 'tool', 'platform'].includes(s.category))
     .slice(0, 4);
   for (const skill of techSkills) {
     terms.add(`${skill.name} Developer`);
@@ -327,16 +403,28 @@ router.get('/api-key-status', async (_req, res, next) => {
     const adzunaKey = await resolveRawApiKey('adzuna', ctx.tenantId);
     const serpApiKey = await resolveRawApiKey('serpapi', ctx.tenantId);
     res.json({
-      anthropic: { hasKey: !!anthropicKey, maskedKey: anthropicKey ? maskApiKey(anthropicKey) : null },
-      firecrawl: { hasKey: !!firecrawlKey, maskedKey: firecrawlKey ? maskApiKey(firecrawlKey) : null },
+      anthropic: {
+        hasKey: !!anthropicKey,
+        maskedKey: anthropicKey ? maskApiKey(anthropicKey) : null,
+      },
+      firecrawl: {
+        hasKey: !!firecrawlKey,
+        maskedKey: firecrawlKey ? maskApiKey(firecrawlKey) : null,
+      },
       adzuna: { hasKey: !!adzunaKey, maskedKey: adzunaKey ? maskApiKey(adzunaKey) : null },
       serpapi: { hasKey: !!serpApiKey, maskedKey: serpApiKey ? maskApiKey(serpApiKey) : null },
       s3: {
         configured: !!(process.env.S3_ENDPOINT || process.env.AWS_REGION),
-        endpoint: process.env.S3_ENDPOINT ? 'MinIO (local)' : process.env.AWS_REGION ? `AWS (${process.env.AWS_REGION})` : null,
+        endpoint: process.env.S3_ENDPOINT
+          ? 'MinIO (local)'
+          : process.env.AWS_REGION
+            ? `AWS (${process.env.AWS_REGION})`
+            : null,
       },
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/save-api-key', async (req, res, next) => {
@@ -346,9 +434,9 @@ router.post('/save-api-key', async (req, res, next) => {
     if (!ALLOWED_SERVICES.includes(service)) throw new Error(`Unknown service: ${service}`);
 
     if (!apiKey || apiKey.trim() === '') {
-      await db.delete(apiKeys).where(
-        and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)),
-      );
+      await db
+        .delete(apiKeys)
+        .where(and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)));
       const hasEnvKey = !!process.env[ENV_VAR_MAP[service]];
       res.json({ success: true, hasKey: hasEnvKey });
       return;
@@ -356,9 +444,9 @@ router.post('/save-api-key', async (req, res, next) => {
 
     const encryptedValue = await encrypt(apiKey.trim());
 
-    await db.delete(apiKeys).where(
-      and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)),
-    );
+    await db
+      .delete(apiKeys)
+      .where(and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)));
     await db.insert(apiKeys).values({
       id: createId(),
       tenantId: ctx.tenantId,
@@ -367,7 +455,9 @@ router.post('/save-api-key', async (req, res, next) => {
     });
 
     res.json({ success: true, hasKey: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/delete-api-key', async (req, res, next) => {
@@ -375,12 +465,14 @@ router.post('/delete-api-key', async (req, res, next) => {
     const ctx = getTenantContext();
     const { service } = req.body;
     if (!ALLOWED_SERVICES.includes(service)) throw new Error(`Unknown service: ${service}`);
-    await db.delete(apiKeys).where(
-      and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)),
-    );
+    await db
+      .delete(apiKeys)
+      .where(and(eq(apiKeys.tenantId, ctx.tenantId), eq(apiKeys.service, service)));
     const hasEnvKey = !!process.env[ENV_VAR_MAP[service]];
     res.json({ success: true, hasKey: hasEnvKey, source: hasEnvKey ? 'env' : null });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -412,7 +504,7 @@ router.get('/search-config', async (_req, res, next) => {
       }),
     ]);
 
-    const experienceTitles = [...new Set(experience.map(e => e.title))];
+    const experienceTitles = [...new Set(experience.map((e) => e.title))];
     const searchTerms = await generateDiverseSearchTerms(candidate, topSkills, experienceTitles);
 
     const isRemote = candidate.remotePreference === 'remote';
@@ -424,11 +516,13 @@ router.get('/search-config', async (_req, res, next) => {
       remotePreference: candidate.remotePreference || 'flexible',
       currentTitle: candidate.currentTitle || '',
       topSkills: topSkills
-        .filter(s => ['language', 'framework', 'tool', 'platform'].includes(s.category))
+        .filter((s) => ['language', 'framework', 'tool', 'platform'].includes(s.category))
         .slice(0, 5)
-        .map(s => s.name),
+        .map((s) => s.name),
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/enable-source', async (req, res, next) => {
@@ -468,7 +562,7 @@ router.post('/enable-source', async (req, res, next) => {
         }),
       ]);
 
-      const experienceTitles = [...new Set(experience.map(e => e.title))];
+      const experienceTitles = [...new Set(experience.map((e) => e.title))];
       searchTerms = await generateDiverseSearchTerms(candidate, topSkills, experienceTitles);
       location = candidate.location || '';
     }
@@ -482,23 +576,28 @@ router.post('/enable-source', async (req, res, next) => {
       adzuna: 'Adzuna',
     };
 
-    const [source] = await db.insert(jobSources).values({
-      id: createId(),
-      tenantId: ctx.tenantId,
-      name: typeLabels[type] || type,
-      type,
-      config: {
-        searchTerm: searchTerms[0],
-        searchTerms,
-        location,
-        isRemote: candidate?.remotePreference === 'remote',
-        country: 'us',
-      },
-      enabled: true,
-    }).returning();
+    const [source] = await db
+      .insert(jobSources)
+      .values({
+        id: createId(),
+        tenantId: ctx.tenantId,
+        name: typeLabels[type] || type,
+        type,
+        config: {
+          searchTerm: searchTerms[0],
+          searchTerms,
+          location,
+          isRemote: candidate?.remotePreference === 'remote',
+          country: 'us',
+        },
+        enabled: true,
+      })
+      .returning();
 
     res.json(source);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -509,7 +608,9 @@ router.get('/job-sources', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
     res.json(await db.query.jobSources.findMany({ where: eq(jobSources.tenantId, ctx.tenantId) }));
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/job-sources', async (req, res, next) => {
@@ -522,33 +623,48 @@ router.post('/job-sources', async (req, res, next) => {
     if (req.body.country) config.country = req.body.country;
     if (req.body.isRemote != null) config.isRemote = req.body.isRemote;
 
-    const [source] = await db.insert(jobSources).values({
-      id: createId(),
-      tenantId: ctx.tenantId,
-      name: req.body.name,
-      type: req.body.type,
-      config,
-      enabled: true,
-    }).returning();
+    const [source] = await db
+      .insert(jobSources)
+      .values({
+        id: createId(),
+        tenantId: ctx.tenantId,
+        name: req.body.name,
+        type: req.body.type,
+        config,
+        enabled: true,
+      })
+      .returning();
     res.json(source);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/job-sources/delete', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
-    await db.delete(jobSources).where(and(eq(jobSources.id, req.body.sourceId), eq(jobSources.tenantId, ctx.tenantId)));
+    await db
+      .delete(jobSources)
+      .where(and(eq(jobSources.id, req.body.sourceId), eq(jobSources.tenantId, ctx.tenantId)));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/job-sources/toggle', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
-    const [updated] = await db.update(jobSources).set({ enabled: req.body.enabled }).where(and(eq(jobSources.id, req.body.sourceId), eq(jobSources.tenantId, ctx.tenantId))).returning();
+    const [updated] = await db
+      .update(jobSources)
+      .set({ enabled: req.body.enabled })
+      .where(and(eq(jobSources.id, req.body.sourceId), eq(jobSources.tenantId, ctx.tenantId)))
+      .returning();
     if (!updated) throw new Error('Job source not found');
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -565,7 +681,9 @@ router.post('/job-sources/sync', async (req, res, next) => {
     if (!source) throw new Error('Job source not found');
     if (!source.enabled) throw new Error('Job source is disabled.');
     res.json(await syncSource(source, ctx));
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/job-sources/sync-all', async (_req, res, next) => {
@@ -593,7 +711,9 @@ router.post('/job-sources/sync-all', async (_req, res, next) => {
       totalNewJobs: results.reduce((s, r) => s + r.newJobs, 0),
       totalErrors: results.reduce((s, r) => s + r.errors.length, 0),
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

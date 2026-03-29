@@ -1,4 +1,4 @@
-import { eq, and, SQL } from 'drizzle-orm';
+import { and, eq, SQL } from 'drizzle-orm';
 import { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
 import { db } from './client.js';
 
@@ -34,10 +34,8 @@ export function createTenantDb(ctx: TenantContext) {
   return {
     ...ctx,
     db,
-    where: <T extends TableConfig>(
-      table: PgTableWithColumns<T>,
-      ...conditions: SQL[]
-    ) => tenantWhere(table, ctx.tenantId, ...conditions),
+    where: <T extends TableConfig>(table: PgTableWithColumns<T>, ...conditions: SQL[]) =>
+      tenantWhere(table, ctx.tenantId, ...conditions),
   };
 }
 

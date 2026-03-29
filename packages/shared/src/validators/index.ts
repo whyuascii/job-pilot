@@ -2,7 +2,11 @@ import { z } from 'zod';
 
 export const tenantSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   plan: z.enum(['free', 'pro', 'enterprise']).default('free'),
 });
 
@@ -28,7 +32,15 @@ export const candidateSchema = z.object({
 
 export const skillSchema = z.object({
   name: z.string().min(1).max(100),
-  category: z.enum(['language', 'framework', 'tool', 'platform', 'methodology', 'soft_skill', 'domain']),
+  category: z.enum([
+    'language',
+    'framework',
+    'tool',
+    'platform',
+    'methodology',
+    'soft_skill',
+    'domain',
+  ]),
   confidenceScore: z.number().min(0).max(100),
   yearsUsed: z.number().min(0).nullable().default(null),
   lastUsed: z.coerce.date().nullable().default(null),

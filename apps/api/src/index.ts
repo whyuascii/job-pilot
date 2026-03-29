@@ -1,11 +1,11 @@
-import express from 'express';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express from 'express';
 import { auth } from './lib/auth.js';
 import { authMiddleware } from './middleware/auth.js';
-import { tenantMiddleware } from './middleware/tenant.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { securityHeaders } from './middleware/security.js';
+import { tenantMiddleware } from './middleware/tenant.js';
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
@@ -20,10 +20,12 @@ if (process.env.NODE_ENV === 'production') {
 // Global middleware
 // ---------------------------------------------------------------------------
 app.use(securityHeaders);
-app.use(cors({
-  origin: APP_URL,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: APP_URL,
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 
@@ -199,13 +201,15 @@ app.use(errorHandler);
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
-registerRoutes().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[API] Server running on http://localhost:${PORT}`);
+registerRoutes()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`[API] Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('[API] Failed to register routes:', err);
+    process.exit(1);
   });
-}).catch((err) => {
-  console.error('[API] Failed to register routes:', err);
-  process.exit(1);
-});
 
 export default app;

@@ -1,7 +1,15 @@
 import { Mastra } from '@mastra/core';
-
-import { jobParserAgent, scoringAgent, resumeTailorAgent, answerAssistAgent } from './agents/index.js';
-import { jobIngestionWorkflow, scoringWorkflow, resumeGenerationWorkflow } from './workflows/index.js';
+import {
+  answerAssistAgent,
+  jobParserAgent,
+  resumeTailorAgent,
+  scoringAgent,
+} from './agents/index.js';
+import {
+  jobIngestionWorkflow,
+  resumeGenerationWorkflow,
+  scoringWorkflow,
+} from './workflows/index.js';
 
 export const mastra = new Mastra({
   agents: {

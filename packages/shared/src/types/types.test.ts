@@ -1,4 +1,51 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type {
+  CreateAnswerBankEntry as _CreateAnswerBankEntry,
+  CreateApplication as _CreateApplication,
+  CreateCandidate as _CreateCandidate,
+  CreateExperienceBlock as _CreateExperienceBlock,
+  CreateJob as _CreateJob,
+  CreateJobSource as _CreateJobSource,
+  CreatePreference as _CreatePreference,
+  CreateProject as _CreateProject,
+  CreateSkill as _CreateSkill,
+  CreateUser as _CreateUser,
+  CreateTenant,
+} from '../validators/index';
+/**
+ * Compile-time type assertions.
+ *
+ * These use TypeScript's type system to ensure that types are exported.
+ * If a type were removed or renamed, this file would fail to compile.
+ * At runtime these are no-ops.
+ */
+import type {
+  AnswerBankEntry as _AnswerBankEntry,
+  Application as _Application,
+  ApplicationQuestion as _ApplicationQuestion,
+  Candidate as _Candidate,
+  ExperienceBlock as _ExperienceBlock,
+  Job as _Job,
+  JobScore as _JobScore,
+  JobSource as _JobSource,
+  LlmRun as _LlmRun,
+  Outcome as _Outcome,
+  Preference as _Preference,
+  Project as _Project,
+  Resume as _Resume,
+  Skill as _Skill,
+  User as _User,
+  ApiSourceConfig,
+  ApplicationStatus,
+  CompetitivenessBreakdown,
+  FirecrawlSourceConfig,
+  FitBreakdown,
+  JobSourceConfig,
+  RssSourceConfig,
+  Tenant,
+  TenantId,
+  UserId,
+} from './index';
 
 /**
  * Type export tests: verify that all expected types and interfaces are
@@ -84,55 +131,6 @@ describe('top-level package exports', () => {
   });
 });
 
-/**
- * Compile-time type assertions.
- *
- * These use TypeScript's type system to ensure that types are exported.
- * If a type were removed or renamed, this file would fail to compile.
- * At runtime these are no-ops.
- */
-import type {
-  TenantId,
-  UserId,
-  Tenant,
-  User as _User,
-  Candidate as _Candidate,
-  Skill as _Skill,
-  ExperienceBlock as _ExperienceBlock,
-  Project as _Project,
-  Resume as _Resume,
-  Job as _Job,
-  JobScore as _JobScore,
-  FitBreakdown,
-  CompetitivenessBreakdown,
-  Application as _Application,
-  ApplicationStatus,
-  ApplicationQuestion as _ApplicationQuestion,
-  AnswerBankEntry as _AnswerBankEntry,
-  FirecrawlSourceConfig,
-  ApiSourceConfig,
-  RssSourceConfig,
-  JobSourceConfig,
-  JobSource as _JobSource,
-  LlmRun as _LlmRun,
-  Outcome as _Outcome,
-  Preference as _Preference,
-} from './index';
-
-import type {
-  CreateTenant,
-  CreateUser as _CreateUser,
-  CreateCandidate as _CreateCandidate,
-  CreateSkill as _CreateSkill,
-  CreateExperienceBlock as _CreateExperienceBlock,
-  CreateProject as _CreateProject,
-  CreateJob as _CreateJob,
-  CreateApplication as _CreateApplication,
-  CreateAnswerBankEntry as _CreateAnswerBankEntry,
-  CreateJobSource as _CreateJobSource,
-  CreatePreference as _CreatePreference,
-} from '../validators/index';
-
 // Ensure the imported types are usable (compile-time only)
 describe('compile-time type checks', () => {
   it('TenantId and UserId are string aliases', () => {
@@ -157,9 +155,17 @@ describe('compile-time type checks', () => {
 
   it('ApplicationStatus union contains expected values', () => {
     const statuses: ApplicationStatus[] = [
-      'discovered', 'shortlisted', 'resume_generated', 'applied',
-      'recruiter_screen', 'technical', 'onsite', 'final',
-      'rejected', 'offer', 'withdrawn',
+      'discovered',
+      'shortlisted',
+      'resume_generated',
+      'applied',
+      'recruiter_screen',
+      'technical',
+      'onsite',
+      'final',
+      'rejected',
+      'offer',
+      'withdrawn',
     ];
     expect(statuses).toHaveLength(11);
   });

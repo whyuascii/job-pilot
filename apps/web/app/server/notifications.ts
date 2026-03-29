@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import { notifications } from '@job-pilot/db/schema';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
-import { getTenantContext } from '~/lib/api';
 import type { NotificationType } from '@job-pilot/shared';
+import { getTenantContext } from '~/lib/api';
 
 /**
  * List the most recent 50 notifications for the current user.
@@ -15,16 +15,8 @@ export const listNotifications = createServerFn({ method: 'GET' }).handler(async
   const results = await db
     .select()
     .from(notifications)
-    .where(
-      and(
-        eq(notifications.tenantId, ctx.tenantId),
-        eq(notifications.userId, ctx.userId),
-      )
-    )
-    .orderBy(
-      sql`${notifications.read} ASC`,
-      desc(notifications.createdAt),
-    )
+    .where(and(eq(notifications.tenantId, ctx.tenantId), eq(notifications.userId, ctx.userId)))
+    .orderBy(sql`${notifications.read} ASC`, desc(notifications.createdAt))
     .limit(50);
 
   return results;
@@ -33,29 +25,29 @@ export const listNotifications = createServerFn({ method: 'GET' }).handler(async
 /**
  * Mark a single notification as read.
  */
-export const markNotificationRead = createServerFn({ method: 'POST' }).validator(
-  (data: { notificationId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const markNotificationRead = createServerFn({ method: 'POST' })
+  .validator((data: { notificationId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  const [updated] = await db
-    .update(notifications)
-    .set({ read: true })
-    .where(
-      and(
-        eq(notifications.id, data.notificationId),
-        eq(notifications.tenantId, ctx.tenantId),
-        eq(notifications.userId, ctx.userId),
+    const [updated] = await db
+      .update(notifications)
+      .set({ read: true })
+      .where(
+        and(
+          eq(notifications.id, data.notificationId),
+          eq(notifications.tenantId, ctx.tenantId),
+          eq(notifications.userId, ctx.userId),
+        ),
       )
-    )
-    .returning();
+      .returning();
 
-  if (!updated) {
-    throw new Error('Notification not found');
-  }
+    if (!updated) {
+      throw new Error('Notification not found');
+    }
 
-  return updated;
-});
+    return updated;
+  });
 
 /**
  * Mark all notifications as read for the current user.
@@ -71,7 +63,7 @@ export const markAllNotificationsRead = createServerFn({ method: 'POST' }).handl
         eq(notifications.tenantId, ctx.tenantId),
         eq(notifications.userId, ctx.userId),
         eq(notifications.read, false),
-      )
+      ),
     );
 
   return { success: true };
@@ -91,7 +83,7 @@ export const getUnreadCount = createServerFn({ method: 'GET' }).handler(async ()
         eq(notifications.tenantId, ctx.tenantId),
         eq(notifications.userId, ctx.userId),
         eq(notifications.read, false),
-      )
+      ),
     );
 
   return { count: result?.count ?? 0 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Input, Label, Badge } from '@job-pilot/ui';
-import { X, Plus, Loader2 } from 'lucide-react';
+import { Loader2, Plus, X } from 'lucide-react';
+import { Badge, Button, Input, Label } from '@job-pilot/ui';
 
 interface QuickAddData {
   company: string;
@@ -91,15 +91,15 @@ export function QuickAddForm({ open, onClose, onSubmit, prefill }: QuickAddFormP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/20 z-50" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/20" onClick={onClose}>
       <div
-        className="bg-card border rounded-xl shadow-lg max-w-md mx-auto mt-20 p-6"
+        className="bg-card mx-auto mt-20 max-w-md rounded-xl border p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Plus className="h-4 w-4 text-muted-foreground" />
+            <Plus className="text-muted-foreground h-4 w-4" />
             <h3 className="text-lg font-semibold">Quick Add Application</h3>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
@@ -229,9 +229,7 @@ export function QuickAddForm({ open, onClose, onSubmit, prefill }: QuickAddFormP
           </div>
 
           {/* Error message */}
-          {error && (
-            <div className="text-sm text-destructive">{error}</div>
-          )}
+          {error && <div className="text-destructive text-sm">{error}</div>}
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-2 pt-2">

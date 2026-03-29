@@ -1,12 +1,16 @@
+import type Anthropic from '@anthropic-ai/sdk';
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
-import { getTenantContext } from '../lib/context.js';
-import { checkRateLimit } from '../lib/rate-limit.js';
-import { getClient, loadCandidateProfile, recordLLMRun, parseJsonResponse } from './ai.js';
 import { db } from '@job-pilot/db';
 import { candidates, jobs, projects } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
-import type Anthropic from '@anthropic-ai/sdk';
-import { PROFILE_COACH_PROMPT, PROFILE_ANALYSIS_PROMPT, CAREER_GROWTH_PROMPT } from '@job-pilot/mastra/prompts';
+import {
+  CAREER_GROWTH_PROMPT,
+  PROFILE_ANALYSIS_PROMPT,
+  PROFILE_COACH_PROMPT,
+} from '@job-pilot/mastra/prompts';
+import { getTenantContext } from '../lib/context.js';
+import { checkRateLimit } from '../lib/rate-limit.js';
+import { getClient, loadCandidateProfile, parseJsonResponse, recordLLMRun } from './ai.js';
 
 const MODEL = 'claude-sonnet-4-20250514';
 
@@ -31,7 +35,9 @@ router.post('/chat', async (req, res, next) => {
       where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
     if (!candidate) {
-      res.status(400).json({ error: 'No candidate profile found. Create one before using AI Coach.' });
+      res
+        .status(400)
+        .json({ error: 'No candidate profile found. Create one before using AI Coach.' });
       return;
     }
 
@@ -43,39 +49,43 @@ router.post('/chat', async (req, res, next) => {
     });
 
     // Build profile context for system prompt
-    const profileContext = JSON.stringify({
-      headline: profile.headline,
-      summary: profile.summary,
-      currentTitle: profile.currentTitle,
-      currentCompany: profile.currentCompany,
-      yearsOfExperience: profile.yearsOfExperience,
-      location: profile.location,
-      skills: profile.skills.map((s: any) => ({
-        name: s.name,
-        category: s.category,
-        confidenceScore: s.confidenceScore,
-        yearsUsed: s.yearsUsed,
-      })),
-      experience: profile.experience.map((e: any) => ({
-        id: e.id,
-        company: e.company,
-        title: e.title,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        current: e.current,
-        description: e.description,
-        bullets: e.bullets,
-        skills: e.skills,
-      })),
-      projects: candidateProjects.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        url: p.url,
-        skills: p.skills,
-        highlights: p.highlights,
-      })),
-    }, null, 2);
+    const profileContext = JSON.stringify(
+      {
+        headline: profile.headline,
+        summary: profile.summary,
+        currentTitle: profile.currentTitle,
+        currentCompany: profile.currentCompany,
+        yearsOfExperience: profile.yearsOfExperience,
+        location: profile.location,
+        skills: profile.skills.map((s: any) => ({
+          name: s.name,
+          category: s.category,
+          confidenceScore: s.confidenceScore,
+          yearsUsed: s.yearsUsed,
+        })),
+        experience: profile.experience.map((e: any) => ({
+          id: e.id,
+          company: e.company,
+          title: e.title,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          current: e.current,
+          description: e.description,
+          bullets: e.bullets,
+          skills: e.skills,
+        })),
+        projects: candidateProjects.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          url: p.url,
+          skills: p.skills,
+          highlights: p.highlights,
+        })),
+      },
+      null,
+      2,
+    );
 
     const systemPrompt = `${COACH_SYSTEM_PROMPT}\n\n## CANDIDATE PROFILE\n${profileContext}${activeSection ? `\n\nThe user is currently viewing the "${activeSection}" section of their profile.` : ''}`;
 
@@ -151,7 +161,9 @@ router.post('/analyze', async (req, res, next) => {
       where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
     if (!candidate) {
-      res.status(400).json({ error: 'No candidate profile found. Create one before using AI Coach.' });
+      res
+        .status(400)
+        .json({ error: 'No candidate profile found. Create one before using AI Coach.' });
       return;
     }
 
@@ -163,39 +175,43 @@ router.post('/analyze', async (req, res, next) => {
     });
 
     // Build profile context for system prompt
-    const profileContext = JSON.stringify({
-      headline: profile.headline,
-      summary: profile.summary,
-      currentTitle: profile.currentTitle,
-      currentCompany: profile.currentCompany,
-      yearsOfExperience: profile.yearsOfExperience,
-      location: profile.location,
-      skills: profile.skills.map((s: any) => ({
-        name: s.name,
-        category: s.category,
-        confidenceScore: s.confidenceScore,
-        yearsUsed: s.yearsUsed,
-      })),
-      experience: profile.experience.map((e: any) => ({
-        id: e.id,
-        company: e.company,
-        title: e.title,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        current: e.current,
-        description: e.description,
-        bullets: e.bullets,
-        skills: e.skills,
-      })),
-      projects: candidateProjects.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        url: p.url,
-        skills: p.skills,
-        highlights: p.highlights,
-      })),
-    }, null, 2);
+    const profileContext = JSON.stringify(
+      {
+        headline: profile.headline,
+        summary: profile.summary,
+        currentTitle: profile.currentTitle,
+        currentCompany: profile.currentCompany,
+        yearsOfExperience: profile.yearsOfExperience,
+        location: profile.location,
+        skills: profile.skills.map((s: any) => ({
+          name: s.name,
+          category: s.category,
+          confidenceScore: s.confidenceScore,
+          yearsUsed: s.yearsUsed,
+        })),
+        experience: profile.experience.map((e: any) => ({
+          id: e.id,
+          company: e.company,
+          title: e.title,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          current: e.current,
+          description: e.description,
+          bullets: e.bullets,
+          skills: e.skills,
+        })),
+        projects: candidateProjects.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          url: p.url,
+          skills: p.skills,
+          highlights: p.highlights,
+        })),
+      },
+      null,
+      2,
+    );
 
     const systemPrompt = `${PROFILE_ANALYSIS_PROMPT}\n\n## CANDIDATE PROFILE\n${profileContext}`;
 
@@ -211,7 +227,9 @@ router.post('/analyze', async (req, res, next) => {
         model: MODEL,
         max_tokens: 2048,
         system: systemPrompt,
-        messages: [{ role: 'user', content: 'Analyze my profile and give me actionable feedback.' }],
+        messages: [
+          { role: 'user', content: 'Analyze my profile and give me actionable feedback.' },
+        ],
       });
 
       inputTokens = response.usage?.input_tokens ?? 0;
@@ -222,7 +240,12 @@ router.post('/analyze', async (req, res, next) => {
         .map((block) => block.text)
         .join('');
 
-      const parsed = parseJsonResponse<{ message: string; suggestions?: any[]; profileScore?: number; priorities?: string[] }>(responseText);
+      const parsed = parseJsonResponse<{
+        message: string;
+        suggestions?: any[];
+        profileScore?: number;
+        priorities?: string[];
+      }>(responseText);
       success = true;
 
       res.json({
@@ -277,7 +300,9 @@ router.post('/career-growth', async (req, res, next) => {
       where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
     if (!candidate) {
-      res.status(400).json({ error: 'No candidate profile found. Create one before using career growth advisor.' });
+      res.status(400).json({
+        error: 'No candidate profile found. Create one before using career growth advisor.',
+      });
       return;
     }
 
@@ -289,55 +314,63 @@ router.post('/career-growth', async (req, res, next) => {
     });
 
     // Build profile context
-    const profileContext = JSON.stringify({
-      headline: profile.headline,
-      summary: profile.summary,
-      currentTitle: profile.currentTitle,
-      currentCompany: profile.currentCompany,
-      yearsOfExperience: profile.yearsOfExperience,
-      location: profile.location,
-      skills: profile.skills.map((s: any) => ({
-        name: s.name,
-        category: s.category,
-        confidenceScore: s.confidenceScore,
-        yearsUsed: s.yearsUsed,
-      })),
-      experience: profile.experience.map((e: any) => ({
-        id: e.id,
-        company: e.company,
-        title: e.title,
-        startDate: e.startDate,
-        endDate: e.endDate,
-        current: e.current,
-        description: e.description,
-        bullets: e.bullets,
-        skills: e.skills,
-      })),
-      projects: candidateProjects.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        url: p.url,
-        skills: p.skills,
-        highlights: p.highlights,
-      })),
-    }, null, 2);
+    const profileContext = JSON.stringify(
+      {
+        headline: profile.headline,
+        summary: profile.summary,
+        currentTitle: profile.currentTitle,
+        currentCompany: profile.currentCompany,
+        yearsOfExperience: profile.yearsOfExperience,
+        location: profile.location,
+        skills: profile.skills.map((s: any) => ({
+          name: s.name,
+          category: s.category,
+          confidenceScore: s.confidenceScore,
+          yearsUsed: s.yearsUsed,
+        })),
+        experience: profile.experience.map((e: any) => ({
+          id: e.id,
+          company: e.company,
+          title: e.title,
+          startDate: e.startDate,
+          endDate: e.endDate,
+          current: e.current,
+          description: e.description,
+          bullets: e.bullets,
+          skills: e.skills,
+        })),
+        projects: candidateProjects.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          url: p.url,
+          skills: p.skills,
+          highlights: p.highlights,
+        })),
+      },
+      null,
+      2,
+    );
 
     // Build job context
-    const jobContext = JSON.stringify({
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      remotePolicy: job.remotePolicy,
-      description: job.parsedDescription || job.rawDescription,
-      mustHaveSkills: job.mustHaveSkills,
-      niceToHaveSkills: job.niceToHaveSkills,
-      yearsRequired: job.yearsRequired,
-      domain: job.domain,
-      employmentType: job.employmentType,
-      compensationMin: job.compensationMin,
-      compensationMax: job.compensationMax,
-    }, null, 2);
+    const jobContext = JSON.stringify(
+      {
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        remotePolicy: job.remotePolicy,
+        description: job.parsedDescription || job.rawDescription,
+        mustHaveSkills: job.mustHaveSkills,
+        niceToHaveSkills: job.niceToHaveSkills,
+        yearsRequired: job.yearsRequired,
+        domain: job.domain,
+        employmentType: job.employmentType,
+        compensationMin: job.compensationMin,
+        compensationMax: job.compensationMax,
+      },
+      null,
+      2,
+    );
 
     const systemPrompt = `${CAREER_GROWTH_PROMPT}\n\n## CANDIDATE PROFILE\n${profileContext}\n\n## TARGET JOB\n${jobContext}`;
 
@@ -353,7 +386,13 @@ router.post('/career-growth', async (req, res, next) => {
         model: MODEL,
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{ role: 'user', content: 'Analyze the gap between my current profile and this target role, and provide a concrete growth plan.' }],
+        messages: [
+          {
+            role: 'user',
+            content:
+              'Analyze the gap between my current profile and this target role, and provide a concrete growth plan.',
+          },
+        ],
       });
 
       inputTokens = response.usage?.input_tokens ?? 0;

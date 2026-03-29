@@ -1,9 +1,9 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { resumes, candidates } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { candidates, resumes } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
-import { getUploadUrl, getDownloadUrl, deleteObject } from '../lib/s3.js';
+import { deleteObject, getDownloadUrl, getUploadUrl } from '../lib/s3.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -29,7 +29,9 @@ router.get('/', async (_req, res, next) => {
       where: eq(resumes.candidateId, candidate.id),
     });
     res.json(list);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/upload-url', async (req, res, next) => {
@@ -40,7 +42,9 @@ router.post('/upload-url', async (req, res, next) => {
     const storageKey = `resumes/${ctx.tenantId}/${candidate.id}/${createId()}_${fileName}`;
     const uploadUrl = await getUploadUrl(storageKey, contentType || 'application/pdf');
     res.json({ uploadUrl, storageKey });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/', async (req, res, next) => {
@@ -49,16 +53,21 @@ router.post('/', async (req, res, next) => {
     const candidate = await getCurrentCandidate(ctx);
     const { fileName, storageKey } = req.body;
     const resumeName = fileName || storageKey?.split('/').pop() || 'Untitled Resume';
-    const [resume] = await db.insert(resumes).values({
-      id: createId(),
-      candidateId: candidate.id,
-      tenantId: ctx.tenantId,
-      name: resumeName,
-      storageKey,
-      isPreferred: false,
-    }).returning();
+    const [resume] = await db
+      .insert(resumes)
+      .values({
+        id: createId(),
+        candidateId: candidate.id,
+        tenantId: ctx.tenantId,
+        name: resumeName,
+        storageKey,
+        isPreferred: false,
+      })
+      .returning();
     res.json(resume);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/delete', async (req, res, next) => {
@@ -73,7 +82,9 @@ router.post('/delete', async (req, res, next) => {
     await deleteObject(resume.storageKey);
     await db.delete(resumes).where(eq(resumes.id, resumeId));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/set-preferred', async (req, res, next) => {
@@ -81,14 +92,20 @@ router.post('/set-preferred', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const { resumeId } = req.body;
-    await db.update(resumes).set({ isPreferred: false }).where(eq(resumes.candidateId, candidate.id));
-    const [updated] = await db.update(resumes)
+    await db
+      .update(resumes)
+      .set({ isPreferred: false })
+      .where(eq(resumes.candidateId, candidate.id));
+    const [updated] = await db
+      .update(resumes)
       .set({ isPreferred: true })
       .where(and(eq(resumes.id, resumeId), eq(resumes.candidateId, candidate.id)))
       .returning();
     if (!updated) throw new Error('Resume not found');
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/download-url', async (req, res, next) => {
@@ -102,7 +119,9 @@ router.get('/download-url', async (req, res, next) => {
     if (!resume) throw new Error('Resume not found');
     const url = await getDownloadUrl(resume.storageKey);
     res.json({ url });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

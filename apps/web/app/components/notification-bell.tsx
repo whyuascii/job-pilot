@@ -1,6 +1,15 @@
 import * as React from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, Check, CheckCheck, Briefcase, TrendingUp, MessageSquare, Info, Star } from 'lucide-react';
+import {
+  Bell,
+  Briefcase,
+  Check,
+  CheckCheck,
+  Info,
+  MessageSquare,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 import { api } from '~/lib/api-client';
 
 type Notification = {
@@ -27,7 +36,7 @@ function getNotificationIcon(type: string) {
       return <MessageSquare className="h-4 w-4 text-violet-500" />;
     case 'system':
     default:
-      return <Info className="h-4 w-4 text-muted-foreground" />;
+      return <Info className="text-muted-foreground h-4 w-4" />;
   }
 }
 
@@ -121,8 +130,10 @@ export function NotificationBell() {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       if (
-        popoverRef.current && !popoverRef.current.contains(target) &&
-        buttonRef.current && !buttonRef.current.contains(target)
+        popoverRef.current &&
+        !popoverRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
       ) {
         setOpen(false);
       }
@@ -183,12 +194,12 @@ export function NotificationBell() {
       <button
         ref={buttonRef}
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+          <span className="bg-primary text-primary-foreground absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -196,14 +207,14 @@ export function NotificationBell() {
 
       {/* Popover Dropdown — fixed positioning to escape sidebar overflow */}
       {open && (
-        <div ref={popoverRef} style={popoverStyle} className="rounded-lg border bg-card shadow-lg">
+        <div ref={popoverRef} style={popoverStyle} className="bg-card rounded-lg border shadow-lg">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h3 className="text-sm font-semibold">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                className="text-primary hover:text-primary/80 flex items-center gap-1 text-xs transition-colors"
               >
                 <CheckCheck className="h-3 w-3" />
                 Mark all read
@@ -215,13 +226,13 @@ export function NotificationBell() {
           <div className="max-h-96 overflow-y-auto">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                <div className="border-muted-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Bell className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">No notifications yet</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <Bell className="text-muted-foreground/40 mb-2 h-8 w-8" />
+                <p className="text-muted-foreground text-sm">No notifications yet</p>
+                <p className="text-muted-foreground/60 mt-1 text-xs">
                   You will see updates here as you use Job Pilot
                 </p>
               </div>
@@ -231,7 +242,7 @@ export function NotificationBell() {
                   <li key={notification.id}>
                     <button
                       onClick={() => handleNotificationClick(notification)}
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50 ${
+                      className={`hover:bg-accent/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
                         !notification.read ? 'bg-primary/5' : ''
                       }`}
                     >
@@ -245,19 +256,21 @@ export function NotificationBell() {
                         <div className="flex items-start justify-between gap-2">
                           <p
                             className={`text-sm leading-tight ${
-                              !notification.read ? 'font-semibold text-foreground' : 'text-foreground/80'
+                              !notification.read
+                                ? 'text-foreground font-semibold'
+                                : 'text-foreground/80'
                             }`}
                           >
                             {notification.title}
                           </p>
                           {!notification.read && (
-                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                            <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
                           {notification.message}
                         </p>
-                        <p className="mt-1 text-[10px] text-muted-foreground/60">
+                        <p className="text-muted-foreground/60 mt-1 text-[10px]">
                           {timeAgo(notification.createdAt)}
                         </p>
                       </div>
@@ -271,7 +284,7 @@ export function NotificationBell() {
           {/* Footer */}
           {notifications.length > 0 && (
             <div className="border-t px-4 py-2">
-              <p className="text-center text-[10px] text-muted-foreground/60">
+              <p className="text-muted-foreground/60 text-center text-[10px]">
                 Showing last {notifications.length} notifications
               </p>
             </div>

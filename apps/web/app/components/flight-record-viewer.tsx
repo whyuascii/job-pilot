@@ -1,6 +1,15 @@
 import * as React from 'react';
-import { FileText, Building2, Calendar, Target, ChevronDown, ChevronUp, Download, Loader2 } from 'lucide-react';
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from '@job-pilot/ui';
+import {
+  Building2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  FileText,
+  Loader2,
+  Target,
+} from 'lucide-react';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
 interface FlightRecord {
@@ -53,7 +62,7 @@ function RecordDetails({ record }: { record: FlightRecord }) {
         <>
           <button
             onClick={() => setShowResume(!showResume)}
-            className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent transition-colors"
+            className="hover:bg-accent flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm transition-colors"
           >
             <span className="flex items-center gap-2 font-medium">
               <FileText className="h-4 w-4 text-indigo-500" />
@@ -62,19 +71,23 @@ function RecordDetails({ record }: { record: FlightRecord }) {
             {showResume ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           {showResume && (
-            <div className="rounded-md border bg-muted/30 p-4 space-y-3">
+            <div className="bg-muted/30 space-y-3 rounded-md border p-4">
               {record.resumeSnapshot.summary && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+                  <p className="text-muted-foreground mb-1 text-xs font-medium">Summary</p>
                   <p className="text-sm">{record.resumeSnapshot.summary}</p>
                 </div>
               )}
               {record.resumeSnapshot.highlightedSkills?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Highlighted Skills</p>
+                  <p className="text-muted-foreground mb-1 text-xs font-medium">
+                    Highlighted Skills
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {record.resumeSnapshot.highlightedSkills.map((skill: string) => (
-                      <Badge key={skill} variant="secondary" className="text-[10px]">{skill}</Badge>
+                      <Badge key={skill} variant="secondary" className="text-[10px]">
+                        {skill}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -89,17 +102,21 @@ function RecordDetails({ record }: { record: FlightRecord }) {
         <>
           <button
             onClick={() => setShowCoverLetter(!showCoverLetter)}
-            className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm hover:bg-accent transition-colors"
+            className="hover:bg-accent flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm transition-colors"
           >
             <span className="flex items-center gap-2 font-medium">
               <FileText className="h-4 w-4 text-emerald-500" />
               Cover Letter Snapshot
             </span>
-            {showCoverLetter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {showCoverLetter ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
           {showCoverLetter && (
-            <div className="rounded-md border bg-muted/30 p-4">
-              <p className="text-sm whitespace-pre-wrap">{record.coverLetterSnapshot}</p>
+            <div className="bg-muted/30 rounded-md border p-4">
+              <p className="whitespace-pre-wrap text-sm">{record.coverLetterSnapshot}</p>
             </div>
           )}
         </>
@@ -115,9 +132,7 @@ function RecordDetails({ record }: { record: FlightRecord }) {
             </span>
           )}
           {record.scoreSnapshot.fitScore != null && (
-            <span className="text-muted-foreground">
-              Fit: {record.scoreSnapshot.fitScore}%
-            </span>
+            <span className="text-muted-foreground">Fit: {record.scoreSnapshot.fitScore}%</span>
           )}
           {record.scoreSnapshot.competitivenessScore != null && (
             <span className="text-muted-foreground">
@@ -130,7 +145,15 @@ function RecordDetails({ record }: { record: FlightRecord }) {
   );
 }
 
-function RecordHeader({ record, onDownload, exporting }: { record: FlightRecord; onDownload: () => void; exporting: boolean }) {
+function RecordHeader({
+  record,
+  onDownload,
+  exporting,
+}: {
+  record: FlightRecord;
+  onDownload: () => void;
+  exporting: boolean;
+}) {
   const jobTitle = record.jobTitle || record.jobSnapshot?.title || 'Unknown Position';
   const jobCompany = record.jobCompany || record.jobSnapshot?.company || 'Unknown Company';
   const score = record.scoreSnapshot?.overallScore;
@@ -143,7 +166,7 @@ function RecordHeader({ record, onDownload, exporting }: { record: FlightRecord;
             <FileText className="h-4 w-4 text-sky-500" />
             {jobTitle}
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <Building2 className="h-3.5 w-3.5" />
             {jobCompany}
           </div>
@@ -151,19 +174,31 @@ function RecordHeader({ record, onDownload, exporting }: { record: FlightRecord;
         <div className="flex items-center gap-2">
           {score != null && (
             <Badge variant={score >= 60 ? 'success' : score >= 40 ? 'default' : 'warning'}>
-              <Target className="h-3 w-3 mr-1" />
+              <Target className="mr-1 h-3 w-3" />
               {score}%
             </Badge>
           )}
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onDownload} disabled={exporting}>
-            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={onDownload}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+      <div className="text-muted-foreground flex items-center gap-3 pt-1 text-xs">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          {record.appliedAt ? `Applied ${new Date(record.appliedAt).toLocaleDateString()}` : `Created ${new Date(record.createdAt).toLocaleDateString()}`}
+          {record.appliedAt
+            ? `Applied ${new Date(record.appliedAt).toLocaleDateString()}`
+            : `Created ${new Date(record.createdAt).toLocaleDateString()}`}
         </span>
         {record.scoreSnapshot?.recommendation && (
           <Badge variant="secondary" className="text-[10px]">

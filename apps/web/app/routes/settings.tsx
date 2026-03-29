@@ -1,28 +1,52 @@
 import React from 'react';
-import { createFileRoute, useRouter, Link } from '@tanstack/react-router';
-import { Key, Globe, Database, Mail, Plus, Trash2, Check, X, RefreshCw, Loader2, Clock, AlertCircle, CheckCircle2, Unplug, Search, ExternalLink, Sparkles, ChevronDown, User, Eye, EyeOff, Lock } from 'lucide-react';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
-  Button,
-  Badge,
-  Separator,
-  Input,
-  Label,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Database,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Globe,
+  Key,
+  Loader2,
+  Lock,
+  Mail,
+  Plus,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Trash2,
+  Unplug,
+  User,
+  X,
+} from 'lucide-react';
+import {
   AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Separator,
 } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 import { authClient } from '~/lib/auth-client';
+import { captureEvent } from '~/lib/posthog';
 
 interface SyncResult {
   sourceId: string;
@@ -41,7 +65,12 @@ export const Route = createFileRoute('/settings')({
     const [apiKeys, sources, gmailStatus, session] = await Promise.all([
       api.settings.getApiKeyStatus(),
       api.settings.listJobSources(),
-      api.gmail.getStatus().catch(() => ({ connected: false } as { connected: boolean; scope?: string; connectedAt?: string })),
+      api.gmail
+        .getStatus()
+        .catch(
+          () =>
+            ({ connected: false }) as { connected: boolean; scope?: string; connectedAt?: string },
+        ),
       api.auth.getSession().catch(() => null),
     ]);
     return { apiKeys, sources, gmailStatus, session };
@@ -61,9 +90,7 @@ function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Ground Control</h1>
-        <p className="text-muted-foreground">
-          Configure your Job Pilot system settings.
-        </p>
+        <p className="text-muted-foreground">Configure your Job Pilot system settings.</p>
       </div>
 
       <div className="grid gap-6">
@@ -142,12 +169,13 @@ function ApiKeysSection({ apiKeys }: { apiKeys: ApiKeyStatus }) {
             )}
             <span className="text-sm font-medium">Object Storage (S3)</span>
           </div>
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="text-muted-foreground font-mono text-xs">
             {apiKeys.s3.configured ? apiKeys.s3.endpoint : 'Not configured'}
           </span>
         </div>
-        <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-          Keys set here override environment variables. S3 storage is configured via <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">.env</code>.
+        <div className="bg-muted/50 text-muted-foreground rounded-md p-3 text-sm">
+          Keys set here override environment variables. S3 storage is configured via{' '}
+          <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">.env</code>.
         </div>
       </div>
     </SettingsSection>
@@ -181,6 +209,7 @@ function EditableApiKeyRow({
     setError('');
     try {
       await api.settings.saveApiKey({ service, apiKey: value.trim() });
+      captureEvent('api_key_saved', { service });
       setValue('');
       setEditing(false);
       onMutate();
@@ -208,7 +237,7 @@ function EditableApiKeyRow({
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <Key className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Key className="text-muted-foreground h-4 w-4 shrink-0" />
           <span className="text-sm font-medium">{label}</span>
         </div>
         <div className="flex gap-2">
@@ -221,18 +250,29 @@ function EditableApiKeyRow({
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave();
-              if (e.key === 'Escape') { setEditing(false); setValue(''); }
+              if (e.key === 'Escape') {
+                setEditing(false);
+                setValue('');
+              }
             }}
           />
           <Button size="sm" onClick={handleSave} disabled={saving || !value.trim()}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setValue(''); setError(''); }}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setEditing(false);
+              setValue('');
+              setError('');
+            }}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
         {error && (
-          <p className="text-xs text-destructive flex items-center gap-1">
+          <p className="text-destructive flex items-center gap-1 text-xs">
             <AlertCircle className="h-3 w-3" /> {error}
           </p>
         )}
@@ -253,28 +293,25 @@ function EditableApiKeyRow({
           </div>
         )}
         <span className="text-sm font-medium">{label}</span>
-        {configured && (
-          <span className="font-mono text-xs text-muted-foreground">{masked}</span>
-        )}
+        {configured && <span className="text-muted-foreground font-mono text-xs">{masked}</span>}
       </div>
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 text-xs"
-          onClick={() => setEditing(true)}
-        >
+        <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setEditing(true)}>
           {configured ? 'Update' : 'Add Key'}
         </Button>
         {configured && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
             onClick={handleDelete}
             disabled={deleting}
           >
-            {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+            {deleting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
           </Button>
         )}
       </div>
@@ -310,6 +347,7 @@ function GmailSection({
     setError('');
     try {
       const { url } = await api.gmail.getAuthUrl();
+      captureEvent('gmail_connect_started');
       window.location.href = url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start Gmail connection.');
@@ -322,6 +360,7 @@ function GmailSection({
     setError('');
     try {
       await api.gmail.disconnect();
+      captureEvent('gmail_disconnected');
       onMutate();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disconnect Gmail.');
@@ -362,18 +401,16 @@ function GmailSection({
                 </div>
                 <div>
                   <p className="text-sm font-medium">Gmail Connected</p>
-                  <p className="text-xs text-muted-foreground">
-                    Connected {gmailStatus.connectedAt ? new Date(gmailStatus.connectedAt).toLocaleDateString() : 'recently'}
+                  <p className="text-muted-foreground text-xs">
+                    Connected{' '}
+                    {gmailStatus.connectedAt
+                      ? new Date(gmailStatus.connectedAt).toLocaleDateString()
+                      : 'recently'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSync}
-                  disabled={syncing}
-                >
+                <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                   {syncing ? (
                     <>
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -409,9 +446,9 @@ function GmailSection({
                 <div className="flex items-center gap-2 text-emerald-700">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   <span>
-                    Found <strong>{syncResult.total}</strong> matching messages:
-                    {' '}<strong>{syncResult.synced}</strong> new,
-                    {' '}<strong>{syncResult.skipped}</strong> already imported.
+                    Found <strong>{syncResult.total}</strong> matching messages:{' '}
+                    <strong>{syncResult.synced}</strong> new, <strong>{syncResult.skipped}</strong>{' '}
+                    already imported.
                   </span>
                 </div>
               </div>
@@ -421,18 +458,18 @@ function GmailSection({
           <div className="space-y-4">
             {/* What Gmail connection does */}
             <div className="rounded-lg border border-sky-300 bg-white p-4">
-              <h4 className="text-sm font-semibold mb-2">What does connecting Gmail do?</h4>
-              <ul className="text-sm text-muted-foreground space-y-1.5">
+              <h4 className="mb-2 text-sm font-semibold">What does connecting Gmail do?</h4>
+              <ul className="text-muted-foreground space-y-1.5 text-sm">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
                   <span>Automatically detects recruiter emails and interview invitations</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
                   <span>Updates application statuses when you receive responses</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
                   <span>Read-only access — Job Pilot never sends emails on your behalf</span>
                 </li>
               </ul>
@@ -441,22 +478,17 @@ function GmailSection({
             {/* Connect button */}
             <div className="flex items-center justify-between rounded-md border px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
+                  <Mail className="text-muted-foreground h-4 w-4" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">Not Connected</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Click to securely connect via Google sign-in.
                   </p>
                 </div>
               </div>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleConnect}
-                disabled={connecting}
-              >
+              <Button variant="default" size="sm" onClick={handleConnect} disabled={connecting}>
                 {connecting ? (
                   <>
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -480,14 +512,16 @@ function GmailSection({
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
-            <p className="text-xs text-red-500/80 mt-1 ml-6">
-              If this persists, check that your system administrator has configured the Gmail integration.
+            <p className="ml-6 mt-1 text-xs text-red-500/80">
+              If this persists, check that your system administrator has configured the Gmail
+              integration.
             </p>
           </div>
         )}
 
-        <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-          Your privacy is protected. Gmail data is only used to track application responses and is never shared.
+        <div className="bg-muted/50 text-muted-foreground rounded-md p-3 text-xs">
+          Your privacy is protected. Gmail data is only used to track application responses and is
+          never shared.
         </div>
       </div>
     </SettingsSection>
@@ -520,47 +554,148 @@ function formatRelativeTime(date: Date | string): string {
 const SEARCH_SOURCES = [
   { type: 'linkedin', label: 'LinkedIn', description: 'Largest professional network' },
   { type: 'indeed', label: 'Indeed', description: 'Biggest job search engine' },
-  { type: 'serpapi', label: 'Google Jobs', description: 'Google job aggregator', requiresKey: 'serpapi' },
-  { type: 'adzuna', label: 'Adzuna', description: 'Jobs across 19 countries', requiresKey: 'adzuna' },
+  {
+    type: 'serpapi',
+    label: 'Google Jobs',
+    description: 'Google job aggregator',
+    requiresKey: 'serpapi',
+  },
+  {
+    type: 'adzuna',
+    label: 'Adzuna',
+    description: 'Jobs across 19 countries',
+    requiresKey: 'adzuna',
+  },
 ] as const;
 
 // Each board has a searchUrl template: {q} = query, {l} = location
 const JOB_BOARD_DIRECTORY = [
-  { name: 'Glassdoor', searchUrl: 'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={q}&locT=C&locKeyword={l}', category: 'General', description: 'Company reviews and salary data' },
-  { name: 'Wellfound', searchUrl: 'https://wellfound.com/role/r/{q}', category: 'Startups', description: 'Startup and tech jobs (ex-AngelList)' },
-  { name: 'We Work Remotely', searchUrl: 'https://weworkremotely.com/remote-jobs/search?term={q}', category: 'Remote', description: 'Leading remote-only job board' },
-  { name: 'RemoteOK', searchUrl: 'https://remoteok.com/remote-{q}-jobs', category: 'Remote', description: 'Remote jobs with salary transparency' },
-  { name: 'Hacker News', searchUrl: 'https://news.ycombinator.com/jobs', category: 'Tech', description: 'YC startup job postings' },
-  { name: 'Built In', searchUrl: 'https://builtin.com/jobs?search={q}&location={l}', category: 'Tech', description: 'Tech hub listings by city' },
-  { name: 'Dice', searchUrl: 'https://www.dice.com/jobs?q={q}&location={l}', category: 'Tech', description: 'Technology-focused career site' },
-  { name: 'Otta', searchUrl: 'https://otta.com/jobs?search={q}', category: 'Startups', description: 'Curated startup jobs with matching' },
-  { name: 'Levels.fyi', searchUrl: 'https://www.levels.fyi/jobs?searchText={q}&location={l}', category: 'Tech', description: 'Verified compensation data' },
-  { name: 'FlexJobs', searchUrl: 'https://www.flexjobs.com/search?search={q}&location={l}', category: 'Remote', description: 'Vetted remote and flexible jobs' },
-  { name: 'Remote.co', searchUrl: 'https://remote.co/remote-jobs/search/?search_keywords={q}', category: 'Remote', description: 'Curated remote job listings' },
-  { name: 'Working Nomads', searchUrl: 'https://www.workingnomads.com/jobs?category={q}', category: 'Remote', description: 'Remote jobs for digital nomads' },
-  { name: 'The Muse', searchUrl: 'https://www.themuse.com/search?keyword={q}&location={l}', category: 'General', description: 'Company profiles and testimonials' },
-  { name: 'USAJobs', searchUrl: 'https://www.usajobs.gov/Search/Results?k={q}&l={l}', category: 'Government', description: 'US federal government jobs' },
-  { name: 'SimplyHired', searchUrl: 'https://www.simplyhired.com/search?q={q}&l={l}', category: 'General', description: 'Job aggregator with salary estimates' },
-  { name: 'ZipRecruiter', searchUrl: 'https://www.ziprecruiter.com/jobs-search?search={q}&location={l}', category: 'General', description: 'AI-powered job matching' },
-  { name: 'Stack Overflow', searchUrl: 'https://stackoverflow.com/jobs?q={q}&l={l}', category: 'Tech', description: 'Developer community jobs' },
-  { name: 'Greenhouse', searchUrl: 'https://www.greenhouse.com/explore?query={q}', category: 'Tech', description: 'Companies using Greenhouse ATS' },
-  { name: 'Lever Jobs', searchUrl: 'https://jobs.lever.co?search={q}', category: 'Tech', description: 'Companies using Lever ATS' },
+  {
+    name: 'Glassdoor',
+    searchUrl: 'https://www.glassdoor.com/Job/jobs.htm?sc.keyword={q}&locT=C&locKeyword={l}',
+    category: 'General',
+    description: 'Company reviews and salary data',
+  },
+  {
+    name: 'Wellfound',
+    searchUrl: 'https://wellfound.com/role/r/{q}',
+    category: 'Startups',
+    description: 'Startup and tech jobs (ex-AngelList)',
+  },
+  {
+    name: 'We Work Remotely',
+    searchUrl: 'https://weworkremotely.com/remote-jobs/search?term={q}',
+    category: 'Remote',
+    description: 'Leading remote-only job board',
+  },
+  {
+    name: 'RemoteOK',
+    searchUrl: 'https://remoteok.com/remote-{q}-jobs',
+    category: 'Remote',
+    description: 'Remote jobs with salary transparency',
+  },
+  {
+    name: 'Hacker News',
+    searchUrl: 'https://news.ycombinator.com/jobs',
+    category: 'Tech',
+    description: 'YC startup job postings',
+  },
+  {
+    name: 'Built In',
+    searchUrl: 'https://builtin.com/jobs?search={q}&location={l}',
+    category: 'Tech',
+    description: 'Tech hub listings by city',
+  },
+  {
+    name: 'Dice',
+    searchUrl: 'https://www.dice.com/jobs?q={q}&location={l}',
+    category: 'Tech',
+    description: 'Technology-focused career site',
+  },
+  {
+    name: 'Otta',
+    searchUrl: 'https://otta.com/jobs?search={q}',
+    category: 'Startups',
+    description: 'Curated startup jobs with matching',
+  },
+  {
+    name: 'Levels.fyi',
+    searchUrl: 'https://www.levels.fyi/jobs?searchText={q}&location={l}',
+    category: 'Tech',
+    description: 'Verified compensation data',
+  },
+  {
+    name: 'FlexJobs',
+    searchUrl: 'https://www.flexjobs.com/search?search={q}&location={l}',
+    category: 'Remote',
+    description: 'Vetted remote and flexible jobs',
+  },
+  {
+    name: 'Remote.co',
+    searchUrl: 'https://remote.co/remote-jobs/search/?search_keywords={q}',
+    category: 'Remote',
+    description: 'Curated remote job listings',
+  },
+  {
+    name: 'Working Nomads',
+    searchUrl: 'https://www.workingnomads.com/jobs?category={q}',
+    category: 'Remote',
+    description: 'Remote jobs for digital nomads',
+  },
+  {
+    name: 'The Muse',
+    searchUrl: 'https://www.themuse.com/search?keyword={q}&location={l}',
+    category: 'General',
+    description: 'Company profiles and testimonials',
+  },
+  {
+    name: 'USAJobs',
+    searchUrl: 'https://www.usajobs.gov/Search/Results?k={q}&l={l}',
+    category: 'Government',
+    description: 'US federal government jobs',
+  },
+  {
+    name: 'SimplyHired',
+    searchUrl: 'https://www.simplyhired.com/search?q={q}&l={l}',
+    category: 'General',
+    description: 'Job aggregator with salary estimates',
+  },
+  {
+    name: 'ZipRecruiter',
+    searchUrl: 'https://www.ziprecruiter.com/jobs-search?search={q}&location={l}',
+    category: 'General',
+    description: 'AI-powered job matching',
+  },
+  {
+    name: 'Stack Overflow',
+    searchUrl: 'https://stackoverflow.com/jobs?q={q}&l={l}',
+    category: 'Tech',
+    description: 'Developer community jobs',
+  },
+  {
+    name: 'Greenhouse',
+    searchUrl: 'https://www.greenhouse.com/explore?query={q}',
+    category: 'Tech',
+    description: 'Companies using Greenhouse ATS',
+  },
+  {
+    name: 'Lever Jobs',
+    searchUrl: 'https://jobs.lever.co?search={q}',
+    category: 'Tech',
+    description: 'Companies using Lever ATS',
+  },
 ] as const;
 
 /** Build a search URL from a board template using the candidate's profile search config */
 function buildBoardSearchUrl(template: string, searchConfig: any): string {
-  const query = encodeURIComponent(searchConfig?.currentTitle || searchConfig?.searchTerms?.[0] || 'software engineer');
+  const query = encodeURIComponent(
+    searchConfig?.currentTitle || searchConfig?.searchTerms?.[0] || 'software engineer',
+  );
   const location = encodeURIComponent(searchConfig?.location || '');
   return template.replace(/\{q\}/g, query).replace(/\{l\}/g, location);
 }
 
-function JobSourcesSection({
-  sources,
-  onMutate,
-}: {
-  sources: JobSource[];
-  onMutate: () => void;
-}) {
+function JobSourcesSection({ sources, onMutate }: { sources: JobSource[]; onMutate: () => void }) {
   const [deletingSourceId, setDeletingSourceId] = React.useState<string | null>(null);
 
   // Search config state
@@ -572,8 +707,8 @@ function JobSourcesSection({
   const [showDirectory, setShowDirectory] = React.useState(false);
   const [boardSearch, setBoardSearch] = React.useState('');
   const [addingBoard, setAddingBoard] = React.useState<string | null>(null);
-  const [addedBoards, setAddedBoards] = React.useState<Set<string>>(() =>
-    new Set(sources.map((s) => s.name)),
+  const [addedBoards, setAddedBoards] = React.useState<Set<string>>(
+    () => new Set(sources.map((s) => s.name)),
   );
 
   // Add Custom Source state
@@ -595,7 +730,8 @@ function JobSourcesSection({
 
   // Load search config on mount
   React.useEffect(() => {
-    api.settings.getSearchConfig()
+    api.settings
+      .getSearchConfig()
       .then(setSearchConfig)
       .catch(() => setSearchConfig(null))
       .finally(() => setLoadingConfig(false));
@@ -633,7 +769,7 @@ function JobSourcesSection({
     }
   }
 
-  async function handleAddBoard(board: typeof JOB_BOARD_DIRECTORY[number]) {
+  async function handleAddBoard(board: (typeof JOB_BOARD_DIRECTORY)[number]) {
     setAddingBoard(board.name);
     try {
       const url = buildBoardSearchUrl(board.searchUrl, searchConfig);
@@ -671,8 +807,16 @@ function JobSourcesSection({
 
   async function handleSyncSource(sourceId: string) {
     setSyncingIds((prev) => new Set([...prev, sourceId]));
-    setSyncResults((prev) => { const next = { ...prev }; delete next[sourceId]; return next; });
-    setSyncErrors((prev) => { const next = { ...prev }; delete next[sourceId]; return next; });
+    setSyncResults((prev) => {
+      const next = { ...prev };
+      delete next[sourceId];
+      return next;
+    });
+    setSyncErrors((prev) => {
+      const next = { ...prev };
+      delete next[sourceId];
+      return next;
+    });
 
     try {
       const result = await api.settings.syncJobSource({ sourceId });
@@ -698,9 +842,7 @@ function JobSourcesSection({
     setSyncResults({});
     setSyncErrors({});
 
-    const enabledWithUrls = sources.filter(
-      (s) => s.enabled && (s.config as any)?.url,
-    );
+    const enabledWithUrls = sources.filter((s) => s.enabled && (s.config as any)?.url);
     setSyncingIds(new Set(enabledWithUrls.map((s) => s.id)));
 
     try {
@@ -732,22 +874,29 @@ function JobSourcesSection({
       description="Configure where Job Pilot searches for opportunities."
     >
       <div className="space-y-6">
-
         {/* Search Sources */}
         <div className="space-y-3">
           <div>
-            <h4 className="text-sm font-semibold flex items-center gap-2">
+            <h4 className="flex items-center gap-2 text-sm font-semibold">
               <Sparkles className="h-4 w-4 text-sky-600" />
               Search Sources
             </h4>
             {searchConfig && searchConfig.currentTitle && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Auto-searching: <span className="font-medium text-foreground">{searchConfig.searchTerms?.[0] || searchConfig.currentTitle}</span>
-                {searchConfig.location && <> in <span className="font-medium text-foreground">{searchConfig.location}</span></>}
+              <p className="text-muted-foreground mt-1 text-xs">
+                Auto-searching:{' '}
+                <span className="text-foreground font-medium">
+                  {searchConfig.searchTerms?.[0] || searchConfig.currentTitle}
+                </span>
+                {searchConfig.location && (
+                  <>
+                    {' '}
+                    in <span className="text-foreground font-medium">{searchConfig.location}</span>
+                  </>
+                )}
               </p>
             )}
             {!searchConfig?.currentTitle && !loadingConfig && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Complete your profile to auto-generate search terms.
               </p>
             )}
@@ -766,7 +915,7 @@ function JobSourcesSection({
                   disabled={isEnabling}
                   onClick={() => {
                     if (isEnabled) {
-                      const existing = sources.find(s => s.type === src.type);
+                      const existing = sources.find((s) => s.type === src.type);
                       if (existing) setDeletingSourceId(existing.id);
                     } else {
                       handleEnableSource(src.type);
@@ -775,17 +924,17 @@ function JobSourcesSection({
                   className={`relative flex flex-col items-center gap-1 rounded-lg border p-3 text-center transition-all ${
                     isEnabled
                       ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-200'
-                      : 'border-muted hover:border-sky-300 hover:bg-muted/30'
+                      : 'border-muted hover:bg-muted/30 hover:border-sky-300'
                   }`}
                 >
                   {isEnabling && (
-                    <Loader2 className="absolute top-1.5 right-1.5 h-3.5 w-3.5 animate-spin text-sky-500" />
+                    <Loader2 className="absolute right-1.5 top-1.5 h-3.5 w-3.5 animate-spin text-sky-500" />
                   )}
                   {isEnabled && !isEnabling && (
-                    <Check className="absolute top-1.5 right-1.5 h-3.5 w-3.5 text-sky-600" />
+                    <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-sky-600" />
                   )}
                   <span className="text-xs font-medium">{src.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{src.description}</span>
+                  <span className="text-muted-foreground text-[10px]">{src.description}</span>
                   {needsKey && !isEnabled && (
                     <span className="text-[10px] text-amber-600">needs key</span>
                   )}
@@ -802,21 +951,28 @@ function JobSourcesSection({
           <div className="flex items-center justify-between rounded-md border border-sky-300 bg-white px-4 py-3">
             <div className="min-w-0">
               <p className="text-sm font-medium">Sync All Sources</p>
-              <p className="text-xs text-muted-foreground">
-                Fetch new jobs from {enabledSourcesWithUrls.length} enabled source{enabledSourcesWithUrls.length !== 1 ? 's' : ''}.
+              <p className="text-muted-foreground text-xs">
+                Fetch new jobs from {enabledSourcesWithUrls.length} enabled source
+                {enabledSourcesWithUrls.length !== 1 ? 's' : ''}.
               </p>
             </div>
             <Button
               variant="default"
               size="sm"
-              className="shrink-0 ml-4"
+              className="ml-4 shrink-0"
               onClick={handleSyncAll}
               disabled={syncingAll || syncingIds.size > 0}
             >
               {syncingAll ? (
-                <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />Syncing...</>
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
               ) : (
-                <><RefreshCw className="mr-1.5 h-4 w-4" />Sync All</>
+                <>
+                  <RefreshCw className="mr-1.5 h-4 w-4" />
+                  Sync All
+                </>
               )}
             </Button>
           </div>
@@ -826,7 +982,7 @@ function JobSourcesSection({
 
         {/* Active source list */}
         {sources.length === 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No sources enabled yet. Click a search source above or add a custom URL.
           </p>
         )}
@@ -840,7 +996,7 @@ function JobSourcesSection({
           return (
             <div key={source.id} className="rounded-md border">
               <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
                   <button
                     type="button"
                     onClick={() => handleToggle(source.id, !source.enabled)}
@@ -856,29 +1012,33 @@ function JobSourcesSection({
                   </button>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{source.name}</span>
-                      <Badge variant="secondary" className="text-[10px] uppercase shrink-0">
+                      <span className="truncate text-sm font-medium">{source.name}</span>
+                      <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
                         {source.type}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2">
                       {(source.config as any)?.searchTerm && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           Search: "{(source.config as any).searchTerm}"
-                          {(source.config as any)?.location && ` in ${(source.config as any).location}`}
+                          {(source.config as any)?.location &&
+                            ` in ${(source.config as any).location}`}
                         </p>
                       )}
                       {(source.config as any)?.url && !(source.config as any)?.searchTerm && (
-                        <p className="text-xs text-muted-foreground break-all">
+                        <p className="text-muted-foreground break-all text-xs">
                           {(source.config as any).url}
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
+                <div className="ml-2 flex shrink-0 items-center gap-2">
                   {source.lastSyncAt && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground" title={new Date(source.lastSyncAt).toLocaleString()}>
+                    <span
+                      className="text-muted-foreground flex items-center gap-1 text-xs"
+                      title={new Date(source.lastSyncAt).toLocaleString()}
+                    >
                       <Clock className="h-3 w-3" />
                       {formatRelativeTime(source.lastSyncAt)}
                     </span>
@@ -887,18 +1047,22 @@ function JobSourcesSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 px-2 text-muted-foreground hover:text-sky-600"
+                      className="text-muted-foreground h-8 px-2 hover:text-sky-600"
                       onClick={() => handleSyncSource(source.id)}
                       disabled={isSyncing || syncingAll}
                       title="Sync this source now"
                     >
-                      {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      {isSyncing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
                     onClick={() => setDeletingSourceId(source.id)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -907,10 +1071,10 @@ function JobSourcesSection({
               </div>
               {result && <SourceSyncResult result={result} />}
               {error && (
-                <div className="border-t px-4 py-3 bg-white">
+                <div className="border-t bg-white px-4 py-3">
                   <div className="flex items-start gap-2 text-xs text-red-700">
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                    <p className="break-words whitespace-pre-wrap leading-relaxed">{error}</p>
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <p className="whitespace-pre-wrap break-words leading-relaxed">{error}</p>
                   </div>
                 </div>
               )}
@@ -920,9 +1084,16 @@ function JobSourcesSection({
 
         {/* Delete Source Confirmation */}
         {(() => {
-          const deletingSource = deletingSourceId ? sources.find((s) => s.id === deletingSourceId) : null;
+          const deletingSource = deletingSourceId
+            ? sources.find((s) => s.id === deletingSourceId)
+            : null;
           return (
-            <AlertDialog open={!!deletingSourceId} onOpenChange={(open) => { if (!open) setDeletingSourceId(null); }}>
+            <AlertDialog
+              open={!!deletingSourceId}
+              onOpenChange={(open) => {
+                if (!open) setDeletingSourceId(null);
+              }}
+            >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Remove Job Source?</AlertDialogTitle>
@@ -958,10 +1129,16 @@ function JobSourcesSection({
         </Button>
 
         {/* Add Custom Source Dialog */}
-        <Dialog open={showAddCustom} onOpenChange={(open) => {
-          setShowAddCustom(open);
-          if (!open) { setCustomName(''); setCustomUrl(''); }
-        }}>
+        <Dialog
+          open={showAddCustom}
+          onOpenChange={(open) => {
+            setShowAddCustom(open);
+            if (!open) {
+              setCustomName('');
+              setCustomUrl('');
+            }
+          }}
+        >
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>Add Custom Source</DialogTitle>
@@ -970,15 +1147,29 @@ function JobSourcesSection({
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Name</Label>
-                <Input placeholder="e.g. Stripe Careers" value={customName} onChange={(e) => setCustomName(e.target.value)} />
+                <Input
+                  placeholder="e.g. Stripe Careers"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>URL (optional)</Label>
-                <Input placeholder="https://example.com/jobs/12345" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
+                <Input
+                  placeholder="https://example.com/jobs/12345"
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowAddCustom(false)}>Cancel</Button>
-                <Button size="sm" disabled={customSubmitting || !customName.trim()} onClick={handleAddCustom}>
+                <Button variant="outline" size="sm" onClick={() => setShowAddCustom(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={customSubmitting || !customName.trim()}
+                  onClick={handleAddCustom}
+                >
                   {customSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
                 </Button>
               </div>
@@ -992,32 +1183,36 @@ function JobSourcesSection({
         <div className="space-y-3">
           <button
             type="button"
-            className="flex items-center justify-between w-full text-left"
+            className="flex w-full items-center justify-between text-left"
             onClick={() => setShowDirectory(!showDirectory)}
           >
             <div>
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <Globe className="h-4 w-4 text-muted-foreground" />
+              <h4 className="flex items-center gap-2 text-sm font-semibold">
+                <Globe className="text-muted-foreground h-4 w-4" />
                 Job Board Directory
-                <Badge variant="secondary" className="text-[10px]">{JOB_BOARD_DIRECTORY.length}</Badge>
+                <Badge variant="secondary" className="text-[10px]">
+                  {JOB_BOARD_DIRECTORY.length}
+                </Badge>
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 One-click add boards as sources. Search URLs are auto-built from your profile.
               </p>
             </div>
-            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showDirectory ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`text-muted-foreground h-4 w-4 transition-transform ${showDirectory ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {showDirectory && (
             <div className="space-y-3">
               {/* Search input */}
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
                   placeholder="Search boards..."
                   value={boardSearch}
                   onChange={(e) => setBoardSearch(e.target.value)}
-                  className="pl-8 h-8 text-sm"
+                  className="h-8 pl-8 text-sm"
                 />
                 {boardSearch && (
                   <button
@@ -1025,67 +1220,72 @@ function JobSourcesSection({
                     onClick={() => setBoardSearch('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2"
                   >
-                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    <X className="text-muted-foreground h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
 
               {/* Filtered boards */}
-              <div className="grid gap-1.5 sm:grid-cols-2 max-h-[400px] overflow-y-auto">
-                {JOB_BOARD_DIRECTORY
-                  .filter((b) => {
-                    if (!boardSearch) return true;
-                    const q = boardSearch.toLowerCase();
-                    return b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q) || b.description.toLowerCase().includes(q);
-                  })
-                  .map((board) => {
-                    const isAdded = addedBoards.has(board.name);
-                    const isAdding = addingBoard === board.name;
-                    return (
-                      <div
-                        key={board.name}
-                        className={`flex items-center justify-between rounded-md border px-3 py-2 transition-colors ${
-                          isAdded ? 'border-sky-300 bg-sky-50' : 'bg-card hover:bg-muted/50'
-                        }`}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium truncate">{board.name}</span>
-                            <Badge variant="secondary" className="text-[9px] shrink-0">{board.category}</Badge>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground truncate">{board.description}</p>
+              <div className="grid max-h-[400px] gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {JOB_BOARD_DIRECTORY.filter((b) => {
+                  if (!boardSearch) return true;
+                  const q = boardSearch.toLowerCase();
+                  return (
+                    b.name.toLowerCase().includes(q) ||
+                    b.category.toLowerCase().includes(q) ||
+                    b.description.toLowerCase().includes(q)
+                  );
+                }).map((board) => {
+                  const isAdded = addedBoards.has(board.name);
+                  const isAdding = addingBoard === board.name;
+                  return (
+                    <div
+                      key={board.name}
+                      className={`flex items-center justify-between rounded-md border px-3 py-2 transition-colors ${
+                        isAdded ? 'border-sky-300 bg-sky-50' : 'bg-card hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium">{board.name}</span>
+                          <Badge variant="secondary" className="shrink-0 text-[9px]">
+                            {board.category}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0 ml-2">
-                          {isAdded ? (
-                            <span className="flex items-center gap-1 text-xs text-sky-600 font-medium">
-                              <Check className="h-3.5 w-3.5" />
-                              Added
-                            </span>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              onClick={() => handleAddBoard(board)}
-                              disabled={isAdding}
-                            >
-                              {isAdding ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Plus className="h-3 w-3" />
-                              )}
-                              Add
-                            </Button>
-                          )}
-                        </div>
+                        <p className="text-muted-foreground truncate text-[11px]">
+                          {board.description}
+                        </p>
                       </div>
-                    );
-                  })}
+                      <div className="ml-2 flex shrink-0 items-center gap-1">
+                        {isAdded ? (
+                          <span className="flex items-center gap-1 text-xs font-medium text-sky-600">
+                            <Check className="h-3.5 w-3.5" />
+                            Added
+                          </span>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1 text-xs"
+                            onClick={() => handleAddBoard(board)}
+                            disabled={isAdding}
+                          >
+                            {isAdding ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Plus className="h-3 w-3" />
+                            )}
+                            Add
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
-
       </div>
     </SettingsSection>
   );
@@ -1100,39 +1300,43 @@ function SourceSyncResult({ result }: { result: SyncResult }) {
   const [showErrors, setShowErrors] = React.useState(false);
 
   return (
-    <div className={`border-t px-4 py-3 text-xs ${hasErrors ? 'bg-white border-amber-300' : 'bg-white border-emerald-300'}`}>
+    <div
+      className={`border-t px-4 py-3 text-xs ${hasErrors ? 'border-amber-300 bg-white' : 'border-emerald-300 bg-white'}`}
+    >
       <div className="flex items-center gap-3">
         {hasErrors ? (
-          <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         ) : (
-          <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-600" />
         )}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>
-            <strong className="font-medium text-foreground">{result.newJobs}</strong> new
+            <strong className="text-foreground font-medium">{result.newJobs}</strong> new
           </span>
           {result.duplicates > 0 && (
             <span>
-              <strong className="font-medium text-foreground">{result.duplicates}</strong> already imported
+              <strong className="text-foreground font-medium">{result.duplicates}</strong> already
+              imported
             </span>
           )}
           {hasErrors && (
             <button
               type="button"
               onClick={() => setShowErrors((v) => !v)}
-              className="text-amber-700 hover:underline cursor-pointer"
+              className="cursor-pointer text-amber-700 hover:underline"
             >
-              <strong className="font-medium">{result.errors.length}</strong> error{result.errors.length !== 1 ? 's' : ''}
+              <strong className="font-medium">{result.errors.length}</strong> error
+              {result.errors.length !== 1 ? 's' : ''}
               <span className="ml-1">{showErrors ? '▾' : '▸'}</span>
             </button>
           )}
         </div>
       </div>
       {hasErrors && showErrors && (
-        <div className="mt-2 ml-6 space-y-1.5">
+        <div className="ml-6 mt-2 space-y-1.5">
           {result.errors.map((err, i) => (
             <div key={i} className="rounded border border-amber-300 bg-white px-2.5 py-1.5">
-              <p className="text-amber-700 break-words whitespace-pre-wrap text-[11px] leading-relaxed">
+              <p className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-amber-700">
                 {err}
               </p>
             </div>
@@ -1143,7 +1347,9 @@ function SourceSyncResult({ result }: { result: SyncResult }) {
   );
 }
 
-function SyncAllSummary({ result }: {
+function SyncAllSummary({
+  result,
+}: {
   result: {
     results: SyncResult[];
     totalNewJobs: number;
@@ -1152,26 +1358,31 @@ function SyncAllSummary({ result }: {
 }) {
   if (result.results.length === 0) {
     return (
-      <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+      <div className="bg-muted/50 text-muted-foreground rounded-md p-3 text-sm">
         No enabled sources with URLs to sync.
       </div>
     );
   }
 
   return (
-    <div className={`rounded-md border p-3 text-sm ${result.totalErrors > 0 ? 'bg-white border-amber-300 text-amber-700' : 'bg-white border-emerald-300 text-emerald-700'}`}>
+    <div
+      className={`rounded-md border p-3 text-sm ${result.totalErrors > 0 ? 'border-amber-300 bg-white text-amber-700' : 'border-emerald-300 bg-white text-emerald-700'}`}
+    >
       <div className="flex items-start gap-2">
         {result.totalErrors > 0 ? (
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
         ) : (
-          <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
         )}
         <span className="break-words">
-          Synced {result.results.length} source{result.results.length !== 1 ? 's' : ''}:
-          {' '}<strong>{result.totalNewJobs}</strong> new job{result.totalNewJobs !== 1 ? 's' : ''} found
+          Synced {result.results.length} source{result.results.length !== 1 ? 's' : ''}:{' '}
+          <strong>{result.totalNewJobs}</strong> new job{result.totalNewJobs !== 1 ? 's' : ''} found
           {result.totalErrors > 0 && (
-            <>, <strong>{result.totalErrors}</strong> error{result.totalErrors !== 1 ? 's' : ''}</>
-          )}.
+            <>
+              , <strong>{result.totalErrors}</strong> error{result.totalErrors !== 1 ? 's' : ''}
+            </>
+          )}
+          .
         </span>
       </div>
     </div>
@@ -1209,7 +1420,7 @@ function DataManagementSection() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium">Rescore All Jobs</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Re-run the AI scorer on every job against your current profile. This uses your
               Anthropic API key and may take a while for large job lists.
             </p>
@@ -1226,7 +1437,7 @@ function DataManagementSection() {
           </Button>
         </div>
         {result && (
-          <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+          <div className="bg-muted/50 text-muted-foreground rounded-md p-3 text-sm">
             Rescored {result.count} of {result.total} jobs successfully.
           </div>
         )}
@@ -1320,27 +1531,26 @@ function AccountSettingsSection({ session }: { session: any }) {
               placeholder="Your name"
               className="max-w-xs"
             />
-            <Button
-              size="sm"
-              onClick={handleSaveName}
-              disabled={savingName || !displayName.trim()}
-            >
+            <Button size="sm" onClick={handleSaveName} disabled={savingName || !displayName.trim()}>
               {savingName ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : nameSaved ? (
-                <><CheckCircle2 className="mr-1.5 h-4 w-4" />Saved</>
+                <>
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  Saved
+                </>
               ) : (
                 'Save'
               )}
             </Button>
           </div>
           {nameError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
+            <p className="text-destructive flex items-center gap-1 text-xs">
               <AlertCircle className="h-3 w-3" /> {nameError}
             </p>
           )}
           {nameSaved && !nameError && (
-            <p className="text-xs text-green-600 flex items-center gap-1">
+            <p className="flex items-center gap-1 text-xs text-green-600">
               <CheckCircle2 className="h-3 w-3" /> Display name updated successfully.
             </p>
           )}
@@ -1351,7 +1561,7 @@ function AccountSettingsSection({ session }: { session: any }) {
         {/* Email (read-only) */}
         <div className="space-y-2">
           <Label>Email (read-only)</Label>
-          <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          <div className="bg-muted/50 text-muted-foreground rounded-md border px-3 py-2 text-sm">
             {session?.user?.email || 'Not available'}
           </div>
         </div>
@@ -1363,9 +1573,7 @@ function AccountSettingsSection({ session }: { session: any }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Password</p>
-              <p className="text-xs text-muted-foreground">
-                Update your account password.
-              </p>
+              <p className="text-muted-foreground text-xs">Update your account password.</p>
             </div>
             <Button
               variant="outline"
@@ -1401,10 +1609,14 @@ function AccountSettingsSection({ session }: { session: any }) {
                   />
                   <button
                     type="button"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
-                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -1421,7 +1633,7 @@ function AccountSettingsSection({ session }: { session: any }) {
                   />
                   <button
                     type="button"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -1441,21 +1653,25 @@ function AccountSettingsSection({ session }: { session: any }) {
                   />
                   <button
                     type="button"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               {passwordError && (
-                <p className="text-xs text-destructive flex items-center gap-1">
+                <p className="text-destructive flex items-center gap-1 text-xs">
                   <AlertCircle className="h-3 w-3" /> {passwordError}
                 </p>
               )}
               {passwordSuccess && (
-                <p className="text-xs text-green-600 flex items-center gap-1">
+                <p className="flex items-center gap-1 text-xs text-green-600">
                   <CheckCircle2 className="h-3 w-3" /> Password changed successfully.
                 </p>
               )}
@@ -1466,7 +1682,10 @@ function AccountSettingsSection({ session }: { session: any }) {
                 disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
               >
                 {changingPassword ? (
-                  <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />Changing...</>
+                  <>
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    Changing...
+                  </>
                 ) : (
                   'Update Password'
                 )}
@@ -1478,7 +1697,7 @@ function AccountSettingsSection({ session }: { session: any }) {
         <Separator />
 
         {/* Profile Link */}
-        <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+        <div className="bg-muted/50 text-muted-foreground rounded-md p-3 text-sm">
           For professional details (headline, experience, skills), visit your{' '}
           <Link to="/profile" className="font-medium text-sky-600 hover:underline">
             Pilot Profile
@@ -1506,12 +1725,12 @@ function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-6 shadow">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="bg-card rounded-xl border p-6 shadow">
+      <div className="mb-1 flex items-center gap-2">
         <span className="text-muted-foreground">{icon}</span>
         <h2 className="font-semibold">{title}</h2>
       </div>
-      <p className="text-sm text-muted-foreground mb-4">{description}</p>
+      <p className="text-muted-foreground mb-4 text-sm">{description}</p>
       {children}
     </div>
   );

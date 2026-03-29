@@ -1,7 +1,15 @@
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { applications, candidates, jobs, jobScores, outcomes, flightRecords, coverLetters } from '@job-pilot/db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import {
+  applications,
+  candidates,
+  coverLetters,
+  flightRecords,
+  jobs,
+  jobScores,
+  outcomes,
+} from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
@@ -32,7 +40,9 @@ router.get('/', async (_req, res, next) => {
     );
 
     res.json(enriched);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // GET /api/applications/:applicationId
@@ -40,7 +50,10 @@ router.get('/:applicationId', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     const app = await db.query.applications.findFirst({
-      where: and(eq(applications.id, req.params.applicationId), eq(applications.tenantId, ctx.tenantId)),
+      where: and(
+        eq(applications.id, req.params.applicationId),
+        eq(applications.tenantId, ctx.tenantId),
+      ),
     });
     if (!app) throw new Error('Application not found');
 
@@ -50,7 +63,9 @@ router.get('/:applicationId', async (req, res, next) => {
     });
 
     res.json({ ...app, job, score });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications
@@ -93,7 +108,9 @@ router.post('/', async (req, res, next) => {
     });
 
     res.json(app);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications/update-status
@@ -118,7 +135,9 @@ router.post('/update-status', async (req, res, next) => {
     });
 
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications/mark-applied
@@ -144,19 +163,23 @@ router.post('/mark-applied', async (req, res, next) => {
 
     const now = new Date();
     if (app) {
-      [app] = await db.update(applications)
+      [app] = await db
+        .update(applications)
         .set({ status: 'applied', appliedAt: now, updatedAt: now })
         .where(eq(applications.id, app.id))
         .returning();
     } else {
-      [app] = await db.insert(applications).values({
-        id: createId(),
-        jobId,
-        candidateId: candidate.id,
-        tenantId: ctx.tenantId,
-        status: 'applied',
-        appliedAt: now,
-      }).returning();
+      [app] = await db
+        .insert(applications)
+        .values({
+          id: createId(),
+          jobId,
+          candidateId: candidate.id,
+          tenantId: ctx.tenantId,
+          status: 'applied',
+          appliedAt: now,
+        })
+        .returning();
 
       await db.insert(outcomes).values({
         id: createId(),
@@ -185,31 +208,40 @@ router.post('/mark-applied', async (req, res, next) => {
       if (tailored) resumeSnapshot = tailored.contentJson;
     } catch {}
 
-    const [flightRecord] = await db.insert(flightRecords).values({
-      id: createId(),
-      applicationId: app.id,
-      candidateId: candidate.id,
-      jobId,
-      tenantId: ctx.tenantId,
-      resumeSnapshot,
-      coverLetterSnapshot: coverLetter?.content ?? null,
-      jobSnapshot: job ? {
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        mustHaveSkills: (job.mustHaveSkills as string[]) ?? [],
-      } : { title: 'Unknown', company: 'Unknown' },
-      scoreSnapshot: score ? {
-        overallScore: score.overallScore,
-        fitScore: score.fitScore,
-        competitivenessScore: score.competitivenessScore,
-        recommendation: score.recommendation,
-      } : null,
-      appliedAt: now,
-    }).returning();
+    const [flightRecord] = await db
+      .insert(flightRecords)
+      .values({
+        id: createId(),
+        applicationId: app.id,
+        candidateId: candidate.id,
+        jobId,
+        tenantId: ctx.tenantId,
+        resumeSnapshot,
+        coverLetterSnapshot: coverLetter?.content ?? null,
+        jobSnapshot: job
+          ? {
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              mustHaveSkills: (job.mustHaveSkills as string[]) ?? [],
+            }
+          : { title: 'Unknown', company: 'Unknown' },
+        scoreSnapshot: score
+          ? {
+              overallScore: score.overallScore,
+              fitScore: score.fitScore,
+              competitivenessScore: score.competitivenessScore,
+              recommendation: score.recommendation,
+            }
+          : null,
+        appliedAt: now,
+      })
+      .returning();
 
     res.json({ application: app, flightRecordId: flightRecord.id });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications/delete
@@ -222,12 +254,14 @@ router.post('/delete', async (req, res, next) => {
     await db.delete(outcomes).where(eq(outcomes.applicationId, applicationId));
 
     // Delete the application
-    await db.delete(applications).where(
-      and(eq(applications.id, applicationId), eq(applications.tenantId, ctx.tenantId))
-    );
+    await db
+      .delete(applications)
+      .where(and(eq(applications.id, applicationId), eq(applications.tenantId, ctx.tenantId)));
 
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications/quick-add
@@ -261,32 +295,38 @@ router.post('/quick-add', async (req, res, next) => {
     const appStatus = status || 'applied';
 
     // Create a minimal job stub
-    const [job] = await db.insert(jobs).values({
-      id: createId(),
-      tenantId: ctx.tenantId,
-      title: jobTitle?.trim() || 'Not specified',
-      company: company.trim(),
-      location: '',
-      applyUrl: '',
-      sourceUrl: '',
-      rawDescription: '',
-    }).returning();
+    const [job] = await db
+      .insert(jobs)
+      .values({
+        id: createId(),
+        tenantId: ctx.tenantId,
+        title: jobTitle?.trim() || 'Not specified',
+        company: company.trim(),
+        location: '',
+        applyUrl: '',
+        sourceUrl: '',
+        rawDescription: '',
+      })
+      .returning();
 
     // Create the application
-    const [app] = await db.insert(applications).values({
-      id: createId(),
-      jobId: job.id,
-      candidateId: candidate.id,
-      tenantId: ctx.tenantId,
-      status: appStatus,
-      appliedAt,
-      lastActivityAt: now,
-      compMin: compMin ?? null,
-      compMax: compMax ?? null,
-      equityDetails: equityDetails ?? null,
-      source: source || 'manual',
-      statusNote: statusNote ?? null,
-    }).returning();
+    const [app] = await db
+      .insert(applications)
+      .values({
+        id: createId(),
+        jobId: job.id,
+        candidateId: candidate.id,
+        tenantId: ctx.tenantId,
+        status: appStatus,
+        appliedAt,
+        lastActivityAt: now,
+        compMin: compMin ?? null,
+        compMax: compMax ?? null,
+        equityDetails: equityDetails ?? null,
+        source: source || 'manual',
+        statusNote: statusNote ?? null,
+      })
+      .returning();
 
     // Create an outcome record
     await db.insert(outcomes).values({
@@ -297,7 +337,9 @@ router.post('/quick-add', async (req, res, next) => {
     });
 
     res.json({ ...app, job });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/applications/update-details
@@ -340,7 +382,8 @@ router.post('/update-details', async (req, res, next) => {
       updates.declinedByUser = false;
     }
 
-    const [updated] = await db.update(applications)
+    const [updated] = await db
+      .update(applications)
       .set(updates)
       .where(and(eq(applications.id, applicationId), eq(applications.tenantId, ctx.tenantId)))
       .returning();
@@ -348,7 +391,9 @@ router.post('/update-details', async (req, res, next) => {
     if (!updated) throw new Error('Application not found');
 
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

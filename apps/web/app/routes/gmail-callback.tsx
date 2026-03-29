@@ -1,6 +1,6 @@
 import React from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
@@ -35,7 +35,8 @@ function GmailCallbackPage() {
       return;
     }
 
-    api.gmail.callback({ code })
+    api.gmail
+      .callback({ code })
       .then(() => {
         setStatus('success');
         // Auto-redirect after a short delay
@@ -50,11 +51,11 @@ function GmailCallbackPage() {
   }, [code, oauthError, navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="max-w-md w-full text-center space-y-4">
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="w-full max-w-md space-y-4 text-center">
         {status === 'processing' && (
           <>
-            <Loader2 className="h-12 w-12 animate-spin text-sky-500 mx-auto" />
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-sky-500" />
             <h1 className="text-xl font-semibold">Connecting Gmail...</h1>
             <p className="text-muted-foreground text-sm">
               Exchanging authorization code and securely storing your tokens.
@@ -64,7 +65,7 @@ function GmailCallbackPage() {
 
         {status === 'success' && (
           <>
-            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
             <h1 className="text-xl font-semibold">Gmail Connected!</h1>
             <p className="text-muted-foreground text-sm">
               Your Gmail account has been linked successfully. Redirecting to settings...
@@ -74,15 +75,10 @@ function GmailCallbackPage() {
 
         {status === 'error' && (
           <>
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
+            <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
             <h1 className="text-xl font-semibold">Connection Failed</h1>
-            <p className="text-sm text-red-600">
-              {errorMessage}
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => navigate({ to: '/settings' })}
-            >
+            <p className="text-sm text-red-600">{errorMessage}</p>
+            <Button variant="outline" onClick={() => navigate({ to: '/settings' })}>
               Back to Settings
             </Button>
           </>

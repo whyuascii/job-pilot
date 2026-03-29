@@ -1,7 +1,7 @@
-import { defineConfig } from 'drizzle-kit';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { resolve, dirname } from 'path';
 import { config } from 'dotenv';
+import { defineConfig } from 'drizzle-kit';
 
 // Load .env from monorepo root
 const __dirname = dirname(fileURLToPath(import.meta.url));

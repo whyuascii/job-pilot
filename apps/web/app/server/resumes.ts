@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import { candidates, resumes } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
 import { getTenantContext } from '~/lib/api';
-import { getUploadUrl, getDownloadUrl, deleteObject } from '~/lib/s3';
+import { deleteObject, getDownloadUrl, getUploadUrl } from '~/lib/s3';
 
 const ALLOWED_CONTENT_TYPES = [
   'application/pdf',
@@ -24,7 +24,7 @@ export const getUploadPresignedUrl = createServerFn({ method: 'POST' })
     // Validate content type
     if (!ALLOWED_CONTENT_TYPES.includes(data.contentType as any)) {
       throw new Error(
-        `Invalid file type. Allowed types: PDF, DOCX, TXT. Received: ${data.contentType}`
+        `Invalid file type. Allowed types: PDF, DOCX, TXT. Received: ${data.contentType}`,
       );
     }
 
@@ -35,10 +35,7 @@ export const getUploadPresignedUrl = createServerFn({ method: 'POST' })
 
     // Get the candidate for this user
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {
@@ -65,10 +62,7 @@ export const createResume = createServerFn({ method: 'POST' })
 
     // Get the candidate for this user
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {
@@ -80,8 +74,7 @@ export const createResume = createServerFn({ method: 'POST' })
     if (data.contentType === 'application/pdf') {
       type = 'pdf';
     } else if (
-      data.contentType ===
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      data.contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ) {
       type = 'docx';
     } else if (data.contentType === 'text/plain') {
@@ -90,10 +83,7 @@ export const createResume = createServerFn({ method: 'POST' })
 
     // Check if this is the first resume (to set as preferred)
     const existingResumes = await db.query.resumes.findMany({
-      where: and(
-        eq(resumes.candidateId, candidate.id),
-        eq(resumes.tenantId, ctx.tenantId),
-      ),
+      where: and(eq(resumes.candidateId, candidate.id), eq(resumes.tenantId, ctx.tenantId)),
     });
 
     const isFirst = existingResumes.length === 0;
@@ -120,10 +110,7 @@ export const listResumes = createServerFn({ method: 'GET' }).handler(async () =>
   const ctx = await getTenantContext();
 
   const candidate = await db.query.candidates.findFirst({
-    where: and(
-      eq(candidates.tenantId, ctx.tenantId),
-      eq(candidates.userId, ctx.userId),
-    ),
+    where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
   });
 
   if (!candidate) {
@@ -131,10 +118,7 @@ export const listResumes = createServerFn({ method: 'GET' }).handler(async () =>
   }
 
   const resumeList = await db.query.resumes.findMany({
-    where: and(
-      eq(resumes.candidateId, candidate.id),
-      eq(resumes.tenantId, ctx.tenantId),
-    ),
+    where: and(eq(resumes.candidateId, candidate.id), eq(resumes.tenantId, ctx.tenantId)),
     orderBy: [desc(resumes.createdAt)],
   });
 
@@ -151,10 +135,7 @@ export const deleteResume = createServerFn({ method: 'POST' })
     const ctx = await getTenantContext();
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {
@@ -180,20 +161,12 @@ export const deleteResume = createServerFn({ method: 'POST' })
     // Delete from database
     await db
       .delete(resumes)
-      .where(
-        and(
-          eq(resumes.id, data.resumeId),
-          eq(resumes.tenantId, ctx.tenantId),
-        )
-      );
+      .where(and(eq(resumes.id, data.resumeId), eq(resumes.tenantId, ctx.tenantId)));
 
     // If the deleted resume was preferred, set the most recent remaining as preferred
     if (resume.isPreferred) {
       const remaining = await db.query.resumes.findMany({
-        where: and(
-          eq(resumes.candidateId, candidate.id),
-          eq(resumes.tenantId, ctx.tenantId),
-        ),
+        where: and(eq(resumes.candidateId, candidate.id), eq(resumes.tenantId, ctx.tenantId)),
         orderBy: [desc(resumes.createdAt)],
         limit: 1,
       });
@@ -218,10 +191,7 @@ export const setPreferredResume = createServerFn({ method: 'POST' })
     const ctx = await getTenantContext();
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {
@@ -245,12 +215,7 @@ export const setPreferredResume = createServerFn({ method: 'POST' })
     await db
       .update(resumes)
       .set({ isPreferred: false, updatedAt: new Date() })
-      .where(
-        and(
-          eq(resumes.candidateId, candidate.id),
-          eq(resumes.tenantId, ctx.tenantId),
-        )
-      );
+      .where(and(eq(resumes.candidateId, candidate.id), eq(resumes.tenantId, ctx.tenantId)));
 
     // Set the selected resume as preferred
     const [updated] = await db
@@ -271,10 +236,7 @@ export const getResumeDownloadUrl = createServerFn({ method: 'GET' })
     const ctx = await getTenantContext();
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {

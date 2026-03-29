@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
-  Plane,
-  FileText,
-  Target,
-  Sparkles,
-  BookOpen,
-  Mail,
-  BarChart3,
   ArrowRight,
+  BarChart3,
+  BookOpen,
   CheckCircle2,
+  FileText,
+  Mail,
+  Plane,
+  Sparkles,
+  Target,
 } from 'lucide-react';
 
 export const Route = createFileRoute('/')({
@@ -17,26 +17,26 @@ export const Route = createFileRoute('/')({
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground min-h-screen">
       {/* Sticky Nav */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Plane className="h-5 w-5 text-primary-foreground" />
+            <div className="bg-primary flex h-9 w-9 items-center justify-center rounded-lg">
+              <Plane className="text-primary-foreground h-5 w-5" />
             </div>
             <span className="text-xl font-bold tracking-tight">Job Pilot</span>
           </div>
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm font-medium transition-colors"
             >
               Sign In
             </Link>
             <Link
               to="/signup"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors"
             >
               Get Started
             </Link>
@@ -47,24 +47,23 @@ function LandingPage() {
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-20 text-center md:px-8 md:pt-28">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-          Your AI Co-Pilot for the{' '}
-          <span className="text-primary">Job Search</span>
+          Your AI Co-Pilot for the <span className="text-primary">Job Search</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-          Stop flying blind. Job Pilot uses AI to score job fits, tailor your resume,
-          generate cover letters, and track every application from takeoff to landing.
+        <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg">
+          Stop flying blind. Job Pilot uses AI to score job fits, tailor your resume, generate cover
+          letters, and track every application from takeoff to landing.
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-colors"
           >
             Get Started
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 rounded-md border px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
+            className="hover:bg-accent inline-flex items-center gap-2 rounded-md border px-6 py-3 text-sm font-medium transition-colors"
           >
             Sign In
           </Link>
@@ -82,8 +81,9 @@ function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 py-20 md:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight">Everything You Need to Land the Job</h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            A full cockpit of AI-powered tools designed to give you an edge at every stage of your job search.
+          <p className="text-muted-foreground mx-auto mt-3 max-w-xl">
+            A full cockpit of AI-powered tools designed to give you an edge at every stage of your
+            job search.
           </p>
         </div>
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,11 +121,11 @@ function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section className="border-t bg-muted/30 py-20">
+      <section className="bg-muted/30 border-t py-20">
         <div className="mx-auto max-w-6xl px-4 md:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold tracking-tight">How It Works</h2>
-            <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            <p className="text-muted-foreground mx-auto mt-3 max-w-xl">
               Three simple steps from job listing to confident application.
             </p>
           </div>
@@ -153,32 +153,32 @@ function LandingPage() {
       <footer className="border-t py-10">
         <div className="mx-auto max-w-6xl px-4 text-center md:px-8">
           <div className="flex items-center justify-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Plane className="h-4 w-4 text-primary-foreground" />
+            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+              <Plane className="text-primary-foreground h-4 w-4" />
             </div>
             <span className="font-bold tracking-tight">Job Pilot</span>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-4 text-sm">
             Built by{' '}
             <a
               href="https://eduardoverde.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+              className="text-foreground hover:text-primary font-medium underline underline-offset-4"
             >
               eduardoverde.com
-            </a>
-            {' '}&{' '}
+            </a>{' '}
+            &{' '}
             <a
               href="https://whyuascii.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+              className="text-foreground hover:text-primary font-medium underline underline-offset-4"
             >
               whyuascii.com
             </a>
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-xs">
             &copy; {new Date().getFullYear()} Job Pilot. All rights reserved.
           </p>
         </div>
@@ -197,12 +197,12 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-        <Icon className="h-5 w-5 text-primary" />
+    <div className="bg-card rounded-xl border p-6 shadow-sm transition-shadow hover:shadow-md">
+      <div className="bg-primary/10 mb-4 flex h-10 w-10 items-center justify-center rounded-lg">
+        <Icon className="text-primary h-5 w-5" />
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -218,11 +218,11 @@ function StepCard({
 }) {
   return (
     <div className="text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+      <div className="bg-primary text-primary-foreground mx-auto flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold">
         {step}
       </div>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{description}</p>
     </div>
   );
 }

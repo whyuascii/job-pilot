@@ -1,20 +1,20 @@
 import * as React from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import {
-  Plane,
-  LayoutDashboard,
-  Compass,
-  User,
-  ClipboardList,
-  BookOpen,
-  GraduationCap,
   BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Mail,
+  BookOpen,
+  ClipboardList,
+  Compass,
   FileText,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  Menu,
+  Plane,
+  Settings,
+  User,
+  X,
 } from 'lucide-react';
 import { NotificationBell } from '~/components/notification-bell';
 
@@ -35,6 +35,15 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+
+  const handleSignOut = React.useCallback(async () => {
+    const { resetUser, captureEvent } = await import('~/lib/posthog');
+    captureEvent('user_signed_out');
+    resetUser();
+    const { signOut } = await import('~/lib/auth-client');
+    await signOut();
+    window.location.href = '/login';
+  }, []);
 
   // Shared sidebar content used by both desktop and mobile
   const sidebarNav = (
@@ -63,18 +72,18 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Mobile top bar */}
-      <div className="flex h-14 items-center justify-between border-b bg-card px-4 md:hidden">
+      <div className="bg-card flex h-14 items-center justify-between border-b px-4 md:hidden">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Plane className="h-4 w-4 text-primary-foreground" />
+          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+            <Plane className="text-primary-foreground h-4 w-4" />
           </div>
-          <span className="font-bold text-lg tracking-tight">Job Pilot</span>
+          <span className="text-lg font-bold tracking-tight">Job Pilot</span>
         </div>
         <div className="flex items-center gap-1">
           <NotificationBell />
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -91,21 +100,21 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile slide-out sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-card transition-transform duration-300 md:hidden ${
+        className={`bg-card fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r transition-transform duration-300 md:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Logo */}
         <div className="flex h-14 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Plane className="h-4 w-4 text-primary-foreground" />
+            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+              <Plane className="text-primary-foreground h-4 w-4" />
             </div>
-            <span className="font-bold text-lg tracking-tight">Job Pilot</span>
+            <span className="text-lg font-bold tracking-tight">Job Pilot</span>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -122,12 +131,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* User & Logout */}
         <div className="border-t p-3">
           <button
-            onClick={async () => {
-              const { signOut } = await import('~/lib/auth-client');
-              await signOut();
-              window.location.href = '/login';
-            }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
@@ -136,14 +141,14 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r bg-card sticky top-0 h-screen overflow-y-auto">
+      <aside className="bg-card sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r md:flex">
         {/* Logo & Notifications */}
         <div className="flex h-16 items-center justify-between border-b px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Plane className="h-4 w-4 text-primary-foreground" />
+            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+              <Plane className="text-primary-foreground h-4 w-4" />
             </div>
-            <span className="font-bold text-lg tracking-tight">Job Pilot</span>
+            <span className="text-lg font-bold tracking-tight">Job Pilot</span>
           </div>
           <NotificationBell />
         </div>
@@ -169,7 +174,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-
         {/* Beta banner */}
         <div className="mx-3 mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] leading-tight text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <span className="font-semibold">Beta</span> — subject to change and charge.
@@ -178,12 +182,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* User & Logout */}
         <div className="border-t p-3">
           <button
-            onClick={async () => {
-              const { signOut } = await import('~/lib/auth-client');
-              await signOut();
-              window.location.href = '/login';
-            }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>

@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, eq } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import { gmailTokens, recruiterMessages } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { getTenantContext } from '~/lib/api';
-import { encrypt, decrypt } from '~/lib/crypto';
+import { decrypt, encrypt } from '~/lib/crypto';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -19,9 +19,7 @@ const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
-const GMAIL_SCOPES = [
-  'https://www.googleapis.com/auth/gmail.readonly',
-].join(' ');
+const GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'].join(' ');
 
 function getOAuthConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -128,65 +126,60 @@ export const getGmailAuthUrl = createServerFn({ method: 'GET' }).handler(async (
  * Exchange an authorization code for access/refresh tokens.
  * Encrypts and stores the tokens in the database.
  */
-export const handleGmailCallback = createServerFn({ method: 'POST' }).validator(
-  (data: { code: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  const { clientId, clientSecret, redirectUri } = getOAuthConfig();
+export const handleGmailCallback = createServerFn({ method: 'POST' })
+  .validator((data: { code: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    const { clientId, clientSecret, redirectUri } = getOAuthConfig();
 
-  // Exchange the authorization code for tokens
-  const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: data.code,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-    }),
+    // Exchange the authorization code for tokens
+    const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: data.code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to exchange Gmail auth code: ${error}`);
+    }
+
+    const tokenData = await response.json();
+
+    if (!tokenData.refresh_token) {
+      throw new Error(
+        'No refresh token received. This can happen if you previously connected Gmail. Try revoking access at https://myaccount.google.com/permissions and reconnecting.',
+      );
+    }
+
+    // Encrypt tokens before storage
+    const encryptedAccessToken = await encrypt(tokenData.access_token);
+    const encryptedRefreshToken = await encrypt(tokenData.refresh_token);
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+
+    // Upsert: delete any existing token for this user, then insert
+    await db
+      .delete(gmailTokens)
+      .where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
+
+    await db.insert(gmailTokens).values({
+      id: createId(),
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      accessToken: encryptedAccessToken,
+      refreshToken: encryptedRefreshToken,
+      scope: tokenData.scope || GMAIL_SCOPES,
+      expiresAt,
+    });
+
+    return { success: true };
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to exchange Gmail auth code: ${error}`);
-  }
-
-  const tokenData = await response.json();
-
-  if (!tokenData.refresh_token) {
-    throw new Error(
-      'No refresh token received. This can happen if you previously connected Gmail. Try revoking access at https://myaccount.google.com/permissions and reconnecting.',
-    );
-  }
-
-  // Encrypt tokens before storage
-  const encryptedAccessToken = await encrypt(tokenData.access_token);
-  const encryptedRefreshToken = await encrypt(tokenData.refresh_token);
-  const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-
-  // Upsert: delete any existing token for this user, then insert
-  await db
-    .delete(gmailTokens)
-    .where(
-      and(
-        eq(gmailTokens.tenantId, ctx.tenantId),
-        eq(gmailTokens.userId, ctx.userId),
-      ),
-    );
-
-  await db.insert(gmailTokens).values({
-    id: createId(),
-    tenantId: ctx.tenantId,
-    userId: ctx.userId,
-    accessToken: encryptedAccessToken,
-    refreshToken: encryptedRefreshToken,
-    scope: tokenData.scope || GMAIL_SCOPES,
-    expiresAt,
-  });
-
-  return { success: true };
-});
 
 /**
  * Check whether Gmail is connected for the current user.
@@ -195,10 +188,7 @@ export const getGmailStatus = createServerFn({ method: 'GET' }).handler(async ()
   const ctx = await getTenantContext();
 
   const token = await db.query.gmailTokens.findFirst({
-    where: and(
-      eq(gmailTokens.tenantId, ctx.tenantId),
-      eq(gmailTokens.userId, ctx.userId),
-    ),
+    where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
   });
 
   if (!token) {
@@ -220,10 +210,7 @@ export const disconnectGmail = createServerFn({ method: 'POST' }).handler(async 
 
   // Optionally revoke the token at Google first
   const token = await db.query.gmailTokens.findFirst({
-    where: and(
-      eq(gmailTokens.tenantId, ctx.tenantId),
-      eq(gmailTokens.userId, ctx.userId),
-    ),
+    where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
   });
 
   if (token) {
@@ -240,12 +227,7 @@ export const disconnectGmail = createServerFn({ method: 'POST' }).handler(async 
 
   await db
     .delete(gmailTokens)
-    .where(
-      and(
-        eq(gmailTokens.tenantId, ctx.tenantId),
-        eq(gmailTokens.userId, ctx.userId),
-      ),
-    );
+    .where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
 
   return { success: true };
 });
@@ -324,10 +306,7 @@ export const syncRecruitMessages = createServerFn({ method: 'POST' }).handler(as
 
   // 1. Get the stored token
   const tokenRecord = await db.query.gmailTokens.findFirst({
-    where: and(
-      eq(gmailTokens.tenantId, ctx.tenantId),
-      eq(gmailTokens.userId, ctx.userId),
-    ),
+    where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
   });
 
   if (!tokenRecord) {

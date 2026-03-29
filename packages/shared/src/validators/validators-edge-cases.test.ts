@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  tenantSchema,
-  userSchema,
-  candidateSchema,
-  skillSchema,
-  experienceBlockSchema,
-  projectSchema,
-  jobSchema,
+  answerBankSchema,
   applicationSchema,
   applicationStatusSchema,
-  answerBankSchema,
-  jobSourceSchema,
+  candidateSchema,
+  experienceBlockSchema,
+  jobSchema,
   jobSourceConfigSchema,
+  jobSourceSchema,
   preferenceSchema,
+  projectSchema,
+  skillSchema,
+  tenantSchema,
+  userSchema,
 } from './index';
 
 // ---------------------------------------------------------------------------
@@ -156,7 +156,11 @@ describe('userSchema edge cases', () => {
   });
 
   it('rejects invalid role', () => {
-    const result = userSchema.safeParse({ email: 'test@example.com', name: 'Test', role: 'superadmin' });
+    const result = userSchema.safeParse({
+      email: 'test@example.com',
+      name: 'Test',
+      role: 'superadmin',
+    });
     expect(result.success).toBe(false);
   });
 
@@ -311,32 +315,59 @@ describe('skillSchema edge cases', () => {
   });
 
   it('accepts name at max length (100 chars)', () => {
-    const result = skillSchema.safeParse({ name: 'x'.repeat(100), category: 'tool', confidenceScore: 50 });
+    const result = skillSchema.safeParse({
+      name: 'x'.repeat(100),
+      category: 'tool',
+      confidenceScore: 50,
+    });
     expect(result.success).toBe(true);
   });
 
   it('rejects name exceeding max length (101 chars)', () => {
-    const result = skillSchema.safeParse({ name: 'x'.repeat(101), category: 'tool', confidenceScore: 50 });
+    const result = skillSchema.safeParse({
+      name: 'x'.repeat(101),
+      category: 'tool',
+      confidenceScore: 50,
+    });
     expect(result.success).toBe(false);
   });
 
   it('rejects invalid category', () => {
-    const result = skillSchema.safeParse({ name: 'Test', category: 'unknown', confidenceScore: 50 });
+    const result = skillSchema.safeParse({
+      name: 'Test',
+      category: 'unknown',
+      confidenceScore: 50,
+    });
     expect(result.success).toBe(false);
   });
 
   it('accepts null yearsUsed', () => {
-    const result = skillSchema.safeParse({ name: 'Test', category: 'tool', confidenceScore: 50, yearsUsed: null });
+    const result = skillSchema.safeParse({
+      name: 'Test',
+      category: 'tool',
+      confidenceScore: 50,
+      yearsUsed: null,
+    });
     expect(result.success).toBe(true);
   });
 
   it('accepts zero yearsUsed', () => {
-    const result = skillSchema.safeParse({ name: 'Test', category: 'tool', confidenceScore: 50, yearsUsed: 0 });
+    const result = skillSchema.safeParse({
+      name: 'Test',
+      category: 'tool',
+      confidenceScore: 50,
+      yearsUsed: 0,
+    });
     expect(result.success).toBe(true);
   });
 
   it('rejects negative yearsUsed', () => {
-    const result = skillSchema.safeParse({ name: 'Test', category: 'tool', confidenceScore: 50, yearsUsed: -1 });
+    const result = skillSchema.safeParse({
+      name: 'Test',
+      category: 'tool',
+      confidenceScore: 50,
+      yearsUsed: -1,
+    });
     expect(result.success).toBe(false);
   });
 
@@ -651,9 +682,17 @@ describe('applicationSchema edge cases', () => {
 
   it('accepts all valid statuses via applicationSchema', () => {
     const statuses = [
-      'discovered', 'shortlisted', 'resume_generated', 'applied',
-      'recruiter_screen', 'technical', 'onsite', 'final',
-      'rejected', 'offer', 'withdrawn',
+      'discovered',
+      'shortlisted',
+      'resume_generated',
+      'applied',
+      'recruiter_screen',
+      'technical',
+      'onsite',
+      'final',
+      'rejected',
+      'offer',
+      'withdrawn',
     ];
     for (const status of statuses) {
       const result = applicationSchema.safeParse({ jobId: 'job_1', status });
@@ -839,22 +878,38 @@ describe('preferenceSchema edge cases', () => {
   });
 
   it('accepts key at max length (100 chars)', () => {
-    const result = preferenceSchema.safeParse({ key: 'x'.repeat(100), value: 'v', category: 'other' });
+    const result = preferenceSchema.safeParse({
+      key: 'x'.repeat(100),
+      value: 'v',
+      category: 'other',
+    });
     expect(result.success).toBe(true);
   });
 
   it('rejects key exceeding max length (101 chars)', () => {
-    const result = preferenceSchema.safeParse({ key: 'x'.repeat(101), value: 'v', category: 'other' });
+    const result = preferenceSchema.safeParse({
+      key: 'x'.repeat(101),
+      value: 'v',
+      category: 'other',
+    });
     expect(result.success).toBe(false);
   });
 
   it('accepts value at max length (1000 chars)', () => {
-    const result = preferenceSchema.safeParse({ key: 'k', value: 'x'.repeat(1000), category: 'other' });
+    const result = preferenceSchema.safeParse({
+      key: 'k',
+      value: 'x'.repeat(1000),
+      category: 'other',
+    });
     expect(result.success).toBe(true);
   });
 
   it('rejects value exceeding max length (1001 chars)', () => {
-    const result = preferenceSchema.safeParse({ key: 'k', value: 'x'.repeat(1001), category: 'other' });
+    const result = preferenceSchema.safeParse({
+      key: 'k',
+      value: 'x'.repeat(1001),
+      category: 'other',
+    });
     expect(result.success).toBe(false);
   });
 

@@ -1,9 +1,9 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { gmailTokens, recruiterMessages } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { getTenantContext } from '../lib/context.js';
-import { encrypt, decrypt } from '../lib/crypto.js';
+import { decrypt, encrypt } from '../lib/crypto.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -30,16 +30,38 @@ function getOAuthConfig() {
 async function refreshAccessToken(tokenRecord: { id: string; refreshToken: string }) {
   const { clientId, clientSecret } = getOAuthConfig();
   const decryptedRefreshToken = await decrypt(tokenRecord.refreshToken);
-  const response = await fetch(GOOGLE_TOKEN_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: decryptedRefreshToken, grant_type: 'refresh_token' }) });
+  const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: decryptedRefreshToken,
+      grant_type: 'refresh_token',
+    }),
+  });
   if (!response.ok) throw new Error(`Failed to refresh Gmail token: ${await response.text()}`);
   const data = await response.json();
   const encryptedAccessToken = await encrypt(data.access_token);
-  await db.update(gmailTokens).set({ accessToken: encryptedAccessToken, expiresAt: new Date(Date.now() + data.expires_in * 1000), updatedAt: new Date() }).where(eq(gmailTokens.id, tokenRecord.id));
+  await db
+    .update(gmailTokens)
+    .set({
+      accessToken: encryptedAccessToken,
+      expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      updatedAt: new Date(),
+    })
+    .where(eq(gmailTokens.id, tokenRecord.id));
   return data.access_token as string;
 }
 
-async function getValidAccessToken(tokenRecord: { id: string; accessToken: string; refreshToken: string; expiresAt: Date }) {
-  if (new Date(tokenRecord.expiresAt).getTime() - Date.now() < 5 * 60 * 1000) return refreshAccessToken(tokenRecord);
+async function getValidAccessToken(tokenRecord: {
+  id: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: Date;
+}) {
+  if (new Date(tokenRecord.expiresAt).getTime() - Date.now() < 5 * 60 * 1000)
+    return refreshAccessToken(tokenRecord);
   return decrypt(tokenRecord.accessToken);
 }
 
@@ -68,12 +90,22 @@ router.get('/auth-url', async (_req, res, next) => {
   try {
     getTenantContext();
     const config = getOAuthConfig();
-    const params = new URLSearchParams({ client_id: config.clientId, redirect_uri: config.redirectUri, response_type: 'code', scope: GMAIL_SCOPES, access_type: 'offline', prompt: 'consent' });
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      redirect_uri: config.redirectUri,
+      response_type: 'code',
+      scope: GMAIL_SCOPES,
+      access_type: 'offline',
+      prompt: 'consent',
+    });
     res.json({ url: `${GOOGLE_AUTH_ENDPOINT}?${params.toString()}` });
   } catch (e) {
     // Return a user-friendly JSON error for missing OAuth config
     if (e instanceof Error && e.message.includes('not configured')) {
-      res.status(400).json({ error: 'Gmail OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in your environment.' });
+      res.status(400).json({
+        error:
+          'Gmail OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in your environment.',
+      });
       return;
     }
     next(e);
@@ -84,59 +116,131 @@ router.post('/callback', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     const { clientId, clientSecret, redirectUri } = getOAuthConfig();
-    const response = await fetch(GOOGLE_TOKEN_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, code: req.body.code, grant_type: 'authorization_code', redirect_uri: redirectUri }) });
-    if (!response.ok) throw new Error(`Failed to exchange Gmail auth code: ${await response.text()}`);
+    const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: req.body.code,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      }),
+    });
+    if (!response.ok)
+      throw new Error(`Failed to exchange Gmail auth code: ${await response.text()}`);
     const tokenData = await response.json();
     if (!tokenData.refresh_token) throw new Error('No refresh token received.');
     const encryptedAccessToken = await encrypt(tokenData.access_token);
     const encryptedRefreshToken = await encrypt(tokenData.refresh_token);
-    await db.delete(gmailTokens).where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
-    await db.insert(gmailTokens).values({ id: createId(), tenantId: ctx.tenantId, userId: ctx.userId, accessToken: encryptedAccessToken, refreshToken: encryptedRefreshToken, scope: tokenData.scope || GMAIL_SCOPES, expiresAt: new Date(Date.now() + tokenData.expires_in * 1000) });
+    await db
+      .delete(gmailTokens)
+      .where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
+    await db.insert(gmailTokens).values({
+      id: createId(),
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      accessToken: encryptedAccessToken,
+      refreshToken: encryptedRefreshToken,
+      scope: tokenData.scope || GMAIL_SCOPES,
+      expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+    });
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/status', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
-    const token = await db.query.gmailTokens.findFirst({ where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)) });
-    if (!token) { res.json({ connected: false }); return; }
+    const token = await db.query.gmailTokens.findFirst({
+      where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
+    });
+    if (!token) {
+      res.json({ connected: false });
+      return;
+    }
     res.json({ connected: true, scope: token.scope, connectedAt: token.createdAt });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/disconnect', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
-    const token = await db.query.gmailTokens.findFirst({ where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)) });
-    if (token) { try { const at = await decrypt(token.accessToken); await fetch(`https://oauth2.googleapis.com/revoke?token=${at}`, { method: 'POST' }); } catch {} }
-    await db.delete(gmailTokens).where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
+    const token = await db.query.gmailTokens.findFirst({
+      where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
+    });
+    if (token) {
+      try {
+        const at = await decrypt(token.accessToken);
+        await fetch(`https://oauth2.googleapis.com/revoke?token=${at}`, { method: 'POST' });
+      } catch {}
+    }
+    await db
+      .delete(gmailTokens)
+      .where(and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/sync-messages', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
-    const tokenRecord = await db.query.gmailTokens.findFirst({ where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)) });
+    const tokenRecord = await db.query.gmailTokens.findFirst({
+      where: and(eq(gmailTokens.tenantId, ctx.tenantId), eq(gmailTokens.userId, ctx.userId)),
+    });
     if (!tokenRecord) throw new Error('Gmail is not connected.');
     const accessToken = await getValidAccessToken(tokenRecord);
-    const query = ['subject:(opportunity OR position OR role OR hiring OR interview OR application OR recruiter)', 'newer_than:7d', '-category:promotions', '-category:social'].join(' ');
-    const listResponse = await fetch(`${GMAIL_API_BASE}/messages?${new URLSearchParams({ q: query, maxResults: '25' })}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const query = [
+      'subject:(opportunity OR position OR role OR hiring OR interview OR application OR recruiter)',
+      'newer_than:7d',
+      '-category:promotions',
+      '-category:social',
+    ].join(' ');
+    const listResponse = await fetch(
+      `${GMAIL_API_BASE}/messages?${new URLSearchParams({ q: query, maxResults: '25' })}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
     if (!listResponse.ok) throw new Error(`Failed to search Gmail: ${await listResponse.text()}`);
     const messages = (await listResponse.json()).messages || [];
-    let synced = 0, skipped = 0;
+    let synced = 0,
+      skipped = 0;
     for (const msg of messages) {
-      const existing = await db.query.recruiterMessages.findFirst({ where: and(eq(recruiterMessages.tenantId, ctx.tenantId), eq(recruiterMessages.externalId, msg.id)) });
-      if (existing) { skipped++; continue; }
-      const detail = await fetch(`${GMAIL_API_BASE}/messages/${msg.id}?format=full`, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const existing = await db.query.recruiterMessages.findFirst({
+        where: and(
+          eq(recruiterMessages.tenantId, ctx.tenantId),
+          eq(recruiterMessages.externalId, msg.id),
+        ),
+      });
+      if (existing) {
+        skipped++;
+        continue;
+      }
+      const detail = await fetch(`${GMAIL_API_BASE}/messages/${msg.id}?format=full`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       if (!detail.ok) continue;
       const d = await detail.json();
-      await db.insert(recruiterMessages).values({ id: createId(), tenantId: ctx.tenantId, externalId: msg.id, from: getHeader(d.payload.headers, 'From'), subject: getHeader(d.payload.headers, 'Subject') || '(no subject)', body: extractBody(d.payload) || d.snippet || '', receivedAt: new Date(parseInt(d.internalDate, 10)) });
+      await db.insert(recruiterMessages).values({
+        id: createId(),
+        tenantId: ctx.tenantId,
+        externalId: msg.id,
+        from: getHeader(d.payload.headers, 'From'),
+        subject: getHeader(d.payload.headers, 'Subject') || '(no subject)',
+        body: extractBody(d.payload) || d.snippet || '',
+        receivedAt: new Date(parseInt(d.internalDate, 10)),
+      });
       synced++;
     }
     res.json({ synced, skipped, total: messages.length });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // GET /api/gmail/templates
@@ -145,7 +249,9 @@ router.get('/templates', async (_req, res, next) => {
     getTenantContext();
     const { EMAIL_TEMPLATES } = await import('../lib/email-templates.js');
     res.json(EMAIL_TEMPLATES);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/gmail/send
@@ -163,7 +269,9 @@ router.post('/send', async (req, res, next) => {
 
     // Check send scope
     if (!tokenRecord.scope?.includes('gmail.send')) {
-      throw new Error('Gmail send permission not granted. Please reconnect Gmail with send permission.');
+      throw new Error(
+        'Gmail send permission not granted. Please reconnect Gmail with send permission.',
+      );
     }
 
     const accessToken = await getValidAccessToken(tokenRecord);
@@ -171,7 +279,10 @@ router.post('/send', async (req, res, next) => {
     // Build RFC 2822 message
     const { candidates: candidatesTable, sentEmails } = await import('@job-pilot/db/schema');
     const candidate = await db.query.candidates.findFirst({
-      where: and(eq(candidatesTable.tenantId, ctx.tenantId), eq(candidatesTable.userId, ctx.userId)),
+      where: and(
+        eq(candidatesTable.tenantId, ctx.tenantId),
+        eq(candidatesTable.userId, ctx.userId),
+      ),
     });
 
     const fromEmail = candidate?.email || '';
@@ -221,7 +332,9 @@ router.post('/send', async (req, res, next) => {
     });
 
     res.json({ success: true, messageId: sendResult.id });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

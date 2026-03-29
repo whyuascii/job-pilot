@@ -1,17 +1,17 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { and, asc, desc, eq, isNull } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import {
-  ghostwriterMessages,
+  answerBank,
   candidates,
+  ghostwriterMessages,
   jobs,
   jobScores,
   tailoredResumes,
-  answerBank,
 } from '@job-pilot/db/schema';
-import { eq, and, asc, desc, isNull } from 'drizzle-orm';
-import { getTenantContext } from '../lib/context.js';
 import { RESUME_INTERVIEW_PROMPT } from '@job-pilot/mastra/prompts';
-import Anthropic from '@anthropic-ai/sdk';
+import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -53,7 +53,9 @@ router.get('/messages', async (req, res, next) => {
     });
 
     res.json(messages);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -123,18 +125,17 @@ async function buildSystemPrompt(ctx: { tenantId: string; userId: string }, jobI
   );
 
   if (contentJson?.gapAnalysis) {
-    parts.push(
-      '',
-      '--- GAP ANALYSIS ---',
-      JSON.stringify(contentJson.gapAnalysis, null, 2),
-    );
+    parts.push('', '--- GAP ANALYSIS ---', JSON.stringify(contentJson.gapAnalysis, null, 2));
   }
 
   if (answers.length > 0) {
     parts.push(
       '',
       '--- EXISTING ANSWER BANK (avoid probing for info already captured) ---',
-      answers.slice(0, 20).map((a) => `Q: ${a.questionPattern}\nA: ${truncate(a.answer, 200)}`).join('\n\n'),
+      answers
+        .slice(0, 20)
+        .map((a) => `Q: ${a.questionPattern}\nA: ${truncate(a.answer, 200)}`)
+        .join('\n\n'),
     );
   }
 
@@ -166,7 +167,11 @@ router.post('/start', async (req, res, next) => {
       max_tokens: 2048,
       system: systemPrompt,
       messages: [
-        { role: 'user', content: 'Please analyze my tailored resume and start the interview to help me deepen my bullet points.' },
+        {
+          role: 'user',
+          content:
+            'Please analyze my tailored resume and start the interview to help me deepen my bullet points.',
+        },
       ],
     });
 
@@ -195,7 +200,8 @@ router.post('/start', async (req, res, next) => {
         candidateId: candidate.id,
         tenantId: ctx.tenantId,
         role: 'user',
-        content: 'Please analyze my tailored resume and start the interview to help me deepen my bullet points.',
+        content:
+          'Please analyze my tailored resume and start the interview to help me deepen my bullet points.',
         context: CONTEXT_VALUE,
       },
       {
@@ -242,10 +248,11 @@ router.post('/chat', async (req, res, next) => {
       orderBy: [asc(ghostwriterMessages.createdAt)],
     });
 
-    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> = history.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
+    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> =
+      history.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
     conversationMessages.push({ role: 'user', content: message });
 
     // Save user message
@@ -361,18 +368,23 @@ router.post('/accept-enhancement', async (req, res, next) => {
 
     const nextVersion = latest.version + 1;
     const newId = createId();
-    const [saved] = await db.insert(tailoredResumes).values({
-      id: newId,
-      candidateId: candidate.id,
-      jobId,
-      tenantId: ctx.tenantId,
-      storageKey: `tailored/${ctx.tenantId}/${jobId}/${newId}.json`,
-      contentJson: content,
-      version: nextVersion,
-    }).returning();
+    const [saved] = await db
+      .insert(tailoredResumes)
+      .values({
+        id: newId,
+        candidateId: candidate.id,
+        jobId,
+        tenantId: ctx.tenantId,
+        storageKey: `tailored/${ctx.tenantId}/${jobId}/${newId}.json`,
+        contentJson: content,
+        version: nextVersion,
+      })
+      .returning();
 
     res.json(saved);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -415,31 +427,39 @@ router.post('/accept-all', async (req, res, next) => {
     const newId = createId();
 
     // Insert new resume version and save story in parallel
-    const [savedResume] = await db.insert(tailoredResumes).values({
-      id: newId,
-      candidateId: candidate.id,
-      jobId,
-      tenantId: ctx.tenantId,
-      storageKey: `tailored/${ctx.tenantId}/${jobId}/${newId}.json`,
-      contentJson: content,
-      version: nextVersion,
-    }).returning();
+    const [savedResume] = await db
+      .insert(tailoredResumes)
+      .values({
+        id: newId,
+        candidateId: candidate.id,
+        jobId,
+        tenantId: ctx.tenantId,
+        storageKey: `tailored/${ctx.tenantId}/${jobId}/${newId}.json`,
+        contentJson: content,
+        version: nextVersion,
+      })
+      .returning();
 
     let savedAnswer = null;
     if (story?.questionPattern && story?.answer) {
-      const [answer] = await db.insert(answerBank).values({
-        id: createId(),
-        candidateId: candidate.id,
-        tenantId: ctx.tenantId,
-        questionPattern: story.questionPattern,
-        answer: story.answer,
-        category: 'resume_interview',
-      }).returning();
+      const [answer] = await db
+        .insert(answerBank)
+        .values({
+          id: createId(),
+          candidateId: candidate.id,
+          tenantId: ctx.tenantId,
+          questionPattern: story.questionPattern,
+          answer: story.answer,
+          category: 'resume_interview',
+        })
+        .returning();
       savedAnswer = answer;
     }
 
     res.json({ resume: savedResume, answer: savedAnswer });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

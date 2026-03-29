@@ -1,52 +1,52 @@
 import * as React from 'react';
-import { createFileRoute, useRouter, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
-  Search,
-  SlidersHorizontal,
-  Plane,
-  Plus,
-  MapPin,
-  Building2,
-  DollarSign,
-  Clock,
-  ExternalLink,
-  Trash2,
-  Globe,
+  AlertCircle,
+  ArrowUpDown,
+  Bookmark,
   Briefcase,
+  Building2,
+  Calendar,
+  CheckCircle2,
   ChevronDown,
+  Clock,
+  DollarSign,
+  ExternalLink,
+  FileText,
+  Globe,
   Link as LinkIcon,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
+  MapPin,
+  Plane,
+  Plus,
   Radio,
-  X,
-  FileText,
+  RefreshCw,
   Save,
-  ArrowUpDown,
-  Calendar,
-  Bookmark,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  X,
 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
   Separator,
   Skeleton,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -54,6 +54,7 @@ import {
 } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 import type { JobListParams, JobListResult } from '~/lib/api-client';
+import { captureEvent } from '~/lib/posthog';
 
 function JobsSkeleton() {
   return (
@@ -76,9 +77,9 @@ function JobsSkeleton() {
       <Skeleton className="h-5 w-48 rounded-md" />
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-xl border bg-card p-6 space-y-3">
+          <div key={i} className="bg-card space-y-3 rounded-xl border p-6">
             <div className="flex justify-between">
-              <div className="space-y-2 flex-1">
+              <div className="flex-1 space-y-2">
                 <Skeleton className="h-6 w-64 rounded-md" />
                 <Skeleton className="h-4 w-40 rounded-md" />
               </div>
@@ -122,7 +123,8 @@ export const Route = createFileRoute('/jobs/')({
     remote: typeof search.remote === 'string' ? search.remote : undefined,
     minScore: typeof search.minScore === 'number' ? search.minScore : undefined,
     recommendation: typeof search.recommendation === 'string' ? search.recommendation : undefined,
-    hasScore: search.hasScore === 'scored' || search.hasScore === 'unscored' ? search.hasScore : undefined,
+    hasScore:
+      search.hasScore === 'scored' || search.hasScore === 'unscored' ? search.hasScore : undefined,
     employmentType: typeof search.employmentType === 'string' ? search.employmentType : undefined,
     minComp: typeof search.minComp === 'number' ? search.minComp : undefined,
     maxComp: typeof search.maxComp === 'number' ? search.maxComp : undefined,
@@ -131,21 +133,24 @@ export const Route = createFileRoute('/jobs/')({
     minYears: typeof search.minYears === 'number' ? search.minYears : undefined,
     maxYears: typeof search.maxYears === 'number' ? search.maxYears : undefined,
     postedAfter: typeof search.postedAfter === 'string' ? search.postedAfter : undefined,
-    sortBy: ['score', 'date', 'company', 'title'].includes(search.sortBy as string) ? (search.sortBy as JobSearch['sortBy']) : undefined,
+    sortBy: ['score', 'date', 'company', 'title'].includes(search.sortBy as string)
+      ? (search.sortBy as JobSearch['sortBy'])
+      : undefined,
     sortDir: search.sortDir === 'asc' || search.sortDir === 'desc' ? search.sortDir : undefined,
     page: typeof search.page === 'number' ? search.page : undefined,
     pageSize: typeof search.pageSize === 'number' ? search.pageSize : undefined,
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => {
-    const [jobsResult, sources, profileSkills, candidate, applications, presets] = await Promise.all([
-      api.jobs.list(deps),
-      api.settings.listJobSources().catch(() => []),
-      api.skills.list().catch(() => []),
-      api.candidates.get().catch(() => null),
-      api.applications.list().catch(() => []),
-      api.preferences.listByCategory('job_filter_preset').catch(() => []),
-    ]);
+    const [jobsResult, sources, profileSkills, candidate, applications, presets] =
+      await Promise.all([
+        api.jobs.list(deps),
+        api.settings.listJobSources().catch(() => []),
+        api.skills.list().catch(() => []),
+        api.candidates.get().catch(() => null),
+        api.applications.list().catch(() => []),
+        api.preferences.listByCategory('job_filter_preset').catch(() => []),
+      ]);
     return { jobsResult, sources, profileSkills, candidate, applications, presets };
   },
   component: JobsPage,
@@ -222,7 +227,9 @@ function getScoreLabel(score: number) {
   return 'Weak';
 }
 
-function getRecommendationVariant(rec: string | null): 'success' | 'default' | 'warning' | 'destructive' {
+function getRecommendationVariant(
+  rec: string | null,
+): 'success' | 'default' | 'warning' | 'destructive' {
   switch (rec) {
     case 'strong_apply':
       return 'success';
@@ -276,7 +283,14 @@ const SOURCE_PRESETS = [
 // ---------------------------------------------------------------------------
 
 function JobsPage() {
-  const { jobsResult, sources: initialSources, profileSkills, candidate, applications, presets: initialPresets } = Route.useLoaderData();
+  const {
+    jobsResult,
+    sources: initialSources,
+    profileSkills,
+    candidate,
+    applications,
+    presets: initialPresets,
+  } = Route.useLoaderData();
   const search = Route.useSearch();
   const router = useRouter();
   const navigate = useNavigate({ from: '/jobs/' });
@@ -292,16 +306,23 @@ function JobsPage() {
 
   const updateSearch = React.useCallback(
     (updates: Partial<JobSearch>) => {
-      navigate({ search: (prev: any) => {
-        const next = { ...prev, ...updates, page: updates.page !== undefined ? updates.page : 1 };
-        // Remove undefined/null/empty values to keep URL clean
-        for (const key of Object.keys(next)) {
-          if (next[key] === undefined || next[key] === null || next[key] === '' || next[key] === 0) {
-            delete next[key];
+      navigate({
+        search: (prev: any) => {
+          const next = { ...prev, ...updates, page: updates.page !== undefined ? updates.page : 1 };
+          // Remove undefined/null/empty values to keep URL clean
+          for (const key of Object.keys(next)) {
+            if (
+              next[key] === undefined ||
+              next[key] === null ||
+              next[key] === '' ||
+              next[key] === 0
+            ) {
+              delete next[key];
+            }
           }
-        }
-        return next;
-      }});
+          return next;
+        },
+      });
     },
     [navigate],
   );
@@ -315,7 +336,12 @@ function JobsPage() {
   };
 
   // Cleanup debounce on unmount
-  React.useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  React.useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
 
   const [showAddForm, setShowAddForm] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
@@ -326,7 +352,9 @@ function JobsPage() {
   const [presetName, setPresetName] = React.useState('');
   const [savingPreset, setSavingPreset] = React.useState(false);
 
-  React.useEffect(() => { setPresets(initialPresets); }, [initialPresets]);
+  React.useEffect(() => {
+    setPresets(initialPresets);
+  }, [initialPresets]);
 
   // Source management state
   const [sources, setSources] = React.useState(initialSources);
@@ -334,7 +362,10 @@ function JobsPage() {
   const [showAddSource, setShowAddSource] = React.useState(false);
   const [syncingAll, setSyncingAll] = React.useState(false);
   const [syncingIds, setSyncingIds] = React.useState<Set<string>>(new Set());
-  const [syncFeedback, setSyncFeedback] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [syncFeedback, setSyncFeedback] = React.useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [autoSyncing, setAutoSyncing] = React.useState(false);
 
   const [lastScanTime, setLastScanTime] = React.useState<Date | null>(() => {
@@ -354,7 +385,11 @@ function JobsPage() {
       if (sig(initialSources) !== sig(prev)) return initialSources;
       return prev.map((s) => {
         const incoming = initialSources.find((is) => is.id === s.id);
-        if (incoming && incoming.lastSyncAt && (!s.lastSyncAt || new Date(incoming.lastSyncAt) > new Date(s.lastSyncAt))) {
+        if (
+          incoming &&
+          incoming.lastSyncAt &&
+          (!s.lastSyncAt || new Date(incoming.lastSyncAt) > new Date(s.lastSyncAt))
+        ) {
           return { ...s, lastSyncAt: incoming.lastSyncAt };
         }
         return s;
@@ -397,7 +432,11 @@ function JobsPage() {
         if (profileSkillSet.has(skill.toLowerCase())) matched.push(skill);
         else missing.push(skill);
       }
-      map.set(job.id, { matched, missing, matchPct: Math.round((matched.length / required.length) * 100) });
+      map.set(job.id, {
+        matched,
+        missing,
+        matchPct: Math.round((matched.length / required.length) * 100),
+      });
     }
     return map;
   }, [visibleJobs, profileSkillSet]);
@@ -407,7 +446,9 @@ function JobsPage() {
     [deletingId, visibleJobs],
   );
 
-  const enabledSourceCount = sources.filter((s) => s.enabled && ((s.config as any)?.url || (s.config as any)?.searchTerm)).length;
+  const enabledSourceCount = sources.filter(
+    (s) => s.enabled && ((s.config as any)?.url || (s.config as any)?.searchTerm),
+  ).length;
 
   // Count active filters (for badge)
   const activeFilterCount = React.useMemo(() => {
@@ -442,9 +483,7 @@ function JobsPage() {
       const result = await api.settings.syncAllSources();
       const now = new Date().toISOString();
       setSources((prev) =>
-        prev.map((s) =>
-          s.enabled && (s.config as any)?.url ? { ...s, lastSyncAt: now } : s,
-        ),
+        prev.map((s) => (s.enabled && (s.config as any)?.url ? { ...s, lastSyncAt: now } : s)),
       );
       setLastScanTime(new Date());
       setSyncFeedback({
@@ -453,7 +492,10 @@ function JobsPage() {
       });
       router.invalidate();
     } catch (err) {
-      setSyncFeedback({ type: 'error', message: err instanceof Error ? err.message : 'Sync failed.' });
+      setSyncFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Sync failed.',
+      });
     } finally {
       setSyncingAll(false);
       setAutoSyncing(false);
@@ -465,15 +507,17 @@ function JobsPage() {
     try {
       await api.settings.syncJobSource({ sourceId });
       const now = new Date().toISOString();
-      setSources((prev) =>
-        prev.map((s) => (s.id === sourceId ? { ...s, lastSyncAt: now } : s)),
-      );
+      setSources((prev) => prev.map((s) => (s.id === sourceId ? { ...s, lastSyncAt: now } : s)));
       setLastScanTime(new Date());
       router.invalidate();
     } catch (err) {
       console.error('Sync failed:', err);
     } finally {
-      setSyncingIds((prev) => { const next = new Set(prev); next.delete(sourceId); return next; });
+      setSyncingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(sourceId);
+        return next;
+      });
     }
   };
 
@@ -536,12 +580,15 @@ function JobsPage() {
   // Auto-resync every hour
   React.useEffect(() => {
     if (enabledSourceCount === 0) return;
-    const interval = setInterval(() => {
-      if (!syncingAll) {
-        setAutoSyncing(true);
-        handleSyncAll();
-      }
-    }, 60 * 60 * 1000);
+    const interval = setInterval(
+      () => {
+        if (!syncingAll) {
+          setAutoSyncing(true);
+          handleSyncAll();
+        }
+      },
+      60 * 60 * 1000,
+    );
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabledSourceCount]);
@@ -549,12 +596,19 @@ function JobsPage() {
   return (
     <div className="space-y-6">
       {/* Delete Job Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Job?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove {deletingJob ? `"${deletingJob.title}" at ${deletingJob.company}` : 'this job'} from your flight plan.
+              This will permanently remove{' '}
+              {deletingJob ? `"${deletingJob.title}" at ${deletingJob.company}` : 'this job'} from
+              your flight plan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -573,12 +627,12 @@ function JobsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Plane className="h-5 w-5 text-primary" />
+            <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg">
+              <Plane className="text-primary h-5 w-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Flight Plan</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {totalItems} {totalItems === 1 ? 'opportunity' : 'opportunities'} on your radar
               </p>
             </div>
@@ -586,7 +640,10 @@ function JobsPage() {
         </div>
         <div className="flex items-center gap-3">
           {lastScanTime && enabledSourceCount > 0 && (
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground" title={lastScanTime.toLocaleString()}>
+            <div
+              className="text-muted-foreground hidden items-center gap-1.5 text-xs sm:flex"
+              title={lastScanTime.toLocaleString()}
+            >
               <Clock className="h-3 w-3" />
               <span>Scanned {timeAgo(lastScanTime)}</span>
               {autoSyncing && (
@@ -605,7 +662,11 @@ function JobsPage() {
                   onClick={handleSyncAll}
                   disabled={syncingAll || enabledSourceCount === 0}
                   className="gap-2"
-                  aria-label={enabledSourceCount === 0 ? 'Add a source with a URL first' : `Scan ${enabledSourceCount} source${enabledSourceCount !== 1 ? 's' : ''}`}
+                  aria-label={
+                    enabledSourceCount === 0
+                      ? 'Add a source with a URL first'
+                      : `Scan ${enabledSourceCount} source${enabledSourceCount !== 1 ? 's' : ''}`
+                  }
                 >
                   {syncingAll ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -648,7 +709,7 @@ function JobsPage() {
           <span className="flex-1 break-words font-medium">{syncFeedback.message}</span>
           <button
             onClick={() => setSyncFeedback(null)}
-            className="shrink-0 rounded-md p-1 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="focus-visible:ring-ring shrink-0 rounded-md p-1 transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2"
             aria-label="Dismiss notification"
           >
             <X className="h-3.5 w-3.5" />
@@ -657,15 +718,15 @@ function JobsPage() {
       )}
 
       {/* Sources Panel (collapsible) */}
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
         <button
           type="button"
           onClick={() => setShowSources((v) => !v)}
           aria-expanded={showSources}
-          className="flex w-full items-center justify-between px-5 py-3.5 text-sm font-medium hover:bg-accent/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          className="hover:bg-accent/40 focus-visible:ring-ring flex w-full items-center justify-between px-5 py-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset"
         >
           <div className="flex items-center gap-2.5">
-            <Radio className="h-4 w-4 text-primary" />
+            <Radio className="text-primary h-4 w-4" />
             <span className="font-semibold">Job Sources</span>
             <Badge variant="secondary" className="text-[10px] font-medium">
               {sources.length} source{sources.length !== 1 ? 's' : ''}
@@ -676,16 +737,18 @@ function JobsPage() {
               </Badge>
             )}
           </div>
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showSources ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`text-muted-foreground h-4 w-4 transition-transform duration-200 ${showSources ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {showSources && (
-          <div className="border-t px-5 pb-5 space-y-3">
+          <div className="space-y-3 border-t px-5 pb-5">
             {sources.length === 0 ? (
               <div className="flex flex-col items-center py-6 text-center">
-                <Radio className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                <p className="text-sm font-medium text-foreground">No sources configured</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <Radio className="text-muted-foreground/40 mb-2 h-8 w-8" />
+                <p className="text-foreground text-sm font-medium">No sources configured</p>
+                <p className="text-muted-foreground mt-1 text-xs">
                   Add a job board or careers page to scan for opportunities automatically.
                 </p>
               </div>
@@ -701,55 +764,89 @@ function JobsPage() {
                         source.enabled ? 'bg-card hover:bg-accent/20' : 'bg-muted/30 opacity-75'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex min-w-0 items-center gap-3">
                         <button
                           type="button"
                           role="switch"
                           aria-checked={source.enabled}
                           aria-label={`${source.enabled ? 'Disable' : 'Enable'} ${source.name}`}
                           onClick={() => handleToggleSource(source.id, !source.enabled)}
-                          className={`flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                          className={`focus-visible:ring-ring flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                             source.enabled ? 'bg-primary' : 'bg-muted-foreground/30'
                           }`}
                         >
-                          <span className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                            source.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
-                          }`} />
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                              source.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+                            }`}
+                          />
                         </button>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium truncate">{source.name}</span>
-                            <Badge variant="secondary" className="text-[10px] uppercase shrink-0 font-medium">{source.type}</Badge>
+                            <span className="truncate text-sm font-medium">{source.name}</span>
+                            <Badge
+                              variant="secondary"
+                              className="shrink-0 text-[10px] font-medium uppercase"
+                            >
+                              {source.type}
+                            </Badge>
                             {(source.config as any)?.searchTerm && (
-                              <Badge variant="outline" className="text-[10px] shrink-0 font-medium border-sky-300 text-sky-700 bg-white">
-                                <Search className="h-2.5 w-2.5 mr-0.5" />
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-sky-300 bg-white text-[10px] font-medium text-sky-700"
+                              >
+                                <Search className="mr-0.5 h-2.5 w-2.5" />
                                 search
                               </Badge>
                             )}
                           </div>
                           {hasUrl && (
-                            <p className="text-xs text-muted-foreground break-all line-clamp-1 mt-0.5">{(source.config as any).url}</p>
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 break-all text-xs">
+                              {(source.config as any).url}
+                            </p>
                           )}
                           {(source.config as any)?.searchTerm && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                               {(source.config as any).searchTerm}
-                              {(source.config as any).location ? ` in ${(source.config as any).location}` : ''}
+                              {(source.config as any).location
+                                ? ` in ${(source.config as any).location}`
+                                : ''}
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1">
                         {source.lastSyncAt && (
-                          <span className="text-[10px] text-muted-foreground mr-1 tabular-nums" title={new Date(source.lastSyncAt).toLocaleString()}>
+                          <span
+                            className="text-muted-foreground mr-1 text-[10px] tabular-nums"
+                            title={new Date(source.lastSyncAt).toLocaleString()}
+                          >
                             {timeAgo(source.lastSyncAt)}
                           </span>
                         )}
                         {(hasUrl || (source.config as any)?.searchTerm) && source.enabled && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => handleSyncOne(source.id)} disabled={isSyncing || syncingAll} aria-label={`Sync ${source.name}`}>
-                            {isSyncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-primary h-7 w-7"
+                            onClick={() => handleSyncOne(source.id)}
+                            disabled={isSyncing || syncingAll}
+                            aria-label={`Sync ${source.name}`}
+                          >
+                            {isSyncing ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            )}
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteSource(source.id)} aria-label={`Remove ${source.name}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive h-7 w-7"
+                          onClick={() => handleDeleteSource(source.id)}
+                          aria-label={`Remove ${source.name}`}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -758,7 +855,12 @@ function JobsPage() {
                 })}
               </div>
             )}
-            <Button variant="outline" size="sm" className="gap-2 mt-1" onClick={() => setShowAddSource(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1 gap-2"
+              onClick={() => setShowAddSource(true)}
+            >
               <Plus className="h-3.5 w-3.5" />
               Add Source
             </Button>
@@ -778,16 +880,36 @@ function JobsPage() {
 
       {/* Add Job Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Job</DialogTitle>
-            <DialogDescription>Paste a URL, job description text, or add details manually.</DialogDescription>
+            <DialogDescription>
+              Paste a URL, job description text, or add details manually.
+            </DialogDescription>
           </DialogHeader>
-          <AddJobByUrl onClose={() => setShowAddForm(false)} onCreated={() => { setShowAddForm(false); router.invalidate(); }} />
+          <AddJobByUrl
+            onClose={() => setShowAddForm(false)}
+            onCreated={() => {
+              setShowAddForm(false);
+              router.invalidate();
+            }}
+          />
           <Separator />
-          <AddJobByText onClose={() => setShowAddForm(false)} onCreated={() => { setShowAddForm(false); router.invalidate(); }} />
+          <AddJobByText
+            onClose={() => setShowAddForm(false)}
+            onCreated={() => {
+              setShowAddForm(false);
+              router.invalidate();
+            }}
+          />
           <Separator />
-          <AddJobForm onClose={() => setShowAddForm(false)} onCreated={() => { setShowAddForm(false); router.invalidate(); }} />
+          <AddJobForm
+            onClose={() => setShowAddForm(false)}
+            onCreated={() => {
+              setShowAddForm(false);
+              router.invalidate();
+            }}
+          />
         </DialogContent>
       </Dialog>
 
@@ -795,7 +917,7 @@ function JobsPage() {
       <div className="space-y-3">
         <div className="flex gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
             <Input
               type="search"
               placeholder="Search jobs by title, company, location, or skills..."
@@ -808,7 +930,7 @@ function JobsPage() {
               <button
                 type="button"
                 onClick={() => handleQueryChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-0.5 focus-visible:outline-none focus-visible:ring-2"
                 aria-label="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
@@ -817,32 +939,32 @@ function JobsPage() {
           </div>
           <Button
             variant={showFilters ? 'default' : 'outline'}
-            className="gap-2 relative"
+            className="relative gap-2"
             onClick={() => setShowFilters((v) => !v)}
             aria-label="Toggle filters"
           >
             <SlidersHorizontal className="h-4 w-4" />
             <span className="hidden sm:inline">Filters</span>
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              <span className="bg-primary text-primary-foreground absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
                 {activeFilterCount}
               </span>
             )}
           </Button>
           {/* Quick preset dropdown */}
           {presets.length > 0 && (
-            <div className="relative group">
+            <div className="group relative">
               <Button variant="outline" className="gap-2">
                 <Bookmark className="h-4 w-4" />
                 <span className="hidden sm:inline">Presets</span>
                 <ChevronDown className="h-3 w-3" />
               </Button>
-              <div className="absolute right-0 top-full mt-1 z-50 hidden group-focus-within:block hover:block min-w-[200px] rounded-lg border bg-card shadow-lg p-1">
+              <div className="bg-card absolute right-0 top-full z-50 mt-1 hidden min-w-[200px] rounded-lg border p-1 shadow-lg hover:block group-focus-within:block">
                 {presets.map((preset: any) => (
                   <button
                     key={preset.id}
                     type="button"
-                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
+                    className="hover:bg-accent/50 flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors"
                     onClick={() => handleLoadPreset(preset)}
                   >
                     <span className="truncate font-medium">{preset.key}</span>
@@ -855,22 +977,28 @@ function JobsPage() {
 
         {/* Profile skill chips for quick search */}
         {profileSkills.length > 0 && !localQuery && (
-          <div className="flex items-center gap-2 flex-wrap" role="list" aria-label="Quick filter by skill">
-            <span className="text-xs font-medium text-foreground/70 shrink-0">My skills:</span>
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="list"
+            aria-label="Quick filter by skill"
+          >
+            <span className="text-foreground/70 shrink-0 text-xs font-medium">My skills:</span>
             {profileSkills.slice(0, 8).map((skill: any) => (
               <button
                 key={skill.id}
                 type="button"
                 role="listitem"
-                className="inline-flex items-center rounded-full border border-border bg-white px-2.5 py-0.5 text-xs font-medium text-foreground hover:border-sky-300 hover:text-sky-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="border-border text-foreground focus-visible:ring-ring inline-flex items-center rounded-full border bg-white px-2.5 py-0.5 text-xs font-medium transition-colors hover:border-sky-300 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2"
                 onClick={() => handleQueryChange(skill.name)}
               >
-                <Search className="h-2.5 w-2.5 mr-1 opacity-50" />
+                <Search className="mr-1 h-2.5 w-2.5 opacity-50" />
                 {skill.name}
               </button>
             ))}
             {profileSkills.length > 8 && (
-              <span className="text-xs text-muted-foreground font-medium">+{profileSkills.length - 8} more</span>
+              <span className="text-muted-foreground text-xs font-medium">
+                +{profileSkills.length - 8} more
+              </span>
             )}
           </div>
         )}
@@ -878,23 +1006,33 @@ function JobsPage() {
 
       {/* Filter Dialog */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Filter Jobs</DialogTitle>
-            <DialogDescription>Narrow down your flight plan by specific criteria.</DialogDescription>
+            <DialogDescription>
+              Narrow down your flight plan by specific criteria.
+            </DialogDescription>
           </DialogHeader>
 
           {/* Saved Presets */}
           {presets.length > 0 && (
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Saved Presets</span>
+              <span className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Saved Presets
+              </span>
               <div className="flex flex-wrap gap-2">
                 {presets.map((preset: any) => (
-                  <div key={preset.id} className="inline-flex items-center gap-1 rounded-full border bg-white px-3 py-1">
+                  <div
+                    key={preset.id}
+                    className="inline-flex items-center gap-1 rounded-full border bg-white px-3 py-1"
+                  >
                     <button
                       type="button"
-                      className="text-xs font-medium hover:text-primary transition-colors"
-                      onClick={() => { handleLoadPreset(preset); setShowFilters(false); }}
+                      className="hover:text-primary text-xs font-medium transition-colors"
+                      onClick={() => {
+                        handleLoadPreset(preset);
+                        setShowFilters(false);
+                      }}
                     >
                       {preset.key}
                     </button>
@@ -916,16 +1054,21 @@ function JobsPage() {
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Remote Policy */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Remote Policy</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Remote Policy
+              </legend>
               <div className="space-y-2.5">
                 {['remote', 'hybrid', 'onsite'].map((policy) => {
                   const currentRemote = search.remote?.split(',').filter(Boolean) ?? [];
                   const isChecked = currentRemote.includes(policy);
                   return (
-                    <label key={policy} className="flex items-center gap-2.5 text-sm cursor-pointer group">
+                    <label
+                      key={policy}
+                      className="group flex cursor-pointer items-center gap-2.5 text-sm"
+                    >
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary focus:ring-offset-0"
+                        className="border-input text-primary focus:ring-primary h-4 w-4 rounded focus:ring-offset-0"
                         checked={isChecked}
                         onChange={(e) => {
                           const next = e.target.checked
@@ -945,7 +1088,9 @@ function JobsPage() {
 
             {/* Score Range */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Minimum Score</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Minimum Score
+              </legend>
               <div className="space-y-2">
                 <input
                   type="range"
@@ -953,12 +1098,14 @@ function JobsPage() {
                   max={100}
                   value={search.minScore ?? 0}
                   onChange={(e) => updateSearch({ minScore: Number(e.target.value) || undefined })}
-                  className="w-full accent-primary"
+                  className="accent-primary w-full"
                   aria-label="Minimum score"
                 />
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">0</span>
-                  <span className="font-semibold text-foreground tabular-nums bg-primary/10 px-2 py-0.5 rounded">{search.minScore ?? 0}</span>
+                  <span className="text-foreground bg-primary/10 rounded px-2 py-0.5 font-semibold tabular-nums">
+                    {search.minScore ?? 0}
+                  </span>
                   <span className="text-muted-foreground">100</span>
                 </div>
               </div>
@@ -966,7 +1113,9 @@ function JobsPage() {
 
             {/* Recommendation */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Recommendation</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Recommendation
+              </legend>
               <div className="space-y-2.5">
                 {[
                   { key: 'strong_apply', label: 'Strong Apply' },
@@ -977,16 +1126,21 @@ function JobsPage() {
                   const currentRecs = search.recommendation?.split(',').filter(Boolean) ?? [];
                   const isChecked = currentRecs.includes(key);
                   return (
-                    <label key={key} className="flex items-center gap-2.5 text-sm cursor-pointer group">
+                    <label
+                      key={key}
+                      className="group flex cursor-pointer items-center gap-2.5 text-sm"
+                    >
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary focus:ring-offset-0"
+                        className="border-input text-primary focus:ring-primary h-4 w-4 rounded focus:ring-offset-0"
                         checked={isChecked}
                         onChange={(e) => {
                           const next = e.target.checked
                             ? [...currentRecs, key]
                             : currentRecs.filter((r) => r !== key);
-                          updateSearch({ recommendation: next.length > 0 ? next.join(',') : undefined });
+                          updateSearch({
+                            recommendation: next.length > 0 ? next.join(',') : undefined,
+                          });
                         }}
                       />
                       <span className="group-hover:text-foreground transition-colors">{label}</span>
@@ -998,18 +1152,23 @@ function JobsPage() {
 
             {/* Has Score */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Score Status</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Score Status
+              </legend>
               <div className="space-y-2.5">
                 {[
                   { key: undefined as any, label: 'All Jobs' },
                   { key: 'scored' as const, label: 'Scored Only' },
                   { key: 'unscored' as const, label: 'Unscored Only' },
                 ].map(({ key, label }) => (
-                  <label key={label} className="flex items-center gap-2.5 text-sm cursor-pointer group">
+                  <label
+                    key={label}
+                    className="group flex cursor-pointer items-center gap-2.5 text-sm"
+                  >
                     <input
                       type="radio"
                       name="has-score-filter"
-                      className="h-4 w-4 border-input text-primary focus:ring-primary focus:ring-offset-0"
+                      className="border-input text-primary focus:ring-primary h-4 w-4 focus:ring-offset-0"
                       checked={search.hasScore === key}
                       onChange={() => updateSearch({ hasScore: key })}
                     />
@@ -1021,7 +1180,9 @@ function JobsPage() {
 
             {/* Employment Type */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Employment Type</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Employment Type
+              </legend>
               <div className="space-y-2.5">
                 {[
                   { key: 'full_time', label: 'Full-time' },
@@ -1032,16 +1193,21 @@ function JobsPage() {
                   const currentTypes = search.employmentType?.split(',').filter(Boolean) ?? [];
                   const isChecked = currentTypes.includes(key);
                   return (
-                    <label key={key} className="flex items-center gap-2.5 text-sm cursor-pointer group">
+                    <label
+                      key={key}
+                      className="group flex cursor-pointer items-center gap-2.5 text-sm"
+                    >
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary focus:ring-offset-0"
+                        className="border-input text-primary focus:ring-primary h-4 w-4 rounded focus:ring-offset-0"
                         checked={isChecked}
                         onChange={(e) => {
                           const next = e.target.checked
                             ? [...currentTypes, key]
                             : currentTypes.filter((t) => t !== key);
-                          updateSearch({ employmentType: next.length > 0 ? next.join(',') : undefined });
+                          updateSearch({
+                            employmentType: next.length > 0 ? next.join(',') : undefined,
+                          });
                         }}
                       />
                       <span className="group-hover:text-foreground transition-colors">{label}</span>
@@ -1053,8 +1219,10 @@ function JobsPage() {
 
             {/* Compensation Range */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
-                <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Compensation</span>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5" /> Compensation
+                </span>
               </legend>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
@@ -1063,7 +1231,9 @@ function JobsPage() {
                     type="number"
                     placeholder="e.g. 100000"
                     value={search.minComp ?? ''}
-                    onChange={(e) => updateSearch({ minComp: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      updateSearch({ minComp: e.target.value ? Number(e.target.value) : undefined })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -1073,7 +1243,9 @@ function JobsPage() {
                     type="number"
                     placeholder="e.g. 200000"
                     value={search.maxComp ?? ''}
-                    onChange={(e) => updateSearch({ maxComp: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      updateSearch({ maxComp: e.target.value ? Number(e.target.value) : undefined })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -1082,7 +1254,9 @@ function JobsPage() {
 
             {/* Domain */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Domain</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Domain
+              </legend>
               <Input
                 placeholder="e.g. fintech, healthcare"
                 value={search.domain ?? ''}
@@ -1093,9 +1267,11 @@ function JobsPage() {
 
             {/* Sponsorship */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Sponsorship</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Sponsorship
+              </legend>
               <select
-                className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="border-input focus-visible:ring-ring flex h-8 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                 value={search.sponsorship ?? ''}
                 onChange={(e) => updateSearch({ sponsorship: e.target.value || undefined })}
               >
@@ -1108,7 +1284,9 @@ function JobsPage() {
 
             {/* Years Required */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Years Required</legend>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                Years Required
+              </legend>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Min</Label>
@@ -1116,7 +1294,11 @@ function JobsPage() {
                     type="number"
                     placeholder="0"
                     value={search.minYears ?? ''}
-                    onChange={(e) => updateSearch({ minYears: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      updateSearch({
+                        minYears: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -1126,7 +1308,11 @@ function JobsPage() {
                     type="number"
                     placeholder="10+"
                     value={search.maxYears ?? ''}
-                    onChange={(e) => updateSearch({ maxYears: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      updateSearch({
+                        maxYears: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -1135,8 +1321,10 @@ function JobsPage() {
 
             {/* Posted After */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
-                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> Posted After</span>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" /> Posted After
+                </span>
               </legend>
               <Input
                 type="date"
@@ -1148,12 +1336,14 @@ function JobsPage() {
 
             {/* Sort */}
             <fieldset className="space-y-3">
-              <legend className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
-                <span className="flex items-center gap-1.5"><ArrowUpDown className="h-3.5 w-3.5" /> Sort By</span>
+              <legend className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
+                <span className="flex items-center gap-1.5">
+                  <ArrowUpDown className="h-3.5 w-3.5" /> Sort By
+                </span>
               </legend>
               <div className="flex gap-2">
                 <select
-                  className="flex h-8 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="border-input focus-visible:ring-ring flex h-8 flex-1 rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                   value={search.sortBy ?? 'score'}
                   onChange={(e) => updateSearch({ sortBy: (e.target.value as any) || undefined })}
                 >
@@ -1166,7 +1356,9 @@ function JobsPage() {
                   variant="outline"
                   size="sm"
                   className="h-8 px-2"
-                  onClick={() => updateSearch({ sortDir: search.sortDir === 'asc' ? 'desc' : 'asc' })}
+                  onClick={() =>
+                    updateSearch({ sortDir: search.sortDir === 'asc' ? 'desc' : 'asc' })
+                  }
                   aria-label="Toggle sort direction"
                 >
                   {search.sortDir === 'asc' ? 'ASC' : 'DESC'}
@@ -1183,13 +1375,18 @@ function JobsPage() {
               placeholder="Preset name..."
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
-              className="h-8 text-sm flex-1"
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSavePreset(); } }}
+              className="h-8 flex-1 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSavePreset();
+                }
+              }}
             />
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 shrink-0"
+              className="h-8 shrink-0 gap-1.5"
               onClick={handleSavePreset}
               disabled={!presetName.trim() || savingPreset}
             >
@@ -1202,14 +1399,16 @@ function JobsPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm"
               onClick={() => {
                 navigate({ search: {} });
               }}
             >
               Clear all filters
             </Button>
-            <Button onClick={() => setShowFilters(false)} className="px-6">Done</Button>
+            <Button onClick={() => setShowFilters(false)} className="px-6">
+              Done
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1217,13 +1416,22 @@ function JobsPage() {
       {/* Job Count */}
       {totalItems > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span>-<span className="font-medium text-foreground">{Math.min(currentPage * pageSize, totalItems)}</span> of{' '}
-            <span className="font-medium text-foreground">{totalItems}</span>{' '}
-            job{totalItems !== 1 ? 's' : ''}
+          <p className="text-muted-foreground text-sm">
+            Showing{' '}
+            <span className="text-foreground font-medium">{(currentPage - 1) * pageSize + 1}</span>-
+            <span className="text-foreground font-medium">
+              {Math.min(currentPage * pageSize, totalItems)}
+            </span>{' '}
+            of <span className="text-foreground font-medium">{totalItems}</span> job
+            {totalItems !== 1 ? 's' : ''}
           </p>
           {search.q && (
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5" onClick={() => handleQueryChange('')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => handleQueryChange('')}
+            >
               <X className="h-3 w-3" />
               Clear search
             </Button>
@@ -1233,26 +1441,40 @@ function JobsPage() {
 
       {/* Job Cards or Empty State */}
       {visibleJobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 px-6 shadow-sm">
-          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/10 to-sky-100">
-            <Plane className="h-12 w-12 text-primary/60" />
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border px-6 py-16 shadow-sm">
+          <div className="from-primary/10 mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br to-sky-100">
+            <Plane className="text-primary/60 h-12 w-12" />
           </div>
-          <h3 className="font-bold text-xl mb-2 text-foreground">
+          <h3 className="text-foreground mb-2 text-xl font-bold">
             {search.q || activeFilterCount > 0 ? 'No matching jobs' : 'No jobs on radar yet'}
           </h3>
-          <p className="text-sm text-muted-foreground max-w-md text-center mb-8 leading-relaxed">
+          <p className="text-muted-foreground mb-8 max-w-md text-center text-sm leading-relaxed">
             {search.q || activeFilterCount > 0
               ? 'No jobs match your current search or filters. Try adjusting your criteria.'
               : 'Your flight plan is clear. Add a job source and scan for opportunities, or paste a job posting URL to get started.'}
           </p>
-          {(search.q || activeFilterCount > 0) ? (
-            <Button onClick={() => { handleQueryChange(''); navigate({ search: {} }); }} variant="outline" className="gap-2">
+          {search.q || activeFilterCount > 0 ? (
+            <Button
+              onClick={() => {
+                handleQueryChange('');
+                navigate({ search: {} });
+              }}
+              variant="outline"
+              className="gap-2"
+            >
               <X className="h-4 w-4" />
               Clear Filters
             </Button>
           ) : (
             <div className="flex flex-col items-center gap-3 sm:flex-row">
-              <Button onClick={() => { setShowSources(true); setShowAddSource(true); }} variant="outline" className="gap-2">
+              <Button
+                onClick={() => {
+                  setShowSources(true);
+                  setShowAddSource(true);
+                }}
+                variant="outline"
+                className="gap-2"
+              >
                 <Radio className="h-4 w-4" />
                 Add a Source
               </Button>
@@ -1276,7 +1498,7 @@ function JobsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4 pb-2">
+            <div className="flex items-center justify-center gap-2 pb-2 pt-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -1294,7 +1516,11 @@ function JobsPage() {
                   })
                   .reduce((acc, pg, idx, arr) => {
                     if (idx > 0 && pg - arr[idx - 1] > 1) {
-                      acc.push(<span key={`ellipsis-${pg}`} className="px-1 text-muted-foreground text-sm">...</span>);
+                      acc.push(
+                        <span key={`ellipsis-${pg}`} className="text-muted-foreground px-1 text-sm">
+                          ...
+                        </span>,
+                      );
                     }
                     acc.push(
                       <Button
@@ -1305,7 +1531,7 @@ function JobsPage() {
                         onClick={() => updateSearch({ page: pg })}
                       >
                         {pg}
-                      </Button>
+                      </Button>,
                     );
                     return acc;
                   }, [] as React.ReactNode[])}
@@ -1360,18 +1586,18 @@ function JobCard({
     <Link
       to="/jobs/$jobId"
       params={{ jobId: job.id }}
-      className="group block rounded-xl border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      className="bg-card hover:border-primary/30 focus-visible:ring-ring group block rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
     >
       <div className="p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           {/* Left: Main info */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="min-w-0 flex-1 space-y-2">
             {/* Title & Company */}
             <div>
-              <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">
+              <h3 className="text-foreground group-hover:text-primary text-base font-semibold leading-tight transition-colors">
                 {job.title}
               </h3>
-              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-muted-foreground">
+              <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-sm">
                 <Building2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="font-medium">{job.company}</span>
               </div>
@@ -1380,7 +1606,7 @@ function JobCard({
             {/* Meta row */}
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               {job.location && (
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <span className="text-muted-foreground inline-flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   {job.location}
                 </span>
@@ -1394,18 +1620,18 @@ function JobCard({
                 </span>
               )}
               {comp && (
-                <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
+                <span className="text-foreground/80 inline-flex items-center gap-1 font-medium">
                   <DollarSign className="h-3.5 w-3.5 shrink-0" />
                   {comp}
                 </span>
               )}
               {job.employmentType && (
                 <Badge variant="secondary" className="text-xs font-medium">
-                  <Briefcase className="h-3 w-3 mr-1" />
+                  <Briefcase className="mr-1 h-3 w-3" />
                   {job.employmentType.charAt(0).toUpperCase() + job.employmentType.slice(1)}
                 </Badge>
               )}
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+              <span className="text-muted-foreground inline-flex items-center gap-1 text-xs tabular-nums">
                 <Clock className="h-3 w-3 shrink-0" />
                 {timeAgo(job.createdAt)}
               </span>
@@ -1423,16 +1649,19 @@ function JobCard({
                       className={`text-xs font-normal ${
                         isMatched
                           ? 'border-emerald-300 bg-white text-emerald-700'
-                          : 'border-border bg-white text-muted-foreground'
+                          : 'border-border text-muted-foreground bg-white'
                       }`}
                     >
-                      {isMatched && <CheckCircle2 className="h-3 w-3 mr-0.5 shrink-0" />}
+                      {isMatched && <CheckCircle2 className="mr-0.5 h-3 w-3 shrink-0" />}
                       {skill}
                     </Badge>
                   );
                 })}
                 {extraCount > 0 && (
-                  <Badge variant="outline" className="text-xs font-normal bg-white border-border text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className="border-border text-muted-foreground bg-white text-xs font-normal"
+                  >
                     +{extraCount} more
                   </Badge>
                 )}
@@ -1441,29 +1670,39 @@ function JobCard({
           </div>
 
           {/* Right: Score + Actions */}
-          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 shrink-0">
+          <div className="flex shrink-0 flex-row items-center gap-3 sm:flex-col sm:items-end">
             {hasScore && (
-              <div className={`flex flex-col items-center rounded-lg border px-4 py-2.5 ${getScoreBg(job.score!.overallScore!)}`}>
-                <span className={`text-2xl font-bold tabular-nums leading-none ${getScoreColor(job.score!.overallScore!)}`}>
+              <div
+                className={`flex flex-col items-center rounded-lg border px-4 py-2.5 ${getScoreBg(job.score!.overallScore!)}`}
+              >
+                <span
+                  className={`text-2xl font-bold tabular-nums leading-none ${getScoreColor(job.score!.overallScore!)}`}
+                >
                   {job.score!.overallScore}
                 </span>
-                <span className={`text-[10px] font-semibold mt-1 uppercase tracking-wide ${getScoreColor(job.score!.overallScore!)}`}>
+                <span
+                  className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${getScoreColor(job.score!.overallScore!)}`}
+                >
                   {getScoreLabel(job.score!.overallScore!)}
                 </span>
                 {job.score!.recommendation && (
                   <Badge
                     variant={getRecommendationVariant(job.score!.recommendation)}
-                    className="text-[10px] mt-1.5 px-2"
+                    className="mt-1.5 px-2 text-[10px]"
                   >
                     {getRecommendationLabel(job.score!.recommendation)}
                   </Badge>
                 )}
                 {matchInfo && matchInfo.matchPct > 0 && (
-                  <span className={`text-xs font-semibold tabular-nums ${
-                    matchInfo.matchPct >= 75 ? 'text-emerald-700' :
-                    matchInfo.matchPct >= 50 ? 'text-sky-700' :
-                    'text-muted-foreground'
-                  }`}>
+                  <span
+                    className={`text-xs font-semibold tabular-nums ${
+                      matchInfo.matchPct >= 75
+                        ? 'text-emerald-700'
+                        : matchInfo.matchPct >= 50
+                          ? 'text-sky-700'
+                          : 'text-muted-foreground'
+                    }`}
+                  >
                     {matchInfo.matchPct}% skill match
                   </span>
                 )}
@@ -1473,8 +1712,13 @@ function JobCard({
             {/* Actions */}
             <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
               {job.applyUrl && (
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" asChild>
-                  <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" asChild>
+                  <a
+                    href={job.applyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <ExternalLink className="h-3 w-3" />
                     <span className="hidden sm:inline">View Posting</span>
                     <span className="sm:hidden">View</span>
@@ -1484,8 +1728,12 @@ function JobCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive focus-visible:ring-destructive"
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRequestDelete(job.id); }}
+                className="text-muted-foreground hover:text-destructive focus-visible:ring-destructive h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onRequestDelete(job.id);
+                }}
                 aria-label={`Delete ${job.title}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -1521,7 +1769,7 @@ function AddSourceDialog({
   const selectedPreset = SOURCE_PRESETS.find((p) => p.type === type);
   const supportsSearch = selectedPreset?.supportsSearch ?? false;
 
-  const handlePreset = (preset: typeof SOURCE_PRESETS[number]) => {
+  const handlePreset = (preset: (typeof SOURCE_PRESETS)[number]) => {
     setName(preset.name);
     setType(preset.type);
   };
@@ -1565,7 +1813,7 @@ function AddSourceDialog({
 
         {/* Quick Presets */}
         <div className="space-y-2.5">
-          <Label className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+          <Label className="text-foreground/70 text-xs font-semibold uppercase tracking-wider">
             Quick Add
           </Label>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Source type presets">
@@ -1600,12 +1848,14 @@ function AddSourceDialog({
               <Label htmlFor="source-type">Type</Label>
               <select
                 id="source-type"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
                 {SOURCE_PRESETS.map((p) => (
-                  <option key={p.type} value={p.type}>{p.name}</option>
+                  <option key={p.type} value={p.type}>
+                    {p.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -1613,17 +1863,22 @@ function AddSourceDialog({
 
           {/* Search-based config for LinkedIn, Indeed, Adzuna */}
           {supportsSearch && (
-            <div className="rounded-lg border border-sky-200 bg-sky-50/50 p-4 space-y-3">
+            <div className="space-y-3 rounded-lg border border-sky-200 bg-sky-50/50 p-4">
               <div className="flex items-center gap-2">
                 <Search className="h-4 w-4 text-sky-600" />
                 <span className="text-sm font-medium text-sky-900">Search Query</span>
-                <Badge variant="outline" className="text-[10px] border-sky-300 text-sky-700 bg-white">
+                <Badge
+                  variant="outline"
+                  className="border-sky-300 bg-white text-[10px] text-sky-700"
+                >
                   {type === 'serpapi' ? 'SerpAPI' : type === 'adzuna' ? 'Adzuna API' : 'ts-jobspy'}
                 </Badge>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="source-search" className="text-xs">Search Term</Label>
+                  <Label htmlFor="source-search" className="text-xs">
+                    Search Term
+                  </Label>
                   <Input
                     id="source-search"
                     placeholder="e.g. software engineer"
@@ -1632,7 +1887,9 @@ function AddSourceDialog({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="source-location" className="text-xs">Location</Label>
+                  <Label htmlFor="source-location" className="text-xs">
+                    Location
+                  </Label>
                   <Input
                     id="source-location"
                     placeholder="e.g. San Francisco, CA"
@@ -1643,16 +1900,18 @@ function AddSourceDialog({
               </div>
               <p className="text-xs text-sky-700/70">
                 {type === 'serpapi'
-                  ? 'Uses the SerpAPI Google Jobs API to search Google\'s job listings. Requires a SerpAPI key in Settings.'
+                  ? "Uses the SerpAPI Google Jobs API to search Google's job listings. Requires a SerpAPI key in Settings."
                   : type === 'adzuna'
-                  ? 'Uses the Adzuna API to search structured job data. Requires an Adzuna API key in Settings.'
-                  : `Scrapes ${type === 'linkedin' ? 'LinkedIn' : 'Indeed'} directly for matching jobs. Works best with specific search terms.`}
+                    ? 'Uses the Adzuna API to search structured job data. Requires an Adzuna API key in Settings.'
+                    : `Scrapes ${type === 'linkedin' ? 'LinkedIn' : 'Indeed'} directly for matching jobs. Works best with specific search terms.`}
               </p>
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="source-url">URL {supportsSearch ? '(optional if using search)' : ''}</Label>
+            <Label htmlFor="source-url">
+              URL {supportsSearch ? '(optional if using search)' : ''}
+            </Label>
             <Input
               id="source-url"
               type="url"
@@ -1660,8 +1919,9 @@ function AddSourceDialog({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              Paste a search results URL or specific job listing URL. The scanner will fetch and parse jobs from this page.
+            <p className="text-muted-foreground text-xs">
+              Paste a search results URL or specific job listing URL. The scanner will fetch and
+              parse jobs from this page.
             </p>
           </div>
           <div className="flex justify-end gap-3">
@@ -1682,13 +1942,7 @@ function AddSourceDialog({
 // Add Job by URL
 // ---------------------------------------------------------------------------
 
-function AddJobByUrl({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
+function AddJobByUrl({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [url, setUrl] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [feedback, setFeedback] = React.useState<{
@@ -1706,11 +1960,13 @@ function AddJobByUrl({
     try {
       const result = await api.ai.ingestJobFromUrl({ url: url.trim() });
       if ((result as any).deduplicated) {
+        captureEvent('job_added_by_url', { company: result.company, deduplicated: true });
         setFeedback({
           type: 'success',
           message: `Already on radar: ${result.title} at ${result.company}.`,
         });
       } else {
+        captureEvent('job_added_by_url', { company: result.company, title: result.title });
         setFeedback({
           type: 'success',
           message: `Added ${result.title} at ${result.company}.`,
@@ -1720,6 +1976,7 @@ function AddJobByUrl({
         onCreated();
       }, 1500);
     } catch (err) {
+      captureEvent('job_add_failed', { method: 'url' });
       setFeedback({
         type: 'error',
         message: err instanceof Error ? err.message : 'Failed to parse job from URL.',
@@ -1732,12 +1989,13 @@ function AddJobByUrl({
   return (
     <form onSubmit={handleFetch} className="space-y-4">
       <div className="flex items-center gap-2">
-        <LinkIcon className="h-4 w-4 text-muted-foreground" />
+        <LinkIcon className="text-muted-foreground h-4 w-4" />
         <h3 className="text-sm font-semibold">Add by URL</h3>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Paste a job posting URL and we will auto-parse the listing and score it against your profile.
+      <p className="text-muted-foreground text-sm">
+        Paste a job posting URL and we will auto-parse the listing and score it against your
+        profile.
       </p>
 
       <div className="flex gap-3">
@@ -1776,9 +2034,9 @@ function AddJobByUrl({
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
           <span className="break-words font-medium">{feedback.message}</span>
         </div>
@@ -1791,13 +2049,7 @@ function AddJobByUrl({
 // Add Job by Text
 // ---------------------------------------------------------------------------
 
-function AddJobByText({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
+function AddJobByText({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [text, setText] = React.useState('');
   const [sourceLabel, setSourceLabel] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -1819,11 +2071,13 @@ function AddJobByText({
         sourceLabel: sourceLabel.trim() || undefined,
       });
       if ((result as any).deduplicated) {
+        captureEvent('job_added_by_text', { company: result.company, deduplicated: true });
         setFeedback({
           type: 'success',
           message: `Already on radar: ${result.title} at ${result.company}.`,
         });
       } else {
+        captureEvent('job_added_by_text', { company: result.company, title: result.title });
         setFeedback({
           type: 'success',
           message: `Added ${result.title} at ${result.company}.`,
@@ -1833,6 +2087,7 @@ function AddJobByText({
         onCreated();
       }, 1500);
     } catch (err) {
+      captureEvent('job_add_failed', { method: 'text' });
       setFeedback({
         type: 'error',
         message: err instanceof Error ? err.message : 'Failed to parse job from text.',
@@ -1845,12 +2100,13 @@ function AddJobByText({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-muted-foreground" />
+        <FileText className="text-muted-foreground h-4 w-4" />
         <h3 className="text-sm font-semibold">Paste Job Description</h3>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Copy and paste a full job description. AI will extract the title, company, skills, and other details automatically.
+      <p className="text-muted-foreground text-sm">
+        Copy and paste a full job description. AI will extract the title, company, skills, and other
+        details automatically.
       </p>
 
       <div className="space-y-2">
@@ -1868,14 +2124,14 @@ function AddJobByText({
         <Label htmlFor="paste-text">Job Description *</Label>
         <textarea
           id="paste-text"
-          className="flex min-h-[160px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[160px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Paste the full job description here..."
           value={text}
           onChange={(e) => setText(e.target.value)}
           disabled={loading}
           required
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Include title, company, requirements, and any other details from the posting.
         </p>
       </div>
@@ -1906,9 +2162,9 @@ function AddJobByText({
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           )}
           <span className="break-words font-medium">{feedback.message}</span>
         </div>
@@ -1921,13 +2177,7 @@ function AddJobByText({
 // Add Job Form
 // ---------------------------------------------------------------------------
 
-function AddJobForm({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
+function AddJobForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [showOptional, setShowOptional] = React.useState(false);
 
@@ -1950,7 +2200,8 @@ function AddJobForm({
   const [mustHaveSkills, setMustHaveSkills] = React.useState('');
   const [niceToHaveSkills, setNiceToHaveSkills] = React.useState('');
 
-  const canSubmit = company.trim() && title.trim() && applyUrl.trim() && sourceUrl.trim() && rawDescription.trim();
+  const canSubmit =
+    company.trim() && title.trim() && applyUrl.trim() && sourceUrl.trim() && rawDescription.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1973,10 +2224,20 @@ function AddJobForm({
         ...(employmentType ? { employmentType } : {}),
         ...(yearsRequired ? { yearsRequired: Number(yearsRequired) } : {}),
         ...(mustHaveSkills.trim()
-          ? { mustHaveSkills: mustHaveSkills.split(',').map((s) => s.trim()).filter(Boolean) }
+          ? {
+              mustHaveSkills: mustHaveSkills
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            }
           : {}),
         ...(niceToHaveSkills.trim()
-          ? { niceToHaveSkills: niceToHaveSkills.split(',').map((s) => s.trim()).filter(Boolean) }
+          ? {
+              niceToHaveSkills: niceToHaveSkills
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            }
           : {}),
       });
       onCreated();
@@ -1990,7 +2251,7 @@ function AddJobForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-2">
-        <Plus className="h-4 w-4 text-muted-foreground" />
+        <Plus className="text-muted-foreground h-4 w-4" />
         <h3 className="text-sm font-semibold">Or Add Manually</h3>
       </div>
 
@@ -2044,7 +2305,7 @@ function AddJobForm({
         <Label htmlFor="add-description">Raw Description *</Label>
         <textarea
           id="add-description"
-          className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[120px] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Paste the full job description here..."
           value={rawDescription}
           onChange={(e) => setRawDescription(e.target.value)}
@@ -2056,10 +2317,12 @@ function AddJobForm({
       <button
         type="button"
         aria-expanded={showOptional}
-        className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md px-1 py-0.5 -ml-1"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring -ml-1 flex items-center gap-1.5 rounded-md px-1 py-0.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2"
         onClick={() => setShowOptional((v) => !v)}
       >
-        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showOptional ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform duration-200 ${showOptional ? 'rotate-180' : ''}`}
+        />
         {showOptional ? 'Hide' : 'Show'} optional fields
       </button>
 
@@ -2080,7 +2343,7 @@ function AddJobForm({
               <Label htmlFor="add-remote-policy">Remote Policy</Label>
               <select
                 id="add-remote-policy"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                 value={remotePolicy}
                 onChange={(e) => setRemotePolicy(e.target.value)}
               >
@@ -2094,7 +2357,7 @@ function AddJobForm({
               <Label htmlFor="add-employment-type">Employment Type</Label>
               <select
                 id="add-employment-type"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                 value={employmentType}
                 onChange={(e) => setEmploymentType(e.target.value)}
               >
@@ -2138,7 +2401,7 @@ function AddJobForm({
               <Label htmlFor="add-comp-type">Compensation Type</Label>
               <select
                 id="add-comp-type"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1"
                 value={compensationType}
                 onChange={(e) => setCompensationType(e.target.value)}
               >

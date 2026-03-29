@@ -1,11 +1,6 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
-export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error('[API Error]', err.message);
 
   // Map common error messages to HTTP status codes
@@ -26,7 +21,11 @@ export function errorHandler(
     return;
   }
 
-  if (message.includes('Invalid') || message.includes('too short') || message.includes('required')) {
+  if (
+    message.includes('Invalid') ||
+    message.includes('too short') ||
+    message.includes('required')
+  ) {
     res.status(400).json({ error: message });
     return;
   }

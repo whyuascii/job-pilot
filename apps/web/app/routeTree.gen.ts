@@ -8,163 +8,164 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as RecruiterMessagesRouteImport } from './routes/recruiter-messages'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as JobsIndexRouteImport } from './routes/jobs.index'
-import { Route as GmailCallbackRouteImport } from './routes/gmail-callback'
-import { Route as FlightRecordsRouteImport } from './routes/flight-records'
-import { Route as CareerGoalsRouteImport } from './routes/career-goals'
-import { Route as ApplicationsRouteImport } from './routes/applications'
-import { Route as AnswersRouteImport } from './routes/answers'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
-import { Route as ApplicationsApplicationIdRouteImport } from './routes/applications.$applicationId'
+import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx';
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as AnalyticsRouteImport } from './routes/analytics';
+import { Route as AnswersRouteImport } from './routes/answers';
+import { Route as ApplicationsRouteImport } from './routes/applications';
+import { Route as ApplicationsApplicationIdRouteImport } from './routes/applications.$applicationId';
+import { Route as CareerGoalsRouteImport } from './routes/career-goals';
+import { Route as DashboardRouteImport } from './routes/dashboard';
+import { Route as FlightRecordsRouteImport } from './routes/flight-records';
+import { Route as GmailCallbackRouteImport } from './routes/gmail-callback';
+import { Route as IndexRouteImport } from './routes/index';
+import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId';
+import { Route as JobsIndexRouteImport } from './routes/jobs.index';
+import { Route as LoginRouteImport } from './routes/login';
+import { Route as ProfileRouteImport } from './routes/profile';
+import { Route as RecruiterMessagesRouteImport } from './routes/recruiter-messages';
+import { Route as SettingsRouteImport } from './routes/settings';
+import { Route as SignupRouteImport } from './routes/signup';
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const RecruiterMessagesRoute = RecruiterMessagesRouteImport.update({
   id: '/recruiter-messages',
   path: '/recruiter-messages',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const JobsIndexRoute = JobsIndexRouteImport.update({
   id: '/jobs/',
   path: '/jobs/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const GmailCallbackRoute = GmailCallbackRouteImport.update({
   id: '/gmail-callback',
   path: '/gmail-callback',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const FlightRecordsRoute = FlightRecordsRouteImport.update({
   id: '/flight-records',
   path: '/flight-records',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const CareerGoalsRoute = CareerGoalsRouteImport.update({
   id: '/career-goals',
   path: '/career-goals',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApplicationsRoute = ApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AnswersRoute = AnswersRouteImport.update({
   id: '/answers',
   path: '/answers',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const JobsJobIdRoute = JobsJobIdRouteImport.update({
   id: '/jobs/$jobId',
   path: '/jobs/$jobId',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ApplicationsApplicationIdRoute =
-  ApplicationsApplicationIdRouteImport.update({
-    id: '/$applicationId',
-    path: '/$applicationId',
-    getParentRoute: () => ApplicationsRoute,
-  } as any)
+} as any);
+const ApplicationsApplicationIdRoute = ApplicationsApplicationIdRouteImport.update({
+  id: '/$applicationId',
+  path: '/$applicationId',
+  getParentRoute: () => ApplicationsRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/answers': typeof AnswersRoute
-  '/applications': typeof ApplicationsRouteWithChildren
-  '/career-goals': typeof CareerGoalsRoute
-  '/flight-records': typeof FlightRecordsRoute
-  '/gmail-callback': typeof GmailCallbackRoute
-  '/jobs': typeof JobsIndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
-  '/recruiter-messages': typeof RecruiterMessagesRoute
-  '/settings': typeof SettingsRoute
-  '/signup': typeof SignupRoute
-  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute
-  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/': typeof IndexRoute;
+  '/analytics': typeof AnalyticsRoute;
+  '/dashboard': typeof DashboardRoute;
+  '/answers': typeof AnswersRoute;
+  '/applications': typeof ApplicationsRouteWithChildren;
+  '/career-goals': typeof CareerGoalsRoute;
+  '/flight-records': typeof FlightRecordsRoute;
+  '/gmail-callback': typeof GmailCallbackRoute;
+  '/jobs': typeof JobsIndexRoute;
+  '/login': typeof LoginRoute;
+  '/profile': typeof ProfileRoute;
+  '/recruiter-messages': typeof RecruiterMessagesRoute;
+  '/settings': typeof SettingsRoute;
+  '/signup': typeof SignupRoute;
+  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute;
+  '/jobs/$jobId': typeof JobsJobIdRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/answers': typeof AnswersRoute
-  '/applications': typeof ApplicationsRouteWithChildren
-  '/career-goals': typeof CareerGoalsRoute
-  '/flight-records': typeof FlightRecordsRoute
-  '/gmail-callback': typeof GmailCallbackRoute
-  '/jobs': typeof JobsIndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
-  '/recruiter-messages': typeof RecruiterMessagesRoute
-  '/settings': typeof SettingsRoute
-  '/signup': typeof SignupRoute
-  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute
-  '/jobs/$jobId': typeof JobsJobIdRoute
+  '/': typeof IndexRoute;
+  '/analytics': typeof AnalyticsRoute;
+  '/dashboard': typeof DashboardRoute;
+  '/answers': typeof AnswersRoute;
+  '/applications': typeof ApplicationsRouteWithChildren;
+  '/career-goals': typeof CareerGoalsRoute;
+  '/flight-records': typeof FlightRecordsRoute;
+  '/gmail-callback': typeof GmailCallbackRoute;
+  '/jobs': typeof JobsIndexRoute;
+  '/login': typeof LoginRoute;
+  '/profile': typeof ProfileRoute;
+  '/recruiter-messages': typeof RecruiterMessagesRoute;
+  '/settings': typeof SettingsRoute;
+  '/signup': typeof SignupRoute;
+  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute;
+  '/jobs/$jobId': typeof JobsJobIdRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/dashboard': typeof DashboardRoute
-  '/answers': typeof AnswersRoute
-  '/applications': typeof ApplicationsRouteWithChildren
-  '/career-goals': typeof CareerGoalsRoute
-  '/flight-records': typeof FlightRecordsRoute
-  '/gmail-callback': typeof GmailCallbackRoute
-  '/jobs/': typeof JobsIndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
-  '/recruiter-messages': typeof RecruiterMessagesRoute
-  '/settings': typeof SettingsRoute
-  '/signup': typeof SignupRoute
-  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute
-  '/jobs/$jobId': typeof JobsJobIdRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/analytics': typeof AnalyticsRoute;
+  '/dashboard': typeof DashboardRoute;
+  '/answers': typeof AnswersRoute;
+  '/applications': typeof ApplicationsRouteWithChildren;
+  '/career-goals': typeof CareerGoalsRoute;
+  '/flight-records': typeof FlightRecordsRoute;
+  '/gmail-callback': typeof GmailCallbackRoute;
+  '/jobs/': typeof JobsIndexRoute;
+  '/login': typeof LoginRoute;
+  '/profile': typeof ProfileRoute;
+  '/recruiter-messages': typeof RecruiterMessagesRoute;
+  '/settings': typeof SettingsRoute;
+  '/signup': typeof SignupRoute;
+  '/applications/$applicationId': typeof ApplicationsApplicationIdRoute;
+  '/jobs/$jobId': typeof JobsJobIdRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/'
     | '/analytics'
@@ -181,8 +182,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/applications/$applicationId'
-    | '/jobs/$jobId'
-  fileRoutesByTo: FileRoutesByTo
+    | '/jobs/$jobId';
+  fileRoutesByTo: FileRoutesByTo;
   to:
     | '/'
     | '/analytics'
@@ -199,7 +200,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/applications/$applicationId'
-    | '/jobs/$jobId'
+    | '/jobs/$jobId';
   id:
     | '__root__'
     | '/'
@@ -217,155 +218,153 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/applications/$applicationId'
-    | '/jobs/$jobId'
-  fileRoutesById: FileRoutesById
+    | '/jobs/$jobId';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  DashboardRoute: typeof DashboardRoute
-  IndexRoute: typeof IndexRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  AnswersRoute: typeof AnswersRoute
-  ApplicationsRoute: typeof ApplicationsRouteWithChildren
-  CareerGoalsRoute: typeof CareerGoalsRoute
-  FlightRecordsRoute: typeof FlightRecordsRoute
-  GmailCallbackRoute: typeof GmailCallbackRoute
-  JobsIndexRoute: typeof JobsIndexRoute
-  JobsJobIdRoute: typeof JobsJobIdRoute
-  LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRoute
-  RecruiterMessagesRoute: typeof RecruiterMessagesRoute
-  SettingsRoute: typeof SettingsRoute
-  SignupRoute: typeof SignupRoute
+  DashboardRoute: typeof DashboardRoute;
+  IndexRoute: typeof IndexRoute;
+  AnalyticsRoute: typeof AnalyticsRoute;
+  AnswersRoute: typeof AnswersRoute;
+  ApplicationsRoute: typeof ApplicationsRouteWithChildren;
+  CareerGoalsRoute: typeof CareerGoalsRoute;
+  FlightRecordsRoute: typeof FlightRecordsRoute;
+  GmailCallbackRoute: typeof GmailCallbackRoute;
+  JobsIndexRoute: typeof JobsIndexRoute;
+  JobsJobIdRoute: typeof JobsJobIdRoute;
+  LoginRoute: typeof LoginRoute;
+  ProfileRoute: typeof ProfileRoute;
+  RecruiterMessagesRoute: typeof RecruiterMessagesRoute;
+  SettingsRoute: typeof SettingsRoute;
+  SignupRoute: typeof SignupRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/signup';
+      path: '/signup';
+      fullPath: '/signup';
+      preLoaderRoute: typeof SignupRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/settings';
+      path: '/settings';
+      fullPath: '/settings';
+      preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/recruiter-messages': {
-      id: '/recruiter-messages'
-      path: '/recruiter-messages'
-      fullPath: '/recruiter-messages'
-      preLoaderRoute: typeof RecruiterMessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/recruiter-messages';
+      path: '/recruiter-messages';
+      fullPath: '/recruiter-messages';
+      preLoaderRoute: typeof RecruiterMessagesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/profile';
+      path: '/profile';
+      fullPath: '/profile';
+      preLoaderRoute: typeof ProfileRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/login';
+      path: '/login';
+      fullPath: '/login';
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/jobs/': {
-      id: '/jobs/'
-      path: '/jobs'
-      fullPath: '/jobs'
-      preLoaderRoute: typeof JobsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/jobs/';
+      path: '/jobs';
+      fullPath: '/jobs';
+      preLoaderRoute: typeof JobsIndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/gmail-callback': {
-      id: '/gmail-callback'
-      path: '/gmail-callback'
-      fullPath: '/gmail-callback'
-      preLoaderRoute: typeof GmailCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/gmail-callback';
+      path: '/gmail-callback';
+      fullPath: '/gmail-callback';
+      preLoaderRoute: typeof GmailCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/career-goals': {
-      id: '/career-goals'
-      path: '/career-goals'
-      fullPath: '/career-goals'
-      preLoaderRoute: typeof CareerGoalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/career-goals';
+      path: '/career-goals';
+      fullPath: '/career-goals';
+      preLoaderRoute: typeof CareerGoalsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/flight-records': {
-      id: '/flight-records'
-      path: '/flight-records'
-      fullPath: '/flight-records'
-      preLoaderRoute: typeof FlightRecordsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/flight-records';
+      path: '/flight-records';
+      fullPath: '/flight-records';
+      preLoaderRoute: typeof FlightRecordsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/applications': {
-      id: '/applications'
-      path: '/applications'
-      fullPath: '/applications'
-      preLoaderRoute: typeof ApplicationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/applications';
+      path: '/applications';
+      fullPath: '/applications';
+      preLoaderRoute: typeof ApplicationsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/answers': {
-      id: '/answers'
-      path: '/answers'
-      fullPath: '/answers'
-      preLoaderRoute: typeof AnswersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/answers';
+      path: '/answers';
+      fullPath: '/answers';
+      preLoaderRoute: typeof AnswersRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/analytics';
+      path: '/analytics';
+      fullPath: '/analytics';
+      preLoaderRoute: typeof AnalyticsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/dashboard';
+      path: '/dashboard';
+      fullPath: '/dashboard';
+      preLoaderRoute: typeof DashboardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/jobs/$jobId': {
-      id: '/jobs/$jobId'
-      path: '/jobs/$jobId'
-      fullPath: '/jobs/$jobId'
-      preLoaderRoute: typeof JobsJobIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/jobs/$jobId';
+      path: '/jobs/$jobId';
+      fullPath: '/jobs/$jobId';
+      preLoaderRoute: typeof JobsJobIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/applications/$applicationId': {
-      id: '/applications/$applicationId'
-      path: '/$applicationId'
-      fullPath: '/applications/$applicationId'
-      preLoaderRoute: typeof ApplicationsApplicationIdRouteImport
-      parentRoute: typeof ApplicationsRoute
-    }
+      id: '/applications/$applicationId';
+      path: '/$applicationId';
+      fullPath: '/applications/$applicationId';
+      preLoaderRoute: typeof ApplicationsApplicationIdRouteImport;
+      parentRoute: typeof ApplicationsRoute;
+    };
   }
 }
 
 interface ApplicationsRouteChildren {
-  ApplicationsApplicationIdRoute: typeof ApplicationsApplicationIdRoute
+  ApplicationsApplicationIdRoute: typeof ApplicationsApplicationIdRoute;
 }
 
 const ApplicationsRouteChildren: ApplicationsRouteChildren = {
   ApplicationsApplicationIdRoute: ApplicationsApplicationIdRoute,
-}
+};
 
-const ApplicationsRouteWithChildren = ApplicationsRoute._addFileChildren(
-  ApplicationsRouteChildren,
-)
+const ApplicationsRouteWithChildren = ApplicationsRoute._addFileChildren(ApplicationsRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
@@ -383,16 +382,14 @@ const rootRouteChildren: RootRouteChildren = {
   RecruiterMessagesRoute: RecruiterMessagesRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

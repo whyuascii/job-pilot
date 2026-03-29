@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
-import { recruiterMessages, applications, jobs, outcomes, llmRuns } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { applications, jobs, llmRuns, outcomes, recruiterMessages } from '@job-pilot/db/schema';
 import { getTenantContext } from '~/lib/api';
 import { checkRateLimit } from '~/lib/rate-limit';
 
@@ -122,10 +122,7 @@ async function analyzeMessageInternal(
 ): Promise<EmailAnalysisResult> {
   // 1. Load the message
   const message = await db.query.recruiterMessages.findFirst({
-    where: and(
-      eq(recruiterMessages.id, messageId),
-      eq(recruiterMessages.tenantId, ctx.tenantId),
-    ),
+    where: and(eq(recruiterMessages.id, messageId), eq(recruiterMessages.tenantId, ctx.tenantId)),
   });
 
   if (!message) {
@@ -158,9 +155,8 @@ async function analyzeMessageInternal(
   }));
 
   // Truncate body to avoid excessive token usage
-  const truncatedBody = message.body.length > 3000
-    ? message.body.slice(0, 3000) + '...[truncated]'
-    : message.body;
+  const truncatedBody =
+    message.body.length > 3000 ? message.body.slice(0, 3000) + '...[truncated]' : message.body;
 
   const userContent = `## EMAIL
 From: ${message.from}
@@ -204,9 +200,8 @@ ${JSON.stringify(applicationsContext, null, 2)}`;
     }>(responseText);
 
     // Map the matched index back to application data
-    const matchedApp = parsed.matchedApplicationIndex !== null
-      ? enrichedApps[parsed.matchedApplicationIndex]
-      : null;
+    const matchedApp =
+      parsed.matchedApplicationIndex !== null ? enrichedApps[parsed.matchedApplicationIndex] : null;
 
     // Build a short snippet from the email for UI display
     const snippet = message.body.slice(0, 200).replace(/\s+/g, ' ').trim();
@@ -266,14 +261,14 @@ export const listRecruiterMessages = createServerFn({ method: 'GET' }).handler(a
  * application it relates to and what status change it implies.
  * Returns the analysis WITHOUT applying any changes.
  */
-export const analyzeRecruitMessage = createServerFn({ method: 'POST' }).validator(
-  (data: { messageId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
-  checkRateLimit(`analyzeRecruitMessage:${ctx.tenantId}`, 20);
+export const analyzeRecruitMessage = createServerFn({ method: 'POST' })
+  .validator((data: { messageId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
+    checkRateLimit(`analyzeRecruitMessage:${ctx.tenantId}`, 20);
 
-  return analyzeMessageInternal(data.messageId, ctx);
-});
+    return analyzeMessageInternal(data.messageId, ctx);
+  });
 
 /**
  * Batch analyze all unprocessed (parsed=false) recruiter messages.
@@ -285,10 +280,7 @@ export const analyzeUnprocessedMessages = createServerFn({ method: 'POST' }).han
 
   // Find all unprocessed messages
   const unprocessed = await db.query.recruiterMessages.findMany({
-    where: and(
-      eq(recruiterMessages.tenantId, ctx.tenantId),
-      eq(recruiterMessages.parsed, false),
-    ),
+    where: and(eq(recruiterMessages.tenantId, ctx.tenantId), eq(recruiterMessages.parsed, false)),
     orderBy: [desc(recruiterMessages.receivedAt)],
     limit: 10, // Cap at 10 to avoid excessive API usage
   });
@@ -320,111 +312,96 @@ export const analyzeUnprocessedMessages = createServerFn({ method: 'POST' }).han
  * Apply a detected status change after user confirmation.
  * Updates the application status and marks the message as parsed.
  */
-export const applyDetectedStatusChange = createServerFn({ method: 'POST' }).validator(
-  (data: {
-    messageId: string;
-    applicationId: string;
-    newStatus: string;
-  }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const applyDetectedStatusChange = createServerFn({ method: 'POST' })
+  .validator((data: { messageId: string; applicationId: string; newStatus: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  // 1. Verify the application belongs to this tenant
-  const app = await db.query.applications.findFirst({
-    where: and(
-      eq(applications.id, data.applicationId),
-      eq(applications.tenantId, ctx.tenantId),
-    ),
-  });
+    // 1. Verify the application belongs to this tenant
+    const app = await db.query.applications.findFirst({
+      where: and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)),
+    });
 
-  if (!app) {
-    throw new Error('Application not found');
-  }
+    if (!app) {
+      throw new Error('Application not found');
+    }
 
-  // 2. Verify the message belongs to this tenant
-  const message = await db.query.recruiterMessages.findFirst({
-    where: and(
-      eq(recruiterMessages.id, data.messageId),
-      eq(recruiterMessages.tenantId, ctx.tenantId),
-    ),
-  });
-
-  if (!message) {
-    throw new Error('Message not found');
-  }
-
-  // 3. Update the application status
-  const [updated] = await db
-    .update(applications)
-    .set({
-      status: data.newStatus,
-      updatedAt: new Date(),
-      ...(data.newStatus === 'applied' ? { appliedAt: new Date() } : {}),
-    })
-    .where(
-      and(
-        eq(applications.id, data.applicationId),
-        eq(applications.tenantId, ctx.tenantId),
+    // 2. Verify the message belongs to this tenant
+    const message = await db.query.recruiterMessages.findFirst({
+      where: and(
+        eq(recruiterMessages.id, data.messageId),
+        eq(recruiterMessages.tenantId, ctx.tenantId),
       ),
-    )
-    .returning();
+    });
 
-  // 4. Record an outcome entry for the status change
-  await db.insert(outcomes).values({
-    id: createId(),
-    applicationId: data.applicationId,
-    stage: data.newStatus,
-    notes: `Auto-detected from email: "${message.subject}"`,
-  });
+    if (!message) {
+      throw new Error('Message not found');
+    }
 
-  // 5. Mark the message as parsed and link to the application
-  await db
-    .update(recruiterMessages)
-    .set({
-      parsed: true,
+    // 3. Update the application status
+    const [updated] = await db
+      .update(applications)
+      .set({
+        status: data.newStatus,
+        updatedAt: new Date(),
+        ...(data.newStatus === 'applied' ? { appliedAt: new Date() } : {}),
+      })
+      .where(and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)))
+      .returning();
+
+    // 4. Record an outcome entry for the status change
+    await db.insert(outcomes).values({
+      id: createId(),
       applicationId: data.applicationId,
-    })
-    .where(eq(recruiterMessages.id, data.messageId));
+      stage: data.newStatus,
+      notes: `Auto-detected from email: "${message.subject}"`,
+    });
 
-  // 6. Send notification
-  const { notifyUser } = await import('./notifications');
-  const job = await db.query.jobs.findFirst({
-    where: eq(jobs.id, app.jobId),
+    // 5. Mark the message as parsed and link to the application
+    await db
+      .update(recruiterMessages)
+      .set({
+        parsed: true,
+        applicationId: data.applicationId,
+      })
+      .where(eq(recruiterMessages.id, data.messageId));
+
+    // 6. Send notification
+    const { notifyUser } = await import('./notifications');
+    const job = await db.query.jobs.findFirst({
+      where: eq(jobs.id, app.jobId),
+    });
+
+    await notifyUser(ctx, {
+      type: 'application_updated',
+      title: 'Status updated from email',
+      message: `${job?.company ?? 'Unknown'} - ${job?.title ?? 'Unknown'} moved to ${data.newStatus}`,
+      link: `/applications/${data.applicationId}`,
+    });
+
+    return updated;
   });
-
-  await notifyUser(ctx, {
-    type: 'application_updated',
-    title: 'Status updated from email',
-    message: `${job?.company ?? 'Unknown'} - ${job?.title ?? 'Unknown'} moved to ${data.newStatus}`,
-    link: `/applications/${data.applicationId}`,
-  });
-
-  return updated;
-});
 
 /**
  * Dismiss a detected status change. Marks the message as parsed
  * without applying any changes.
  */
-export const dismissDetectedChange = createServerFn({ method: 'POST' }).validator(
-  (data: { messageId: string }) => data,
-).handler(async ({ data }) => {
-  const ctx = await getTenantContext();
+export const dismissDetectedChange = createServerFn({ method: 'POST' })
+  .validator((data: { messageId: string }) => data)
+  .handler(async ({ data }) => {
+    const ctx = await getTenantContext();
 
-  const [updated] = await db
-    .update(recruiterMessages)
-    .set({ parsed: true })
-    .where(
-      and(
-        eq(recruiterMessages.id, data.messageId),
-        eq(recruiterMessages.tenantId, ctx.tenantId),
-      ),
-    )
-    .returning();
+    const [updated] = await db
+      .update(recruiterMessages)
+      .set({ parsed: true })
+      .where(
+        and(eq(recruiterMessages.id, data.messageId), eq(recruiterMessages.tenantId, ctx.tenantId)),
+      )
+      .returning();
 
-  if (!updated) {
-    throw new Error('Message not found');
-  }
+    if (!updated) {
+      throw new Error('Message not found');
+    }
 
-  return { success: true };
-});
+    return { success: true };
+  });

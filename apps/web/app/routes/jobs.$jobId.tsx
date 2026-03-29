@@ -1,56 +1,58 @@
 import React from 'react';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
-  createFileRoute,
-  Link,
-  useRouter,
-  useNavigate,
-} from '@tanstack/react-router';
-import {
+  AlertTriangle,
   ArrowLeft,
-  Building2,
-  MapPin,
-  Calendar,
-  ExternalLink,
-  Trash2,
-  Zap,
-  Target,
   BarChart3,
-  Globe,
-  DollarSign,
+  Bookmark,
   Briefcase,
-  Clock,
-  RefreshCw,
-  Wand2,
-  FileText,
+  Building2,
+  Calendar,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  AlertTriangle,
-  CheckCircle2,
-  Lightbulb,
-  XCircle,
-  Star,
-  Puzzle,
-  Printer,
+  Clock,
+  DollarSign,
+  ExternalLink,
+  FileText,
   GitCompareArrows,
-  Plus,
+  Globe,
+  Lightbulb,
   Loader2,
-  Bookmark,
+  MapPin,
+  Plus,
+  Printer,
+  Puzzle,
+  RefreshCw,
+  Star,
+  Target,
+  Trash2,
+  Wand2,
+  XCircle,
+  Zap,
 } from 'lucide-react';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Badge,
+  ScoreIndicator,
   Separator,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from '@job-pilot/ui';
-import { ScoreIndicator } from '@job-pilot/ui';
+import { ApplicationAssistDrawer } from '~/components/application-assist-drawer';
+import {
+  ResumeComparisonView,
+  type TailoredResumeContent as ComparisonTailoredContent,
+  type OriginalProfile,
+} from '~/components/resume-comparison';
 import { api } from '~/lib/api-client';
+import { captureEvent } from '~/lib/posthog';
 
 interface SkillGapAnalysis {
   matchedMustHave: Array<{ jobSkill: string; candidateSkill: string; confidenceScore: number }>;
@@ -63,12 +65,6 @@ interface SkillGapAnalysis {
   overallMatchPercentage: number;
   recommendation: string;
 }
-import {
-  ResumeComparisonView,
-  type OriginalProfile,
-  type TailoredResumeContent as ComparisonTailoredContent,
-} from '~/components/resume-comparison';
-import { ApplicationAssistDrawer } from '~/components/application-assist-drawer';
 
 // ---------------------------------------------------------------------------
 // Route definition
@@ -76,17 +72,19 @@ import { ApplicationAssistDrawer } from '~/components/application-assist-drawer'
 
 export const Route = createFileRoute('/jobs/$jobId')({
   loader: async ({ params }) => {
-    const [job, tailored, rawSkillGap, originalProfile, isCareerGoal, coverLetter, candidate] = await Promise.all([
-      api.jobs.get(params.jobId),
-      api.ai.getTailoredResume(params.jobId).catch(() => null),
-      api.skillGap.get(params.jobId).catch(() => null),
-      api.ai.getOriginalProfile().catch(() => null),
-      api.careerGoals.list().then(
-        (goals) => goals.some((g: any) => g.jobId === params.jobId),
-      ).catch(() => false),
-      api.coverLetter.get(params.jobId).catch(() => null),
-      api.candidates.get().catch(() => null),
-    ]);
+    const [job, tailored, rawSkillGap, originalProfile, isCareerGoal, coverLetter, candidate] =
+      await Promise.all([
+        api.jobs.get(params.jobId),
+        api.ai.getTailoredResume(params.jobId).catch(() => null),
+        api.skillGap.get(params.jobId).catch(() => null),
+        api.ai.getOriginalProfile().catch(() => null),
+        api.careerGoals
+          .list()
+          .then((goals) => goals.some((g: any) => g.jobId === params.jobId))
+          .catch(() => false),
+        api.coverLetter.get(params.jobId).catch(() => null),
+        api.candidates.get().catch(() => null),
+      ]);
 
     // Transform the skill-gap API response to match the SkillGapAnalysis shape
     // The API returns: { mustHave: { matched, missing, score }, niceToHave: { matched, missing, score }, overallScore, candidateSkills }
@@ -116,8 +114,9 @@ export const Route = createFileRoute('/jobs/$jobId')({
       } else {
         // Build the list of required skill names for filtering extra skills
         const allRequiredLower = new Set(
-          [...mustHaveMatched, ...mustHaveMissing, ...niceToHaveMatched, ...niceToHaveMissing]
-            .map((s) => s.toLowerCase()),
+          [...mustHaveMatched, ...mustHaveMissing, ...niceToHaveMatched, ...niceToHaveMissing].map(
+            (s) => s.toLowerCase(),
+          ),
         );
 
         skillGap = {
@@ -153,7 +152,7 @@ export const Route = createFileRoute('/jobs/$jobId')({
 // Types
 // ---------------------------------------------------------------------------
 
-type LoaderData = Awaited<ReturnType<typeof Route['options']['loader']>>;
+type LoaderData = Awaited<ReturnType<(typeof Route)['options']['loader']>>;
 
 interface FitBreakdown {
   titleMatch: number;
@@ -289,13 +288,8 @@ function formatCompensation(
     return `${c === 'USD' ? '$' : c}${n}`;
   };
   const range =
-    min && max
-      ? `${fmt(min)} - ${fmt(max)}`
-      : min
-        ? `${fmt(min)}+`
-        : `Up to ${fmt(max!)}`;
-  const suffix =
-    type === 'hourly' ? '/hr' : type === 'contract' ? '/contract' : '/yr';
+    min && max ? `${fmt(min)} - ${fmt(max)}` : min ? `${fmt(min)}+` : `Up to ${fmt(max!)}`;
+  const suffix = type === 'hourly' ? '/hr' : type === 'contract' ? '/contract' : '/yr';
   return range + suffix;
 }
 
@@ -351,9 +345,7 @@ function ScoreProgressBar({
           {Math.round(score)}
         </span>
       </div>
-      <div
-        className={`h-2 w-full rounded-full ${getScoreTrackColor(score)}`}
-      >
+      <div className={`h-2 w-full rounded-full ${getScoreTrackColor(score)}`}>
         <div
           className={`h-2 rounded-full transition-all duration-500 ${getScoreBgColor(score)}`}
           style={{ width: `${pct}%` }}
@@ -387,19 +379,11 @@ function TailoredResumePreview({
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-muted-foreground text-xs">
             v{version} - {formatMonthYear(createdAt)}
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             {expanded ? 'Collapse' : 'Expand'}
           </Button>
         </div>
@@ -432,9 +416,7 @@ function TailoredResumePreview({
                       className="text-xs"
                     >
                       {idx < 5 && (
-                        <span className="mr-1 text-[10px] font-bold opacity-60">
-                          #{idx + 1}
-                        </span>
+                        <span className="mr-1 text-[10px] font-bold opacity-60">#{idx + 1}</span>
                       )}
                       {skill}
                     </Badge>
@@ -448,25 +430,17 @@ function TailoredResumePreview({
           {(content.experienceBlocks ?? []).length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Tailored Experience
-                </CardTitle>
+                <CardTitle className="text-base">Tailored Experience</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 {(content.experienceBlocks ?? []).map((block, idx) => (
-                  <div
-                    key={`${block.company}-${block.title}-${idx}`}
-                    className="space-y-2"
-                  >
+                  <div key={`${block.company}-${block.title}-${idx}`} className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-sm">{block.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {block.company}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatShortDate(block.startDate)} -{' '}
-                          {formatShortDate(block.endDate)}
+                        <p className="text-sm font-semibold">{block.title}</p>
+                        <p className="text-muted-foreground text-sm">{block.company}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {formatShortDate(block.startDate)} - {formatShortDate(block.endDate)}
                         </p>
                       </div>
                       <span
@@ -478,10 +452,7 @@ function TailoredResumePreview({
                     {(block.bullets ?? []).length > 0 && (
                       <ul className="space-y-1 pl-4">
                         {(block.bullets ?? []).map((bullet, bIdx) => (
-                          <li
-                            key={bIdx}
-                            className="text-sm text-muted-foreground list-disc"
-                          >
+                          <li key={bIdx} className="text-muted-foreground list-disc text-sm">
                             {bullet}
                           </li>
                         ))}
@@ -500,25 +471,17 @@ function TailoredResumePreview({
           {(content.projectHighlights ?? []).length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Projects to Feature
-                </CardTitle>
+                <CardTitle className="text-base">Projects to Feature</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {(content.projectHighlights ?? []).map((project, idx) => (
                   <div key={`${project.name}-${idx}`} className="space-y-2">
-                    <p className="font-semibold text-sm">{project.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {project.description}
-                    </p>
+                    <p className="text-sm font-semibold">{project.name}</p>
+                    <p className="text-muted-foreground text-sm">{project.description}</p>
                     {(project.skills ?? []).length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {(project.skills ?? []).map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="text-[10px]"
-                          >
+                          <Badge key={skill} variant="secondary" className="text-[10px]">
                             {skill}
                           </Badge>
                         ))}
@@ -527,10 +490,7 @@ function TailoredResumePreview({
                     {(project.highlights ?? []).length > 0 && (
                       <ul className="space-y-1 pl-4">
                         {(project.highlights ?? []).map((h, hIdx) => (
-                          <li
-                            key={hIdx}
-                            className="text-sm text-muted-foreground list-disc"
-                          >
+                          <li key={hIdx} className="text-muted-foreground list-disc text-sm">
                             {h}
                           </li>
                         ))}
@@ -546,7 +506,7 @@ function TailoredResumePreview({
           )}
 
           {/* Gap Analysis */}
-          {content.gapAnalysis && (
+          {content.gapAnalysis &&
             ((content.gapAnalysis.missingSkills ?? []).length > 0 ||
               (content.gapAnalysis.recommendations ?? []).length > 0) && (
               <Card>
@@ -559,16 +519,10 @@ function TailoredResumePreview({
                 <CardContent className="space-y-4">
                   {(content.gapAnalysis.missingSkills ?? []).length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Missing Skills
-                      </p>
+                      <p className="text-muted-foreground text-sm font-medium">Missing Skills</p>
                       <div className="flex flex-wrap gap-2">
                         {(content.gapAnalysis.missingSkills ?? []).map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="destructive"
-                            className="text-xs"
-                          >
+                          <Badge key={skill} variant="destructive" className="text-xs">
                             {skill}
                           </Badge>
                         ))}
@@ -577,28 +531,20 @@ function TailoredResumePreview({
                   )}
                   {(content.gapAnalysis.recommendations ?? []).length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Recommendations
-                      </p>
+                      <p className="text-muted-foreground text-sm font-medium">Recommendations</p>
                       <ul className="space-y-1.5">
-                        {(content.gapAnalysis.recommendations ?? []).map(
-                          (rec, idx) => (
-                            <li
-                              key={idx}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <Lightbulb className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-                              <span>{rec}</span>
-                            </li>
-                          ),
-                        )}
+                        {(content.gapAnalysis.recommendations ?? []).map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm">
+                            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                            <span>{rec}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )
-          )}
+            )}
         </div>
       )}
     </div>
@@ -609,13 +555,7 @@ function TailoredResumePreview({
 // Skill Gap Analysis sub-component
 // ---------------------------------------------------------------------------
 
-function SkillGapMatchBar({
-  label,
-  percentage,
-}: {
-  label: string;
-  percentage: number;
-}) {
+function SkillGapMatchBar({ label, percentage }: { label: string; percentage: number }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-sm">
@@ -634,7 +574,12 @@ function SkillGapMatchBar({
   );
 }
 
-function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
+function SkillGapSection({
+  analysis,
+  onAddSkill,
+  addingSkills,
+  addedSkills,
+}: {
   analysis: SkillGapAnalysis;
   onAddSkill?: (skill: string) => void;
   addingSkills?: Set<string>;
@@ -680,22 +625,14 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
             {analysis.overallMatchPercentage ?? 0}% match
           </Badge>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
+        <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           {expanded ? 'Collapse' : 'Expand'}
         </Button>
       </div>
 
       {expanded && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Progress bars for match percentages */}
           <Card>
             <CardHeader className="pb-3">
@@ -725,7 +662,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Target className="h-4 w-4 text-red-500" />
                   Must-Have Skills
-                  <span className="text-sm font-normal text-muted-foreground">
+                  <span className="text-muted-foreground text-sm font-normal">
                     ({matchedMustHave.length}/{matchedMustHave.length + missingMustHave.length})
                   </span>
                 </CardTitle>
@@ -740,7 +677,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                         className="flex items-center justify-between rounded-md border border-emerald-300 bg-white px-3 py-2"
                       >
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                           <span className="text-sm font-medium text-emerald-800">
                             {skill.jobSkill}
                           </span>
@@ -750,7 +687,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-semibold text-emerald-700 tabular-nums">
+                        <span className="text-xs font-semibold tabular-nums text-emerald-700">
                           {Math.round(skill.confidenceScore)}% confidence
                         </span>
                       </div>
@@ -771,23 +708,27 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                           }`}
                         >
                           {isAdded ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
                           )}
-                          <span className={`text-sm font-medium ${isAdded ? 'text-emerald-800' : 'text-red-800'}`}>
+                          <span
+                            className={`text-sm font-medium ${isAdded ? 'text-emerald-800' : 'text-red-800'}`}
+                          >
                             {skill}
                           </span>
                           {isAdded ? (
-                            <span className="text-xs text-emerald-600 ml-auto">Added to profile</span>
+                            <span className="ml-auto text-xs text-emerald-600">
+                              Added to profile
+                            </span>
                           ) : (
                             <>
-                              <span className="text-xs text-red-500 ml-auto mr-2">Missing</span>
+                              <span className="ml-auto mr-2 text-xs text-red-500">Missing</span>
                               {onAddSkill && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-xs text-sky-700 hover:text-sky-900 hover:bg-sky-50"
+                                  className="h-6 px-2 text-xs text-sky-700 hover:bg-sky-50 hover:text-sky-900"
                                   onClick={() => onAddSkill(skill)}
                                   disabled={isAdding}
                                 >
@@ -795,7 +736,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <>
-                                      <Plus className="h-3 w-3 mr-0.5" />
+                                      <Plus className="mr-0.5 h-3 w-3" />
                                       Add
                                     </>
                                   )}
@@ -819,8 +760,9 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Star className="h-4 w-4 text-amber-500" />
                   Nice-to-Have Skills
-                  <span className="text-sm font-normal text-muted-foreground">
-                    ({matchedNiceToHave.length}/{matchedNiceToHave.length + missingNiceToHave.length})
+                  <span className="text-muted-foreground text-sm font-normal">
+                    ({matchedNiceToHave.length}/
+                    {matchedNiceToHave.length + missingNiceToHave.length})
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -834,7 +776,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                         className="flex items-center justify-between rounded-md border border-emerald-300 bg-white px-3 py-2"
                       >
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                           <span className="text-sm font-medium text-emerald-800">
                             {skill.jobSkill}
                           </span>
@@ -844,7 +786,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs font-semibold text-emerald-700 tabular-nums">
+                        <span className="text-xs font-semibold tabular-nums text-emerald-700">
                           {Math.round(skill.confidenceScore)}% confidence
                         </span>
                       </div>
@@ -865,23 +807,27 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                           }`}
                         >
                           {isAdded ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-500 shrink-0" />
+                            <XCircle className="h-4 w-4 shrink-0 text-red-500" />
                           )}
-                          <span className={`text-sm font-medium ${isAdded ? 'text-emerald-800' : 'text-foreground'}`}>
+                          <span
+                            className={`text-sm font-medium ${isAdded ? 'text-emerald-800' : 'text-foreground'}`}
+                          >
                             {skill}
                           </span>
                           {isAdded ? (
-                            <span className="text-xs text-emerald-600 ml-auto">Added to profile</span>
+                            <span className="ml-auto text-xs text-emerald-600">
+                              Added to profile
+                            </span>
                           ) : (
                             <>
-                              <span className="text-xs text-red-500 ml-auto mr-2">Missing</span>
+                              <span className="ml-auto mr-2 text-xs text-red-500">Missing</span>
                               {onAddSkill && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-xs text-sky-700 hover:text-sky-900 hover:bg-sky-50"
+                                  className="h-6 px-2 text-xs text-sky-700 hover:bg-sky-50 hover:text-sky-900"
                                   onClick={() => onAddSkill(skill)}
                                   disabled={isAdding}
                                 >
@@ -889,7 +835,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     <>
-                                      <Plus className="h-3 w-3 mr-0.5" />
+                                      <Plus className="mr-0.5 h-3 w-3" />
                                       Add
                                     </>
                                   )}
@@ -914,7 +860,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Lightbulb className="h-4 w-4 text-blue-500" />
                     Bonus Skills
-                    <span className="text-sm font-normal text-muted-foreground">
+                    <span className="text-muted-foreground text-sm font-normal">
                       ({extraSkills.length} additional)
                     </span>
                   </CardTitle>
@@ -922,11 +868,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {extraSkills.map((skill) => (
-                      <Badge
-                        key={skill.name}
-                        variant="outline"
-                        className="text-xs"
-                      >
+                      <Badge key={skill.name} variant="outline" className="text-xs">
                         {skill.name}
                         {skill.confidenceScore > 0 && (
                           <span className="ml-1 opacity-60">
@@ -946,7 +888,7 @@ function SkillGapSection({ analysis, onAddSkill, addingSkills, addedSkills }: {
             <div className="lg:col-span-3">
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
                     {analysis.recommendation}
                   </p>
                 </CardContent>
@@ -1000,7 +942,10 @@ function JobDetailPage() {
   const [savingGoal, setSavingGoal] = React.useState(false);
   const [savedGoal, setSavedGoal] = React.useState(isCareerGoal);
   const [assistDrawerOpen, setAssistDrawerOpen] = React.useState(false);
-  const [coverLetterData, setCoverLetterData] = React.useState<{ content: string; contentHtml?: string } | null>(initialCoverLetter);
+  const [coverLetterData, setCoverLetterData] = React.useState<{
+    content: string;
+    contentHtml?: string;
+  } | null>(initialCoverLetter);
 
   async function handleSaveCareerGoal() {
     setSavingGoal(true);
@@ -1059,6 +1004,7 @@ function JobDetailPage() {
     setScoring(true);
     try {
       await api.ai.scoreJob({ jobId: job.id });
+      captureEvent('job_scored', { company: job.company, title: job.title });
       router.invalidate();
     } catch (err) {
       console.error('Failed to score job:', err);
@@ -1071,6 +1017,7 @@ function JobDetailPage() {
     setCreatingApp(true);
     try {
       await api.applications.create({ jobId: job.id });
+      captureEvent('application_created', { company: job.company, title: job.title });
       navigate({ to: '/applications' });
     } catch (err) {
       console.error('Failed to create application:', err);
@@ -1083,6 +1030,7 @@ function JobDetailPage() {
     setTailoring(true);
     try {
       const result = await api.ai.tailorResume({ jobId: job.id });
+      captureEvent('resume_tailored', { company: job.company, title: job.title });
       setTailoredData({
         content: result.content as TailoredResumeContent,
         createdAt: result.createdAt,
@@ -1099,6 +1047,7 @@ function JobDetailPage() {
     setExporting(true);
     try {
       const result = await api.resumeRenderer.export({ jobId: job.id });
+      captureEvent('resume_exported', { company: job.company, title: job.title, format: 'html' });
       // Open the HTML in a new window for print-to-PDF
       const printWindow = window.open('', '_blank');
       if (printWindow) {
@@ -1121,7 +1070,7 @@ function JobDetailPage() {
         {/* Back button */}
         <Link
           to="/jobs"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Jobs
@@ -1133,7 +1082,7 @@ function JobDetailPage() {
             <h1 className="text-3xl font-bold tracking-tight">{job.title}</h1>
 
             {/* Company */}
-            <div className="flex items-center gap-2 text-lg text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5 shrink-0" />
               <span>{job.company}</span>
             </div>
@@ -1142,7 +1091,7 @@ function JobDetailPage() {
             <div className="flex flex-wrap items-center gap-3 text-sm">
               {/* Location + remote policy */}
               {job.location && (
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <span className="text-muted-foreground inline-flex items-center gap-1.5">
                   <MapPin className="h-4 w-4 shrink-0" />
                   {job.location}
                 </span>
@@ -1152,14 +1101,13 @@ function JobDetailPage() {
                   className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${getRemotePolicyColor(job.remotePolicy)}`}
                 >
                   <Globe className="h-3 w-3" />
-                  {job.remotePolicy.charAt(0).toUpperCase() +
-                    job.remotePolicy.slice(1)}
+                  {job.remotePolicy.charAt(0).toUpperCase() + job.remotePolicy.slice(1)}
                 </span>
               )}
 
               {/* Compensation */}
               {comp && (
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <span className="text-muted-foreground inline-flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 shrink-0" />
                   {comp}
                 </span>
@@ -1168,20 +1116,18 @@ function JobDetailPage() {
               {/* Employment type */}
               {job.employmentType && (
                 <Badge variant="secondary" className="text-xs">
-                  <Briefcase className="h-3 w-3 mr-1" />
-                  {job.employmentType.charAt(0).toUpperCase() +
-                    job.employmentType.slice(1)}
+                  <Briefcase className="mr-1 h-3 w-3" />
+                  {job.employmentType.charAt(0).toUpperCase() + job.employmentType.slice(1)}
                 </Badge>
               )}
 
               {/* Posted date */}
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <span className="text-muted-foreground inline-flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 shrink-0" />
                 {formatDate(job.createdAt)}
               </span>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -1193,7 +1139,7 @@ function JobDetailPage() {
       {job.score ? (
         <div className="space-y-6">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-muted-foreground" />
+            <Target className="text-muted-foreground h-5 w-5" />
             <h2 className="text-xl font-semibold">Score Breakdown</h2>
           </div>
 
@@ -1201,25 +1147,17 @@ function JobDetailPage() {
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-8">
             {/* Large score circle */}
             {job.score.overallScore != null && (
-              <ScoreIndicator
-                score={job.score.overallScore}
-                label="Overall Score"
-                size="lg"
-              />
+              <ScoreIndicator score={job.score.overallScore} label="Overall Score" size="lg" />
             )}
 
             {/* Recommendation + reasoning */}
             <div className="flex-1 space-y-3">
               {job.score.recommendation && (
                 <div>
-                  <span className="text-sm font-medium text-muted-foreground mr-2">
+                  <span className="text-muted-foreground mr-2 text-sm font-medium">
                     Recommendation:
                   </span>
-                  <Badge
-                    variant={
-                      getRecommendationStyle(job.score.recommendation).variant
-                    }
-                  >
+                  <Badge variant={getRecommendationStyle(job.score.recommendation).variant}>
                     {getRecommendationStyle(job.score.recommendation).label}
                   </Badge>
                 </div>
@@ -1227,24 +1165,13 @@ function JobDetailPage() {
 
               {job.score.reasoning && (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    AI Reasoning:
-                  </p>
-                  <p className="text-sm leading-relaxed">
-                    {job.score.reasoning as string}
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">AI Reasoning:</p>
+                  <p className="text-sm leading-relaxed">{job.score.reasoning as string}</p>
                 </div>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleScore}
-                disabled={scoring}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${scoring ? 'animate-spin' : ''}`}
-                />
+              <Button variant="outline" size="sm" onClick={handleScore} disabled={scoring}>
+                <RefreshCw className={`h-4 w-4 ${scoring ? 'animate-spin' : ''}`} />
                 {scoring ? 'Rescoring...' : 'Rescore'}
               </Button>
             </div>
@@ -1262,30 +1189,12 @@ function JobDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <ScoreProgressBar
-                    label="Title Match"
-                    score={fitBreakdown.titleMatch}
-                  />
-                  <ScoreProgressBar
-                    label="Compensation Fit"
-                    score={fitBreakdown.compensationFit}
-                  />
-                  <ScoreProgressBar
-                    label="Location Fit"
-                    score={fitBreakdown.locationFit}
-                  />
-                  <ScoreProgressBar
-                    label="Stack Overlap"
-                    score={fitBreakdown.stackOverlap}
-                  />
-                  <ScoreProgressBar
-                    label="Seniority Fit"
-                    score={fitBreakdown.seniorityFit}
-                  />
-                  <ScoreProgressBar
-                    label="Industry Fit"
-                    score={fitBreakdown.industryFit}
-                  />
+                  <ScoreProgressBar label="Title Match" score={fitBreakdown.titleMatch} />
+                  <ScoreProgressBar label="Compensation Fit" score={fitBreakdown.compensationFit} />
+                  <ScoreProgressBar label="Location Fit" score={fitBreakdown.locationFit} />
+                  <ScoreProgressBar label="Stack Overlap" score={fitBreakdown.stackOverlap} />
+                  <ScoreProgressBar label="Seniority Fit" score={fitBreakdown.seniorityFit} />
+                  <ScoreProgressBar label="Industry Fit" score={fitBreakdown.industryFit} />
                 </CardContent>
               </Card>
             )}
@@ -1333,10 +1242,10 @@ function JobDetailPage() {
         /* No score yet */
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-10">
-            <Zap className="h-10 w-10 text-muted-foreground/30" />
+            <Zap className="text-muted-foreground/30 h-10 w-10" />
             <div className="text-center">
               <p className="font-semibold">No score yet</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Run the AI scorer to see how well this job matches your profile.
               </p>
             </div>
@@ -1360,9 +1269,7 @@ function JobDetailPage() {
           <CardContent className="pt-6">
             <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
               {(job.parsedDescription as string) || job.rawDescription || (
-                <p className="text-muted-foreground italic">
-                  No description available.
-                </p>
+                <p className="text-muted-foreground italic">No description available.</p>
               )}
             </div>
           </CardContent>
@@ -1374,7 +1281,14 @@ function JobDetailPage() {
       {/* ----------------------------------------------------------------- */}
       {/* Skill Gap Analysis Section                                         */}
       {/* ----------------------------------------------------------------- */}
-      {skillGap && <SkillGapSection analysis={skillGap} onAddSkill={handleAddSkillToProfile} addingSkills={addingSkills} addedSkills={addedSkills} />}
+      {skillGap && (
+        <SkillGapSection
+          analysis={skillGap}
+          onAddSkill={handleAddSkillToProfile}
+          addingSkills={addingSkills}
+          addedSkills={addedSkills}
+        />
+      )}
 
       {skillGap && <Separator />}
 
@@ -1390,10 +1304,7 @@ function JobDetailPage() {
                   <FileText className="mr-1.5 h-3.5 w-3.5" />
                   Tailored Resume
                 </TabsTrigger>
-                <TabsTrigger
-                  value="compare"
-                  disabled={!originalProfile}
-                >
+                <TabsTrigger value="compare" disabled={!originalProfile}>
                   <GitCompareArrows className="mr-1.5 h-3.5 w-3.5" />
                   Compare
                 </TabsTrigger>
@@ -1405,9 +1316,7 @@ function JobDetailPage() {
                   onClick={handleTailorResume}
                   disabled={tailoring}
                 >
-                  <RefreshCw
-                    className={`h-4 w-4 ${tailoring ? 'animate-spin' : ''}`}
-                  />
+                  <RefreshCw className={`h-4 w-4 ${tailoring ? 'animate-spin' : ''}`} />
                   {tailoring ? 'Tailoring flight manual...' : 'Re-tailor Resume'}
                 </Button>
                 <Button
@@ -1439,12 +1348,11 @@ function JobDetailPage() {
               ) : (
                 <Card>
                   <CardContent className="flex flex-col items-center gap-4 py-10">
-                    <GitCompareArrows className="h-10 w-10 text-muted-foreground/30" />
+                    <GitCompareArrows className="text-muted-foreground/30 h-10 w-10" />
                     <div className="text-center">
                       <p className="font-semibold">No profile data available</p>
-                      <p className="text-sm text-muted-foreground">
-                        Create a candidate profile to compare original vs. tailored
-                        resume content.
+                      <p className="text-muted-foreground text-sm">
+                        Create a candidate profile to compare original vs. tailored resume content.
                       </p>
                     </div>
                   </CardContent>
@@ -1456,18 +1364,16 @@ function JobDetailPage() {
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-10">
-            <Wand2 className="h-10 w-10 text-muted-foreground/30" />
+            <Wand2 className="text-muted-foreground/30 h-10 w-10" />
             <div className="text-center">
               <p className="font-semibold">Tailor your resume</p>
-              <p className="text-sm text-muted-foreground">
-                Use AI to customize your resume for this specific role,
-                highlighting the most relevant skills and experience.
+              <p className="text-muted-foreground text-sm">
+                Use AI to customize your resume for this specific role, highlighting the most
+                relevant skills and experience.
               </p>
             </div>
             <Button onClick={handleTailorResume} disabled={tailoring}>
-              <Wand2
-                className={`h-4 w-4 ${tailoring ? 'animate-pulse' : ''}`}
-              />
+              <Wand2 className={`h-4 w-4 ${tailoring ? 'animate-pulse' : ''}`} />
               {tailoring ? 'Tailoring flight manual...' : 'Tailor Resume'}
             </Button>
           </CardContent>
@@ -1499,8 +1405,8 @@ function JobDetailPage() {
       {/* ----------------------------------------------------------------- */}
       {/* Floating Action Bar                                                */}
       {/* ----------------------------------------------------------------- */}
-      <div className="fixed bottom-0 right-0 left-0 md:left-64 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-3">
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed bottom-0 left-0 right-0 z-50 border-t px-4 py-3 backdrop-blur md:left-64">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
           {/* Apply with Assist */}
           <Button
             onClick={() => {
@@ -1508,7 +1414,7 @@ function JobDetailPage() {
               if (applyUrl) window.open(applyUrl, '_blank', 'noopener,noreferrer');
               setAssistDrawerOpen(true);
             }}
-            className="bg-sky-600 hover:bg-sky-700 text-white"
+            className="bg-sky-600 text-white hover:bg-sky-700"
           >
             <Zap className="h-4 w-4" />
             Apply with Assist
@@ -1517,11 +1423,7 @@ function JobDetailPage() {
           {/* Apply (external) */}
           {(job.applyUrl || job.sourceUrl) && (
             <Button variant="outline" asChild>
-              <a
-                href={job.applyUrl || job.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={job.applyUrl || job.sourceUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4" />
                 Apply
               </a>
@@ -1529,11 +1431,7 @@ function JobDetailPage() {
           )}
 
           {/* Tailor / Re-tailor Resume */}
-          <Button
-            variant="outline"
-            onClick={handleTailorResume}
-            disabled={tailoring}
-          >
+          <Button variant="outline" onClick={handleTailorResume} disabled={tailoring}>
             <Wand2 className={`h-4 w-4 ${tailoring ? 'animate-pulse' : ''}`} />
             {tailoring ? 'Tailoring...' : tailoredData ? 'Re-tailor' : 'Tailor Resume'}
           </Button>
@@ -1559,11 +1457,7 @@ function JobDetailPage() {
 
           {/* Export Resume */}
           {tailoredData && (
-            <Button
-              variant="outline"
-              onClick={handleExportResume}
-              disabled={exporting}
-            >
+            <Button variant="outline" onClick={handleExportResume} disabled={exporting}>
               <Printer className="h-4 w-4" />
               {exporting ? 'Preparing...' : 'Export Resume'}
             </Button>
@@ -1571,13 +1465,8 @@ function JobDetailPage() {
 
           {/* Delete */}
           {confirmDelete ? (
-            <div className="flex items-center gap-1 ml-auto">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
+            <div className="ml-auto flex items-center gap-1">
+              <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
                 {deleting ? 'Deleting...' : 'Confirm Delete'}
               </Button>
               <Button
@@ -1593,7 +1482,7 @@ function JobDetailPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto h-9 w-9 text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-destructive ml-auto h-9 w-9"
               onClick={() => setConfirmDelete(true)}
               aria-label="Delete job"
             >
@@ -1609,7 +1498,15 @@ function JobDetailPage() {
         onOpenChange={setAssistDrawerOpen}
         job={job}
         candidate={candidate}
-        existingTailored={tailoredData ? { content: tailoredData.content, createdAt: tailoredData.createdAt, version: tailoredData.version } : null}
+        existingTailored={
+          tailoredData
+            ? {
+                content: tailoredData.content,
+                createdAt: tailoredData.createdAt,
+                version: tailoredData.version,
+              }
+            : null
+        }
         existingCoverLetter={coverLetterData}
         onMarkApplied={() => {
           router.invalidate();

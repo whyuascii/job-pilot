@@ -1,20 +1,29 @@
 import React from 'react';
-import { createFileRoute, useRouter, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
-  Mail,
-  Loader2,
   AlertCircle,
-  CheckCircle2,
-  Search,
-  ChevronRight,
-  Building2,
   ArrowRight,
-  X,
-  Sparkles,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
   Inbox,
+  Loader2,
+  Mail,
   RefreshCw,
+  Search,
+  Sparkles,
+  X,
 } from 'lucide-react';
-import { Button, Card, CardContent, Badge, Separator, Skeleton, StatusBadge, statusLabels } from '@job-pilot/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  Separator,
+  Skeleton,
+  StatusBadge,
+  statusLabels,
+} from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
 interface EmailAnalysisResult {
@@ -86,7 +95,9 @@ function ConfidenceBadge({ level }: { level: 'high' | 'medium' | 'low' }) {
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${styles[level]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${styles[level]}`}
+    >
       {level}
     </span>
   );
@@ -144,30 +155,28 @@ function AnalysisResultCard({
     <div className="mt-3 rounded-lg border border-sky-300 bg-white p-4">
       <div className="flex items-start gap-3">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
-        <div className="flex-1 min-w-0 space-y-2">
+        <div className="min-w-0 flex-1 space-y-2">
           {/* Analysis header */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">AI Analysis</span>
             <ConfidenceBadge level={analysis.confidence} />
           </div>
 
           {/* Reasoning */}
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {analysis.reasoning}
-          </p>
+          <p className="text-muted-foreground text-xs leading-relaxed">{analysis.reasoning}</p>
 
           {/* Matched application info */}
           {hasMatch ? (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm">
-                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <Building2 className="text-muted-foreground h-3.5 w-3.5" />
                 <span className="font-medium">{analysis.matchedCompany}</span>
                 <span className="text-muted-foreground">-</span>
                 <span className="text-muted-foreground truncate">{analysis.matchedJobTitle}</span>
-                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                <ArrowRight className="text-muted-foreground h-3 w-3" />
                 <StatusBadge status={analysis.detectedStatus as any} />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
                 <Button
                   variant="default"
                   size="sm"
@@ -185,7 +194,7 @@ function AnalysisResultCard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-muted-foreground"
+                  className="text-muted-foreground h-7 text-xs"
                   onClick={onDismiss}
                   disabled={applying || dismissing}
                 >
@@ -200,13 +209,13 @@ function AnalysisResultCard({
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-muted-foreground text-xs italic">
                 No matching application found or no status change detected.
               </p>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs text-muted-foreground"
+                className="text-muted-foreground h-7 text-xs"
                 onClick={onDismiss}
                 disabled={dismissing}
               >
@@ -257,22 +266,20 @@ function MessageCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-semibold leading-tight">
-                {message.subject}
-              </p>
+              <p className="truncate text-sm font-semibold leading-tight">{message.subject}</p>
               {message.parsed && !analysis && (
-                <Badge variant="secondary" className="text-[10px] shrink-0">
+                <Badge variant="secondary" className="shrink-0 text-[10px]">
                   Processed
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <Mail className="h-3 w-3 shrink-0" />
               <span className="truncate">{senderName}</span>
               <span className="text-muted-foreground/50">|</span>
               <span className="shrink-0">{formatDate(message.receivedAt)}</span>
             </div>
-            <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
+            <p className="text-muted-foreground/80 line-clamp-2 text-xs leading-relaxed">
               {message.snippet}
             </p>
           </div>
@@ -282,7 +289,7 @@ function MessageCard({
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 h-8 text-xs"
+              className="h-8 shrink-0 text-xs"
               onClick={onAnalyze}
               disabled={analyzing}
             >
@@ -314,7 +321,7 @@ function MessageCard({
 
         {/* Linked application */}
         {message.parsed && message.applicationId && !analysis && (
-          <div className="mt-2 pt-2 border-t">
+          <div className="mt-2 border-t pt-2">
             <Link
               to="/applications/$applicationId"
               params={{ applicationId: message.applicationId }}
@@ -341,7 +348,9 @@ function RecruiterMessagesPage() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = React.useState<FilterTab>('all');
-  const [analysisResults, setAnalysisResults] = React.useState<Record<string, EmailAnalysisResult>>({});
+  const [analysisResults, setAnalysisResults] = React.useState<Record<string, EmailAnalysisResult>>(
+    {},
+  );
   const [analyzingIds, setAnalyzingIds] = React.useState<Set<string>>(new Set());
   const [applyingIds, setApplyingIds] = React.useState<Set<string>>(new Set());
   const [dismissingIds, setDismissingIds] = React.useState<Set<string>>(new Set());
@@ -489,17 +498,15 @@ function RecruiterMessagesPage() {
             Analyze recruiter emails to detect application status changes.
           </p>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 shadow">
-          <Mail className="mb-4 h-16 w-16 text-muted-foreground/20" />
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-20 shadow">
+          <Mail className="text-muted-foreground/20 mb-4 h-16 w-16" />
           <h3 className="mb-1 text-lg font-semibold">Gmail not connected</h3>
-          <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
-            Connect your Gmail account in Settings to sync recruiter messages
-            and auto-detect application status changes.
+          <p className="text-muted-foreground mb-6 max-w-md text-center text-sm">
+            Connect your Gmail account in Settings to sync recruiter messages and auto-detect
+            application status changes.
           </p>
           <Button asChild>
-            <Link to="/settings">
-              Go to Settings
-            </Link>
+            <Link to="/settings">Go to Settings</Link>
           </Button>
         </div>
       </div>
@@ -516,12 +523,12 @@ function RecruiterMessagesPage() {
             Analyze recruiter emails to detect application status changes.
           </p>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 shadow">
-          <Inbox className="mb-4 h-16 w-16 text-muted-foreground/20" />
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-20 shadow">
+          <Inbox className="text-muted-foreground/20 mb-4 h-16 w-16" />
           <h3 className="mb-1 text-lg font-semibold">No messages yet</h3>
-          <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
-            Sync your Gmail to import recruiter messages. Messages matching
-            recruiter patterns from the last 7 days will be imported.
+          <p className="text-muted-foreground mb-6 max-w-md text-center text-sm">
+            Sync your Gmail to import recruiter messages. Messages matching recruiter patterns from
+            the last 7 days will be imported.
           </p>
           <Button onClick={handleSync} disabled={syncing}>
             {syncing ? (
@@ -553,13 +560,13 @@ function RecruiterMessagesPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="rounded-lg border bg-card px-3 py-1.5 text-center shadow-sm">
-            <p className="text-xs text-muted-foreground">Total</p>
+          <div className="bg-card rounded-lg border px-3 py-1.5 text-center shadow-sm">
+            <p className="text-muted-foreground text-xs">Total</p>
             <p className="text-lg font-bold">{messages.length}</p>
           </div>
           {unprocessedCount > 0 && (
-            <div className="rounded-lg border bg-card px-3 py-1.5 text-center shadow-sm">
-              <p className="text-xs text-muted-foreground">Unprocessed</p>
+            <div className="bg-card rounded-lg border px-3 py-1.5 text-center shadow-sm">
+              <p className="text-muted-foreground text-xs">Unprocessed</p>
               <p className="text-lg font-bold text-amber-800">{unprocessedCount}</p>
             </div>
           )}
@@ -601,7 +608,7 @@ function RecruiterMessagesPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -679,15 +686,13 @@ function RecruiterMessagesPage() {
 
       {/* Messages list */}
       {filteredMessages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 shadow">
-          <Inbox className="mb-3 h-10 w-10 text-muted-foreground/20" />
-          <p className="text-sm text-muted-foreground">
-            No messages in this category.
-          </p>
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-16 shadow">
+          <Inbox className="text-muted-foreground/20 mb-3 h-10 w-10" />
+          <p className="text-muted-foreground text-sm">No messages in this category.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Showing {filteredMessages.length} message{filteredMessages.length !== 1 ? 's' : ''}
           </p>
           {filteredMessages.map((msg) => (

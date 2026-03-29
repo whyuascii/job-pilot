@@ -1,20 +1,6 @@
 import * as React from 'react';
-import {
-  Button,
-  Card,
-  CardContent,
-  Badge,
-  Textarea,
-} from '@job-pilot/ui';
-import {
-  ArrowLeft,
-  Check,
-  Loader2,
-  Send,
-  Sparkles,
-  SkipForward,
-  Bookmark,
-} from 'lucide-react';
+import { ArrowLeft, Bookmark, Check, Loader2, Send, SkipForward, Sparkles } from 'lucide-react';
+import { Badge, Button, Card, CardContent, Textarea } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
 // ---------------------------------------------------------------------------
@@ -134,8 +120,8 @@ function EnhancementCard({
   if (accepted) {
     return (
       <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20">
-        <CardContent className="pt-3 pb-3">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
+        <CardContent className="pb-3 pt-3">
+          <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
             <Check className="h-4 w-4" />
             Enhancement accepted
           </div>
@@ -146,19 +132,27 @@ function EnhancementCard({
 
   return (
     <Card className="border-sky-200 bg-sky-50/50 dark:border-sky-800 dark:bg-sky-950/20">
-      <CardContent className="pt-3 pb-3 space-y-2">
+      <CardContent className="space-y-2 pb-3 pt-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-sky-500" />
-          <span className="text-xs font-medium text-sky-700 dark:text-sky-300">Proposed Enhancement</span>
+          <span className="text-xs font-medium text-sky-700 dark:text-sky-300">
+            Proposed Enhancement
+          </span>
         </div>
 
         <div className="space-y-1.5">
           <div>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Original</span>
-            <p className="text-xs text-muted-foreground line-through">{enhancement.originalBullet}</p>
+            <span className="text-muted-foreground text-[10px] uppercase tracking-wider">
+              Original
+            </span>
+            <p className="text-muted-foreground text-xs line-through">
+              {enhancement.originalBullet}
+            </p>
           </div>
           <div>
-            <span className="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400">Enhanced</span>
+            <span className="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400">
+              Enhanced
+            </span>
             <p className="text-xs font-medium">{enhancement.enhancedBullet}</p>
           </div>
         </div>
@@ -166,7 +160,7 @@ function EnhancementCard({
         {enhancement.skills && enhancement.skills.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {enhancement.skills.map((skill) => (
-              <Badge key={skill} variant="secondary" className="text-[10px] h-5">
+              <Badge key={skill} variant="secondary" className="h-5 text-[10px]">
                 {skill}
               </Badge>
             ))}
@@ -176,11 +170,15 @@ function EnhancementCard({
         <div className="flex items-center gap-2 pt-1">
           <Button
             size="sm"
-            className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white"
+            className="h-7 bg-sky-600 text-xs text-white hover:bg-sky-700"
             onClick={handleAcceptAll}
             disabled={accepting !== null}
           >
-            {accepting === 'all' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bookmark className="h-3 w-3" />}
+            {accepting === 'all' ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Bookmark className="h-3 w-3" />
+            )}
             Accept All
           </Button>
           <Button
@@ -190,13 +188,17 @@ function EnhancementCard({
             onClick={handleAcceptBullet}
             disabled={accepting !== null}
           >
-            {accepting === 'bullet' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+            {accepting === 'bullet' ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3" />
+            )}
             Accept Bullet
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs text-muted-foreground"
+            className="text-muted-foreground h-7 text-xs"
             onClick={() => setAccepted(true)}
             disabled={accepting !== null}
           >
@@ -213,7 +215,12 @@ function EnhancementCard({
 // Main Component
 // ---------------------------------------------------------------------------
 
-export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated }: ResumeInterviewProps) {
+export function ResumeInterview({
+  jobId,
+  tailoredResume,
+  onBack,
+  onResumeUpdated,
+}: ResumeInterviewProps) {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [input, setInput] = React.useState('');
   const [state, setState] = React.useState<InterviewState>('idle');
@@ -238,11 +245,13 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
     try {
       const history = await api.resumeInterview.getMessages(jobId);
       if (history.length > 0) {
-        setMessages(history.map((m: any) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-        })));
+        setMessages(
+          history.map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+          })),
+        );
         // Count enhancements already proposed
         let count = 0;
         for (const m of history) {
@@ -254,7 +263,9 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
         if (firstAssistant) {
           const planMatch = firstAssistant.content.match(/:::plan\s*([\s\S]*?)\s*:::/);
           if (planMatch) {
-            try { setPlan(JSON.parse(planMatch[1])); } catch {}
+            try {
+              setPlan(JSON.parse(planMatch[1]));
+            } catch {}
           }
         }
       } else {
@@ -270,7 +281,11 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
 
   async function startInterview() {
     setState('streaming');
-    const assistantMsg: ChatMessage = { id: `assistant-${Date.now()}`, role: 'assistant', content: '' };
+    const assistantMsg: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+    };
     setMessages([assistantMsg]);
 
     try {
@@ -327,7 +342,8 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
         if (last && last.role === 'assistant' && !last.content) {
           updated[updated.length - 1] = {
             ...last,
-            content: 'Sorry, I could not start the interview. Please make sure you have a tailored resume generated first, then try again.',
+            content:
+              'Sorry, I could not start the interview. Please make sure you have a tailored resume generated first, then try again.',
           };
         }
         return updated;
@@ -343,7 +359,11 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
 
     setInput('');
     const userMsg: ChatMessage = { id: `user-${Date.now()}`, role: 'user', content: messageText };
-    const assistantMsg: ChatMessage = { id: `assistant-${Date.now()}`, role: 'assistant', content: '' };
+    const assistantMsg: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+    };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setState('streaming');
@@ -407,7 +427,10 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
         const updated = [...prev];
         const last = updated[updated.length - 1];
         if (last && last.role === 'assistant' && !last.content) {
-          updated[updated.length - 1] = { ...last, content: 'Sorry, something went wrong. Please try again.' };
+          updated[updated.length - 1] = {
+            ...last,
+            content: 'Sorry, something went wrong. Please try again.',
+          };
         }
         return updated;
       });
@@ -423,7 +446,7 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
   if (loadingHistory) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     );
   }
@@ -432,22 +455,25 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
   const progressPct = totalAreas > 0 ? Math.min(100, (areasExplored / totalAreas) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onBack}>
           <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">Resume Depth Interview</p>
           {totalAreas > 0 && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-muted-foreground text-[10px]">
               {areasExplored} of {totalAreas} areas explored
             </p>
           )}
         </div>
         {state === 'complete' && (
-          <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+          <Badge
+            variant="secondary"
+            className="bg-emerald-100 text-[10px] text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
+          >
             Complete
           </Badge>
         )}
@@ -455,24 +481,24 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
 
       {/* Progress bar */}
       {totalAreas > 0 && (
-        <div className="h-1.5 bg-muted rounded-full mb-3 overflow-hidden">
+        <div className="bg-muted mb-3 h-1.5 overflow-hidden rounded-full">
           <div
-            className="h-full bg-sky-500 rounded-full transition-all duration-500"
+            className="h-full rounded-full bg-sky-500 transition-all duration-500"
             style={{ width: `${progressPct}%` }}
           />
         </div>
       )}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 mb-3">
+      <div ref={scrollRef} className="mb-3 flex-1 space-y-3 overflow-y-auto">
         {messages.map((msg) => (
           <React.Fragment key={msg.id}>
             <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                msg.role === 'user'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-muted'
-              }`}>
+              <div
+                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                  msg.role === 'user' ? 'bg-sky-600 text-white' : 'bg-muted'
+                }`}
+              >
                 <div className="whitespace-pre-wrap">
                   {stripBlocks(msg.content) || (state === 'streaming' ? '...' : '')}
                 </div>
@@ -502,7 +528,7 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
               }
             }}
             placeholder="Answer the question..."
-            className="min-h-[40px] max-h-[100px] resize-none text-sm"
+            className="max-h-[100px] min-h-[40px] resize-none text-sm"
             disabled={state === 'streaming'}
           />
           <Button
@@ -511,14 +537,20 @@ export function ResumeInterview({ jobId, tailoredResume, onBack, onResumeUpdated
             onClick={() => sendMessage()}
             disabled={!input.trim() || state === 'streaming'}
           >
-            {state === 'streaming' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {state === 'streaming' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       )}
 
       {state === 'complete' && (
-        <div className="text-center py-3">
-          <p className="text-xs text-muted-foreground mb-2">Interview complete. Head back to review your enhanced resume.</p>
+        <div className="py-3 text-center">
+          <p className="text-muted-foreground mb-2 text-xs">
+            Interview complete. Head back to review your enhanced resume.
+          </p>
           <Button variant="outline" size="sm" onClick={onBack}>
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Resume

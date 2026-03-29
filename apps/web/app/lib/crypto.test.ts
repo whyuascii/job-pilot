@@ -154,7 +154,9 @@ describe('encrypt / decrypt', () => {
     const goodIv = Buffer.alloc(12).toString('base64'); // 12 bytes correct
     const wrongTag = Buffer.alloc(8).toString('base64'); // 8 bytes instead of 16
     const fakeData = Buffer.alloc(10).toString('base64');
-    await expect(decrypt(`${goodIv}:${wrongTag}:${fakeData}`)).rejects.toThrow('Invalid auth tag length');
+    await expect(decrypt(`${goodIv}:${wrongTag}:${fakeData}`)).rejects.toThrow(
+      'Invalid auth tag length',
+    );
   });
 });
 

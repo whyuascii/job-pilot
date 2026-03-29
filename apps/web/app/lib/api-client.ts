@@ -111,8 +111,27 @@ export const api = {
     updateStatus: (data: any) => post<any>('/api/applications/update-status', data),
     delete: (data: { applicationId: string }) => post<any>('/api/applications/delete', data),
     markApplied: (data: { jobId: string }) => post<any>('/api/applications/mark-applied', data),
-    quickAdd: (data: { company: string; jobTitle?: string; dateApplied?: string; compMin?: number; compMax?: number; equityDetails?: string; source?: string; status?: string; statusNote?: string }) => post<any>('/api/applications/quick-add', data),
-    updateDetails: (data: { applicationId: string; compMin?: number; compMax?: number; equityDetails?: string; compNotes?: string; subStatus?: string; statusNote?: string; declinedByUser?: boolean }) => post<any>('/api/applications/update-details', data),
+    quickAdd: (data: {
+      company: string;
+      jobTitle?: string;
+      dateApplied?: string;
+      compMin?: number;
+      compMax?: number;
+      equityDetails?: string;
+      source?: string;
+      status?: string;
+      statusNote?: string;
+    }) => post<any>('/api/applications/quick-add', data),
+    updateDetails: (data: {
+      applicationId: string;
+      compMin?: number;
+      compMax?: number;
+      equityDetails?: string;
+      compNotes?: string;
+      subStatus?: string;
+      statusNote?: string;
+      declinedByUser?: boolean;
+    }) => post<any>('/api/applications/update-details', data),
   },
 
   // Skills
@@ -143,7 +162,8 @@ export const api = {
   // Preferences
   preferences: {
     list: () => get<any[]>('/api/preferences'),
-    listByCategory: (category: string) => get<any[]>(`/api/preferences?category=${encodeURIComponent(category)}`),
+    listByCategory: (category: string) =>
+      get<any[]>(`/api/preferences?category=${encodeURIComponent(category)}`),
     add: (data: any) => post<any>('/api/preferences', data),
     update: (data: any) => post<any>('/api/preferences/update', data),
     delete: (data: { preferenceId: string }) => post<any>('/api/preferences/delete', data),
@@ -184,7 +204,8 @@ export const api = {
   // AI
   ai: {
     ingestJobFromUrl: (data: { url: string }) => post<any>('/api/ai/ingest-url', data),
-    ingestJobFromText: (data: { text: string; sourceLabel?: string }) => post<any>('/api/ai/ingest-text', data),
+    ingestJobFromText: (data: { text: string; sourceLabel?: string }) =>
+      post<any>('/api/ai/ingest-text', data),
     parseDescription: (data: any) => post<any>('/api/ai/parse-description', data),
     scoreJob: (data: { jobId: string }) => post<any>('/api/ai/score-job', data),
     rescoreAll: () => post<any>('/api/ai/rescore-all'),
@@ -203,9 +224,12 @@ export const api = {
     deleteApiKey: (data: { service: string }) => post<any>('/api/settings/delete-api-key', data),
     listJobSources: () => get<any[]>('/api/settings/job-sources'),
     addJobSource: (data: any) => post<any>('/api/settings/job-sources', data),
-    deleteJobSource: (data: { sourceId: string }) => post<any>('/api/settings/job-sources/delete', data),
-    toggleJobSource: (data: { sourceId: string; enabled: boolean }) => post<any>('/api/settings/job-sources/toggle', data),
-    syncJobSource: (data: { sourceId: string }) => post<any>('/api/settings/job-sources/sync', data),
+    deleteJobSource: (data: { sourceId: string }) =>
+      post<any>('/api/settings/job-sources/delete', data),
+    toggleJobSource: (data: { sourceId: string; enabled: boolean }) =>
+      post<any>('/api/settings/job-sources/toggle', data),
+    syncJobSource: (data: { sourceId: string }) =>
+      post<any>('/api/settings/job-sources/sync', data),
     syncAllSources: () => post<any>('/api/settings/job-sources/sync-all'),
     getSearchConfig: () => get<any>('/api/settings/search-config'),
     enableSource: (data: { type: string }) => post<any>('/api/settings/enable-source', data),
@@ -236,7 +260,13 @@ export const api = {
     getStatus: () => get<any>('/api/gmail/status'),
     disconnect: () => post<any>('/api/gmail/disconnect'),
     syncMessages: () => post<any>('/api/gmail/sync-messages'),
-    send: (data: { to: string; subject: string; body: string; applicationId?: string; templateType?: string }) => post<any>('/api/gmail/send', data),
+    send: (data: {
+      to: string;
+      subject: string;
+      body: string;
+      applicationId?: string;
+      templateType?: string;
+    }) => post<any>('/api/gmail/send', data),
     getTemplates: () => get<any[]>('/api/gmail/templates'),
   },
 
@@ -251,12 +281,33 @@ export const api = {
 
   // Profile Coach
   profileCoach: {
-    chat: (data: { message: string; conversationHistory: Array<{ role: string; content: string }>; activeSection?: string }) =>
-      post<{ message: string; suggestions: Array<{ type: string; label: string; data: Record<string, any>; targetId?: string }> }>('/api/profile-coach/chat', data),
+    chat: (data: {
+      message: string;
+      conversationHistory: Array<{ role: string; content: string }>;
+      activeSection?: string;
+    }) =>
+      post<{
+        message: string;
+        suggestions: Array<{
+          type: string;
+          label: string;
+          data: Record<string, any>;
+          targetId?: string;
+        }>;
+      }>('/api/profile-coach/chat', data),
     analyze: () =>
-      post<{ message: string; suggestions: Array<{ type: string; label: string; data: Record<string, any>; targetId?: string }>; profileScore: number; priorities: string[] }>('/api/profile-coach/analyze'),
-    careerGrowth: (data: { jobId: string }) =>
-      post<any>('/api/profile-coach/career-growth', data),
+      post<{
+        message: string;
+        suggestions: Array<{
+          type: string;
+          label: string;
+          data: Record<string, any>;
+          targetId?: string;
+        }>;
+        profileScore: number;
+        priorities: string[];
+      }>('/api/profile-coach/analyze'),
+    careerGrowth: (data: { jobId: string }) => post<any>('/api/profile-coach/career-growth', data),
   },
 
   // Career Goals
@@ -264,7 +315,8 @@ export const api = {
     list: () => get<any[]>('/api/career-goals'),
     save: (data: { jobId: string; notes?: string }) => post<any>('/api/career-goals', data),
     delete: (data: { goalId: string }) => post<any>('/api/career-goals/delete', data),
-    toggleSelected: (data: { goalId: string; selected: boolean }) => post<any>('/api/career-goals/toggle-selected', data),
+    toggleSelected: (data: { goalId: string; selected: boolean }) =>
+      post<any>('/api/career-goals/toggle-selected', data),
     getCoachingPlan: () => get<any>('/api/career-goals/coaching-plan'),
     generateCoachingPlan: () => post<any>('/api/career-goals/generate-coaching-plan'),
   },
@@ -283,37 +335,52 @@ export const api = {
 
   // RxResume
   rxresume: {
-    generatePdf: (data: { jobId: string; templateId?: string }) => post<any>('/api/rxresume/generate-pdf', data),
+    generatePdf: (data: { jobId: string; templateId?: string }) =>
+      post<any>('/api/rxresume/generate-pdf', data),
     getTemplates: () => get<any[]>('/api/rxresume/templates'),
   },
 
   // Ghostwriter
   ghostwriter: {
     getMessages: (jobId: string) => get<any[]>(`/api/ghostwriter/messages?jobId=${jobId}`),
-    saveToAnswers: (data: { question: string; answer: string }) => post<any>('/api/ghostwriter/save-to-answers', data),
+    saveToAnswers: (data: { question: string; answer: string }) =>
+      post<any>('/api/ghostwriter/save-to-answers', data),
   },
 
   // Resume Interview
   resumeInterview: {
     getMessages: (jobId: string) => get<any[]>(`/api/resume-interview/messages?jobId=${jobId}`),
-    acceptEnhancement: (data: { jobId: string; blockIndex: number; bulletIndex: number; enhancedBullet: string }) =>
-      post<any>('/api/resume-interview/accept-enhancement', data),
-    acceptAll: (data: { jobId: string; blockIndex: number; bulletIndex: number; enhancedBullet: string; story: { questionPattern: string; answer: string } }) =>
-      post<any>('/api/resume-interview/accept-all', data),
+    acceptEnhancement: (data: {
+      jobId: string;
+      blockIndex: number;
+      bulletIndex: number;
+      enhancedBullet: string;
+    }) => post<any>('/api/resume-interview/accept-enhancement', data),
+    acceptAll: (data: {
+      jobId: string;
+      blockIndex: number;
+      bulletIndex: number;
+      enhancedBullet: string;
+      story: { questionPattern: string; answer: string };
+    }) => post<any>('/api/resume-interview/accept-all', data),
   },
 
   // Answer AI
   answerAi: {
     detectQuestions: (data: any) => post<any[]>('/api/answer-ai/detect-questions', data),
     suggestAnswer: (data: any) => post<any>('/api/answer-ai/suggest-answer', data),
-    searchSimilar: (data: { searchText: string }) => post<any[]>('/api/answer-ai/search-similar', data),
-    getQuestions: (applicationId: string) => get<any[]>(`/api/answer-ai/questions?applicationId=${applicationId}`),
+    searchSimilar: (data: { searchText: string }) =>
+      post<any[]>('/api/answer-ai/search-similar', data),
+    getQuestions: (applicationId: string) =>
+      get<any[]>(`/api/answer-ai/questions?applicationId=${applicationId}`),
     approveAnswer: (data: any) => post<any>('/api/answer-ai/approve-answer', data),
-    dismissQuestion: (data: { questionId: string }) => post<any>('/api/answer-ai/dismiss-question', data),
+    dismissQuestion: (data: { questionId: string }) =>
+      post<any>('/api/answer-ai/dismiss-question', data),
   },
 
   // Activity Feed
   activity: {
-    confirm: (data: { action: string; itemId: string; itemType: string; data?: any }) => post<any>('/api/activity/confirm', data),
+    confirm: (data: { action: string; itemId: string; itemType: string; data?: any }) =>
+      post<any>('/api/activity/confirm', data),
   },
 };

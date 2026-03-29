@@ -1,19 +1,6 @@
 import React from 'react';
-import {
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Plus,
-  Minus,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Badge,
-  Separator,
-} from '@job-pilot/ui';
+import { ChevronDown, ChevronUp, FileText, Minus, Plus } from 'lucide-react';
+import { Badge, Card, CardContent, CardHeader, CardTitle, Separator } from '@job-pilot/ui';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,12 +92,8 @@ function classifySkills(
   deEmphasized: string[];
   unchanged: string[];
 } {
-  const originalNames = new Set(
-    original.map((s) => s.name.toLowerCase()),
-  );
-  const tailoredNames = new Set(
-    tailored.map((s) => s.toLowerCase()),
-  );
+  const originalNames = new Set(original.map((s) => s.name.toLowerCase()));
+  const tailoredNames = new Set(tailored.map((s) => s.toLowerCase()));
 
   const emphasized: string[] = [];
   const unchanged: string[] = [];
@@ -157,7 +140,7 @@ function CollapsibleSection({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-left hover:bg-muted/50 transition-colors"
+        className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg px-1 py-1 text-left transition-colors"
       >
         <div className="flex items-center gap-2">
           {icon}
@@ -165,9 +148,9 @@ function CollapsibleSection({
           {badge}
         </div>
         {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          <ChevronUp className="text-muted-foreground h-4 w-4" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         )}
       </button>
       {expanded && children}
@@ -179,20 +162,14 @@ function CollapsibleSection({
 // Summary comparison
 // ---------------------------------------------------------------------------
 
-function SummaryComparison({
-  original,
-  tailored,
-}: {
-  original: string;
-  tailored: string;
-}) {
+function SummaryComparison({ original, tailored }: { original: string; tailored: string }) {
   return (
     <CollapsibleSection
       title="Professional Summary"
       icon={<FileText className="h-4 w-4 text-sky-500" />}
       badge={
         original !== tailored ? (
-          <Badge variant="default" className="text-[10px] bg-sky-600">
+          <Badge variant="default" className="bg-sky-600 text-[10px]">
             Rewritten
           </Badge>
         ) : null
@@ -202,17 +179,11 @@ function SummaryComparison({
         {/* Original */}
         <Card className="border-muted">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground font-medium">
-              Original
-            </CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Original</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed">
-              {original || (
-                <span className="italic text-muted-foreground">
-                  No summary on file
-                </span>
-              )}
+              {original || <span className="text-muted-foreground italic">No summary on file</span>}
             </p>
           </CardContent>
         </Card>
@@ -220,9 +191,7 @@ function SummaryComparison({
         {/* Tailored */}
         <Card className="border-sky-300 bg-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-sky-700 font-medium">
-              Tailored
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-sky-700">Tailored</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed">{tailored}</p>
@@ -244,10 +213,7 @@ function SkillsComparison({
   original: OriginalSkill[];
   tailored: string[];
 }) {
-  const { emphasized, deEmphasized, unchanged } = classifySkills(
-    original,
-    tailored,
-  );
+  const { emphasized, deEmphasized, unchanged } = classifySkills(original, tailored);
 
   const totalChanges = emphasized.length + deEmphasized.length;
 
@@ -257,7 +223,7 @@ function SkillsComparison({
       icon={<FileText className="h-4 w-4 text-violet-500" />}
       badge={
         totalChanges > 0 ? (
-          <Badge variant="default" className="text-[10px] bg-violet-600">
+          <Badge variant="default" className="bg-violet-600 text-[10px]">
             {totalChanges} change{totalChanges !== 1 ? 's' : ''}
           </Badge>
         ) : null
@@ -267,34 +233,26 @@ function SkillsComparison({
         {/* Original */}
         <Card className="border-muted">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground font-medium">
+            <CardTitle className="text-muted-foreground text-sm font-medium">
               Original ({original.length} skills)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {original.map((skill) => {
-                const isKept = tailored.some(
-                  (t) => t.toLowerCase() === skill.name.toLowerCase(),
-                );
+                const isKept = tailored.some((t) => t.toLowerCase() === skill.name.toLowerCase());
                 return (
                   <Badge
                     key={skill.name}
                     variant="secondary"
-                    className={`text-xs ${
-                      !isKept
-                        ? 'opacity-40 line-through'
-                        : ''
-                    }`}
+                    className={`text-xs ${!isKept ? 'line-through opacity-40' : ''}`}
                   >
                     {skill.name}
                   </Badge>
                 );
               })}
               {original.length === 0 && (
-                <span className="text-sm italic text-muted-foreground">
-                  No skills on file
-                </span>
+                <span className="text-muted-foreground text-sm italic">No skills on file</span>
               )}
             </div>
           </CardContent>
@@ -303,29 +261,21 @@ function SkillsComparison({
         {/* Tailored */}
         <Card className="border-sky-300 bg-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-sky-700 font-medium">
+            <CardTitle className="text-sm font-medium text-sky-700">
               Tailored ({tailored.length} highlighted)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {tailored.map((skill, idx) => {
-                const isNew = !original.some(
-                  (o) => o.name.toLowerCase() === skill.toLowerCase(),
-                );
+                const isNew = !original.some((o) => o.name.toLowerCase() === skill.toLowerCase());
                 return (
                   <Badge
                     key={skill}
                     variant={idx < 5 ? 'default' : 'secondary'}
-                    className={`text-xs ${
-                      isNew
-                        ? 'ring-2 ring-emerald-400 ring-offset-1'
-                        : ''
-                    }`}
+                    className={`text-xs ${isNew ? 'ring-2 ring-emerald-400 ring-offset-1' : ''}`}
                   >
-                    {isNew && (
-                      <Plus className="h-2.5 w-2.5 mr-0.5" />
-                    )}
+                    {isNew && <Plus className="mr-0.5 h-2.5 w-2.5" />}
                     {skill}
                   </Badge>
                 );
@@ -337,7 +287,7 @@ function SkillsComparison({
 
       {/* Legend */}
       {totalChanges > 0 && (
-        <div className="flex flex-wrap gap-4 px-1 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex flex-wrap gap-4 px-1 text-xs">
           {emphasized.length > 0 && (
             <span className="flex items-center gap-1">
               <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
@@ -346,7 +296,7 @@ function SkillsComparison({
           )}
           {deEmphasized.length > 0 && (
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+              <span className="bg-muted-foreground/30 inline-block h-2.5 w-2.5 rounded-full" />
               {deEmphasized.length} de-emphasized
             </span>
           )}
@@ -401,7 +351,7 @@ function ExperienceComparison({
       title="Experience"
       icon={<FileText className="h-4 w-4 text-amber-500" />}
       badge={
-        <Badge variant="default" className="text-[10px] bg-amber-600">
+        <Badge variant="default" className="bg-amber-600 text-[10px]">
           {tailored.length} of {original.length} roles featured
         </Badge>
       }
@@ -426,24 +376,16 @@ function ExperienceComparison({
                         <CardTitle className="text-sm font-semibold">
                           {orig ? orig.title : tail.title}
                         </CardTitle>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {orig ? orig.company : tail.company}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatShortDate(
-                            orig ? orig.startDate : tail.startDate,
-                          )}{' '}
-                          -{' '}
-                          {formatShortDate(
-                            orig ? orig.endDate : tail.endDate,
-                          )}
+                        <p className="text-muted-foreground text-xs">
+                          {formatShortDate(orig ? orig.startDate : tail.startDate)} -{' '}
+                          {formatShortDate(orig ? orig.endDate : tail.endDate)}
                         </p>
                       </div>
                       {!orig && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] opacity-50"
-                        >
+                        <Badge variant="secondary" className="text-[10px] opacity-50">
                           Not on file
                         </Badge>
                       )}
@@ -453,16 +395,13 @@ function ExperienceComparison({
                     {orig && origBullets.length > 0 ? (
                       <ul className="space-y-1 pl-4">
                         {origBullets.map((bullet, bIdx) => (
-                          <li
-                            key={bIdx}
-                            className="text-xs text-muted-foreground list-disc"
-                          >
+                          <li key={bIdx} className="text-muted-foreground list-disc text-xs">
                             {bullet}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-xs italic text-muted-foreground">
+                      <p className="text-muted-foreground text-xs italic">
                         {orig
                           ? orig.description || 'No bullet points'
                           : 'Original not found in profile'}
@@ -476,33 +415,25 @@ function ExperienceComparison({
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-sm font-semibold">
-                          {tail.title}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          {tail.company}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatShortDate(tail.startDate)} -{' '}
-                          {formatShortDate(tail.endDate)}
+                        <CardTitle className="text-sm font-semibold">{tail.title}</CardTitle>
+                        <p className="text-muted-foreground text-xs">{tail.company}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {formatShortDate(tail.startDate)} - {formatShortDate(tail.endDate)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">
                         {bulletsChanged && (
-                          <Badge
-                            variant="default"
-                            className="text-[10px] bg-sky-600"
-                          >
+                          <Badge variant="default" className="bg-sky-600 text-[10px]">
                             Reframed
                           </Badge>
                         )}
                         <span
                           className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
                             tail.relevanceScore >= 75
-                              ? 'text-emerald-700 bg-white border-emerald-300'
+                              ? 'border-emerald-300 bg-white text-emerald-700'
                               : tail.relevanceScore >= 50
-                                ? 'text-sky-700 bg-white border-sky-300'
-                                : 'text-amber-700 bg-white border-amber-300'
+                                ? 'border-sky-300 bg-white text-sky-700'
+                                : 'border-amber-300 bg-white text-amber-700'
                           }`}
                         >
                           {tail.relevanceScore}%
@@ -514,18 +445,13 @@ function ExperienceComparison({
                     {tailBullets.length > 0 ? (
                       <ul className="space-y-1 pl-4">
                         {tailBullets.map((bullet, bIdx) => (
-                          <li
-                            key={bIdx}
-                            className="text-xs list-disc"
-                          >
+                          <li key={bIdx} className="list-disc text-xs">
                             {bullet}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-xs italic text-muted-foreground">
-                        No bullets generated
-                      </p>
+                      <p className="text-muted-foreground text-xs italic">No bullets generated</p>
                     )}
                   </CardContent>
                 </Card>
@@ -540,20 +466,19 @@ function ExperienceComparison({
           <>
             <Separator />
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-1">
+              <p className="text-muted-foreground flex items-center gap-1.5 px-1 text-xs font-medium">
                 <Minus className="h-3 w-3" />
                 {excludedOriginals.length} role
-                {excludedOriginals.length !== 1 ? 's' : ''} de-emphasized in
-                tailored version
+                {excludedOriginals.length !== 1 ? 's' : ''} de-emphasized in tailored version
               </p>
               <div className="grid gap-2 md:grid-cols-2">
                 {excludedOriginals.map((exp, idx) => (
                   <div
                     key={`excluded-${exp.company}-${idx}`}
-                    className="rounded-md border border-dashed border-muted-foreground/20 px-3 py-2 opacity-50"
+                    className="border-muted-foreground/20 rounded-md border border-dashed px-3 py-2 opacity-50"
                   >
                     <p className="text-xs font-medium">{exp.title}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {exp.company} | {formatShortDate(exp.startDate)} -{' '}
                       {formatShortDate(exp.endDate)}
                     </p>
@@ -587,17 +512,12 @@ function ProjectsComparison({
     original: OriginalProject | null;
     tailored: TailoredProject;
   }> = tailored.map((t) => {
-    const match = original.find(
-      (o) => o.name.toLowerCase() === t.name.toLowerCase(),
-    );
+    const match = original.find((o) => o.name.toLowerCase() === t.name.toLowerCase());
     return { original: match ?? null, tailored: t };
   });
 
   const excludedOriginals = original.filter(
-    (o) =>
-      !tailored.some(
-        (t) => t.name.toLowerCase() === o.name.toLowerCase(),
-      ),
+    (o) => !tailored.some((t) => t.name.toLowerCase() === o.name.toLowerCase()),
   );
 
   return (
@@ -605,7 +525,7 @@ function ProjectsComparison({
       title="Projects"
       icon={<FileText className="h-4 w-4 text-emerald-500" />}
       badge={
-        <Badge variant="default" className="text-[10px] bg-emerald-600">
+        <Badge variant="default" className="bg-emerald-600 text-[10px]">
           {tailored.length} featured
         </Badge>
       }
@@ -622,17 +542,13 @@ function ProjectsComparison({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {orig?.description || 'Not on file'}
                   </p>
                   {orig && (orig.skills ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {(orig.skills ?? []).map((s) => (
-                        <Badge
-                          key={s}
-                          variant="secondary"
-                          className="text-[10px]"
-                        >
+                        <Badge key={s} variant="secondary" className="text-[10px]">
                           {s}
                         </Badge>
                       ))}
@@ -641,10 +557,7 @@ function ProjectsComparison({
                   {orig && (orig.highlights ?? []).length > 0 && (
                     <ul className="space-y-0.5 pl-4">
                       {(orig.highlights ?? []).map((h, hIdx) => (
-                        <li
-                          key={hIdx}
-                          className="text-xs text-muted-foreground list-disc"
-                        >
+                        <li key={hIdx} className="text-muted-foreground list-disc text-xs">
                           {h}
                         </li>
                       ))}
@@ -656,20 +569,14 @@ function ProjectsComparison({
               {/* Tailored */}
               <Card className="border-sky-300 bg-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold">
-                    {tail.name}
-                  </CardTitle>
+                  <CardTitle className="text-sm font-semibold">{tail.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-xs">{tail.description}</p>
                   {(tail.skills ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {(tail.skills ?? []).map((s) => (
-                        <Badge
-                          key={s}
-                          variant="secondary"
-                          className="text-[10px]"
-                        >
+                        <Badge key={s} variant="secondary" className="text-[10px]">
                           {s}
                         </Badge>
                       ))}
@@ -678,7 +585,7 @@ function ProjectsComparison({
                   {(tail.highlights ?? []).length > 0 && (
                     <ul className="space-y-0.5 pl-4">
                       {(tail.highlights ?? []).map((h, hIdx) => (
-                        <li key={hIdx} className="text-xs list-disc">
+                        <li key={hIdx} className="list-disc text-xs">
                           {h}
                         </li>
                       ))}
@@ -694,7 +601,7 @@ function ProjectsComparison({
         {excludedOriginals.length > 0 && (
           <>
             <Separator />
-            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 px-1">
+            <p className="text-muted-foreground flex items-center gap-1.5 px-1 text-xs font-medium">
               <Minus className="h-3 w-3" />
               {excludedOriginals.length} project
               {excludedOriginals.length !== 1 ? 's' : ''} not featured
@@ -712,10 +619,10 @@ function ProjectsComparison({
 
 function DiffLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-lg border border-muted bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-      <span className="font-medium text-foreground">Legend:</span>
+    <div className="border-muted bg-muted/30 text-muted-foreground flex flex-wrap items-center gap-4 rounded-lg border px-4 py-2.5 text-xs">
+      <span className="text-foreground font-medium">Legend:</span>
       <span className="flex items-center gap-1.5">
-        <span className="inline-block h-3 w-6 rounded border border-muted bg-background" />
+        <span className="border-muted bg-background inline-block h-3 w-6 rounded border" />
         Original
       </span>
       <span className="flex items-center gap-1.5">
@@ -723,11 +630,11 @@ function DiffLegend() {
         Tailored
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-emerald-400 ring-offset-1 bg-emerald-100" />
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-100 ring-2 ring-emerald-400 ring-offset-1" />
         Newly emphasized
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+        <span className="bg-muted-foreground/30 inline-block h-2.5 w-2.5 rounded-full" />
         De-emphasized
       </span>
     </div>
@@ -749,10 +656,7 @@ export function ResumeComparisonView({
     <div className="space-y-6">
       <DiffLegend />
 
-      <SummaryComparison
-        original={original.summary}
-        tailored={tailored.summary}
-      />
+      <SummaryComparison original={original.summary} tailored={tailored.summary} />
 
       <Separator />
 
@@ -768,8 +672,7 @@ export function ResumeComparisonView({
         tailored={tailored.experienceBlocks ?? []}
       />
 
-      {((original.projects ?? []).length > 0 ||
-        (tailored.projectHighlights ?? []).length > 0) && (
+      {((original.projects ?? []).length > 0 || (tailored.projectHighlights ?? []).length > 0) && (
         <>
           <Separator />
           <ProjectsComparison

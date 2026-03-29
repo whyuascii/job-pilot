@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, avg, count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
 import { applications, jobs, jobScores, tailoredResumes } from '@job-pilot/db/schema';
-import { eq, and, count, avg, desc, sql } from 'drizzle-orm';
 import { getTenantContext } from '~/lib/api';
 
 export type ActivityItem = {
@@ -27,7 +27,10 @@ export const getDashboardStats = createServerFn({ method: 'GET' }).handler(async
   // Try cache first (TTL: 5 min)
   const cacheKey = `dashboard:${ctx.tenantId}`;
   const { cacheGet, cacheSet } = await import('~/lib/cache');
-  const cached = await cacheGet<ReturnType<typeof getDashboardStats> extends Promise<infer R> ? R : never>(cacheKey);
+  const cached =
+    await cacheGet<ReturnType<typeof getDashboardStats> extends Promise<infer R> ? R : never>(
+      cacheKey,
+    );
   if (cached) return cached;
 
   // Count active applications (not rejected or withdrawn)
@@ -38,7 +41,7 @@ export const getDashboardStats = createServerFn({ method: 'GET' }).handler(async
       and(
         eq(applications.tenantId, ctx.tenantId),
         sql`${applications.status} NOT IN ('rejected', 'withdrawn')`,
-      )
+      ),
     );
 
   // Count total jobs
@@ -56,7 +59,7 @@ export const getDashboardStats = createServerFn({ method: 'GET' }).handler(async
       and(
         eq(jobs.tenantId, ctx.tenantId),
         sql`${jobScores.recommendation} IN ('strong_apply', 'apply')`,
-      )
+      ),
     );
 
   // Count tailored resumes
@@ -76,7 +79,7 @@ export const getDashboardStats = createServerFn({ method: 'GET' }).handler(async
         sql`${applications.status} != 'discovered'`,
         sql`${applications.status} != 'shortlisted'`,
         sql`${applications.status} != 'resume_generated'`,
-      )
+      ),
     );
 
   const interviewCount = await db
@@ -85,15 +88,16 @@ export const getDashboardStats = createServerFn({ method: 'GET' }).handler(async
     .where(
       and(
         eq(applications.tenantId, ctx.tenantId),
-        sql`${applications.status} IN (${sql.join(interviewStages.map(s => sql`${s}`), sql`, `)})`,
-      )
+        sql`${applications.status} IN (${sql.join(
+          interviewStages.map((s) => sql`${s}`),
+          sql`, `,
+        )})`,
+      ),
     );
 
   const totalApplied = appliedCount[0]?.count ?? 0;
   const totalInterviews = interviewCount[0]?.count ?? 0;
-  const successRate = totalApplied > 0
-    ? Math.round((totalInterviews / totalApplied) * 100)
-    : 0;
+  const successRate = totalApplied > 0 ? Math.round((totalInterviews / totalApplied) * 100) : 0;
 
   // --- Recent Activity ---
   // Recent jobs added

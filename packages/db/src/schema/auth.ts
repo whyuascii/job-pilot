@@ -4,7 +4,9 @@ import { users } from './tenants.js';
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey().$defaultFn(createId),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   ipAddress: varchar('ip_address', { length: 45 }),
@@ -15,7 +17,9 @@ export const sessions = pgTable('sessions', {
 
 export const accounts = pgTable('accounts', {
   id: text('id').primaryKey().$defaultFn(createId),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull(),
   providerId: varchar('provider_id', { length: 50 }).notNull(),
   accessToken: text('access_token'),

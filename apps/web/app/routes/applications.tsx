@@ -1,33 +1,34 @@
 import React from 'react';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
-  ClipboardList,
-  Plane,
+  ArrowRight,
   Building2,
-  MapPin,
   Calendar,
   ChevronRight,
-  ArrowRight,
+  ClipboardList,
+  MapPin,
+  Plane,
   Trash2,
   X,
 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
   Button,
   Card,
   CardContent,
-  Badge,
   Separator,
   Skeleton,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
+  StatusBadge,
+  statusLabels,
 } from '@job-pilot/ui';
-import { StatusBadge, statusLabels } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
 // ---------------------------------------------------------------------------
@@ -193,7 +194,13 @@ function formatCompensation(min?: number | null, max?: number | null): string | 
 // ApplicationCard
 // ---------------------------------------------------------------------------
 
-function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequestDelete: (id: string) => void }) {
+function ApplicationCard({
+  app,
+  onRequestDelete,
+}: {
+  app: Application;
+  onRequestDelete: (id: string) => void;
+}) {
   const router = useRouter();
   const [changing, setChanging] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -225,22 +232,27 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
           {/* Left: Job info */}
           <div className="min-w-0 flex-1 space-y-1">
             {app.job?.id ? (
-              <Link to="/jobs/$jobId" params={{ jobId: app.job.id }} className="truncate font-semibold leading-tight hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+              <Link
+                to="/jobs/$jobId"
+                params={{ jobId: app.job.id }}
+                className="hover:text-primary truncate font-semibold leading-tight transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {app.job.title}
               </Link>
             ) : (
               <p className="truncate font-semibold leading-tight">Unknown Position</p>
             )}
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
               <Building2 className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{app.job?.company ?? 'Unknown Company'}</span>
             </div>
             {app.job?.location && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">{app.job.location}</span>
                 {app.job.remotePolicy && (
-                  <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">
                     {app.job.remotePolicy}
                   </Badge>
                 )}
@@ -252,7 +264,7 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
           <div className="flex shrink-0 flex-col items-end gap-1.5">
             <StatusBadge status={status} />
             {isApplied && app.appliedAt && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <Calendar className="h-3 w-3" />
                 <span>{timeAgo(app.appliedAt)}</span>
               </div>
@@ -262,7 +274,7 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
 
         {/* Compensation info */}
         {app.job && formatCompensation(app.job.compensationMin, app.job.compensationMax) && (
-          <p className="mt-2 text-xs font-medium text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-xs font-medium">
             {formatCompensation(app.job.compensationMin, app.job.compensationMax)}
           </p>
         )}
@@ -284,7 +296,7 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive h-7 w-7"
                 onClick={() => onRequestDelete(app.id)}
                 aria-label="Remove application"
               >
@@ -293,7 +305,7 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
             </div>
           ) : (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">Move to:</p>
+              <p className="text-muted-foreground text-xs font-medium">Move to:</p>
               <div className="flex flex-wrap gap-1.5">
                 {availableStatuses.map((ns) => (
                   <Button
@@ -319,7 +331,7 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-muted-foreground"
+                  className="text-muted-foreground h-7 text-xs"
                   onClick={() => setChanging(false)}
                   disabled={loading}
                 >
@@ -338,15 +350,21 @@ function ApplicationCard({ app, onRequestDelete }: { app: Application; onRequest
 // PipelineView (horizontal kanban-style)
 // ---------------------------------------------------------------------------
 
-function PipelineView({ applications, onRequestDelete }: { applications: Application[]; onRequestDelete: (id: string) => void }) {
+function PipelineView({
+  applications,
+  onRequestDelete,
+}: {
+  applications: Application[];
+  onRequestDelete: (id: string) => void;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {PIPELINE_COLUMNS.map((col) => {
         const colApps = applications.filter((a) =>
-          col.statuses.includes(a.status as ApplicationStatus)
+          col.statuses.includes(a.status as ApplicationStatus),
         );
         return (
-          <div key={col.title} className="flex flex-col rounded-xl border bg-muted/30">
+          <div key={col.title} className="bg-muted/30 flex flex-col rounded-xl border">
             {/* Column header */}
             <div className="flex items-center justify-between border-b px-4 py-3">
               <h3 className="text-sm font-semibold">{col.title}</h3>
@@ -357,11 +375,11 @@ function PipelineView({ applications, onRequestDelete }: { applications: Applica
             {/* Column body */}
             <div className="flex-1 space-y-2 overflow-y-auto p-3" style={{ maxHeight: '60vh' }}>
               {colApps.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">
-                  No applications
-                </p>
+                <p className="text-muted-foreground py-8 text-center text-xs">No applications</p>
               ) : (
-                colApps.map((app) => <ApplicationCard key={app.id} app={app} onRequestDelete={onRequestDelete} />)
+                colApps.map((app) => (
+                  <ApplicationCard key={app.id} app={app} onRequestDelete={onRequestDelete} />
+                ))
               )}
             </div>
           </div>
@@ -401,19 +419,18 @@ function ListView({
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 shadow">
-        <Plane className="mb-3 h-10 w-10 text-muted-foreground/20" />
-        <p className="text-sm text-muted-foreground">
-          No applications in this category.
-        </p>
+      <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-16 shadow">
+        <Plane className="text-muted-foreground/20 mb-3 h-10 w-10" />
+        <p className="text-muted-foreground text-sm">No applications in this category.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">
-        Showing {visibleApps.length} of {filtered.length} application{filtered.length !== 1 ? 's' : ''}
+      <p className="text-muted-foreground text-sm">
+        Showing {visibleApps.length} of {filtered.length} application
+        {filtered.length !== 1 ? 's' : ''}
       </p>
       {visibleApps.map((app) => (
         <ApplicationCard key={app.id} app={app} onRequestDelete={onRequestDelete} />
@@ -467,12 +484,12 @@ function ApplicationsPage() {
           </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 shadow">
-          <ClipboardList className="mb-4 h-16 w-16 text-muted-foreground/20" />
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-20 shadow">
+          <ClipboardList className="text-muted-foreground/20 mb-4 h-16 w-16" />
           <h3 className="mb-1 text-lg font-semibold">No flights logged</h3>
-          <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
-            Start applying to jobs to see your application pipeline here. Browse
-            available opportunities to get started.
+          <p className="text-muted-foreground mb-6 max-w-md text-center text-sm">
+            Start applying to jobs to see your application pipeline here. Browse available
+            opportunities to get started.
           </p>
           <Button asChild>
             <Link to="/jobs">
@@ -488,19 +505,28 @@ function ApplicationsPage() {
   // Summary stats
   const totalCount = applications.length;
   const activeCount = applications.filter(
-    (a) => !['rejected', 'withdrawn', 'offer'].includes(a.status)
+    (a) => !['rejected', 'withdrawn', 'offer'].includes(a.status),
   ).length;
   const offerCount = applications.filter((a) => a.status === 'offer').length;
 
   return (
     <div className="space-y-6">
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Application?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove {deletingApp ? `"${deletingApp.job?.title ?? 'this application'}" at ${deletingApp.job?.company ?? 'unknown company'}` : 'this application'} from your flight log. This cannot be undone.
+              This will permanently remove{' '}
+              {deletingApp
+                ? `"${deletingApp.job?.title ?? 'this application'}" at ${deletingApp.job?.company ?? 'unknown company'}`
+                : 'this application'}{' '}
+              from your flight log. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -526,17 +552,17 @@ function ApplicationsPage() {
 
         {/* Summary badges */}
         <div className="flex items-center gap-3">
-          <div className="rounded-lg border bg-card px-3 py-1.5 text-center shadow-sm">
-            <p className="text-xs text-muted-foreground">Total</p>
+          <div className="bg-card rounded-lg border px-3 py-1.5 text-center shadow-sm">
+            <p className="text-muted-foreground text-xs">Total</p>
             <p className="text-lg font-bold">{totalCount}</p>
           </div>
-          <div className="rounded-lg border bg-card px-3 py-1.5 text-center shadow-sm">
-            <p className="text-xs text-muted-foreground">Active</p>
+          <div className="bg-card rounded-lg border px-3 py-1.5 text-center shadow-sm">
+            <p className="text-muted-foreground text-xs">Active</p>
             <p className="text-lg font-bold text-blue-600">{activeCount}</p>
           </div>
           {offerCount > 0 && (
-            <div className="rounded-lg border bg-card px-3 py-1.5 text-center shadow-sm">
-              <p className="text-xs text-muted-foreground">Offers</p>
+            <div className="bg-card rounded-lg border px-3 py-1.5 text-center shadow-sm">
+              <p className="text-muted-foreground text-xs">Offers</p>
               <p className="text-lg font-bold text-emerald-600">{offerCount}</p>
             </div>
           )}
@@ -550,18 +576,15 @@ function ApplicationsPage() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.label;
             const count = tab.statuses
-              ? applications.filter((a) =>
-                  tab.statuses!.includes(a.status as ApplicationStatus)
-                ).length
+              ? applications.filter((a) => tab.statuses!.includes(a.status as ApplicationStatus))
+                  .length
               : applications.length;
             return (
               <button
                 key={tab.label}
                 onClick={() => setActiveTab(tab.label)}
                 className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
+                  isActive ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-accent'
                 }`}
               >
                 {tab.label}
@@ -610,7 +633,11 @@ function ApplicationsPage() {
       {viewMode === 'pipeline' ? (
         <PipelineView applications={applications} onRequestDelete={setDeletingId} />
       ) : (
-        <ListView applications={applications} activeTab={activeTab} onRequestDelete={setDeletingId} />
+        <ListView
+          applications={applications}
+          activeTab={activeTab}
+          onRequestDelete={setDeletingId}
+        />
       )}
     </div>
   );

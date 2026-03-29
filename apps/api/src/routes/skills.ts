@@ -1,7 +1,7 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { skills, candidates } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { candidates, skills } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 const router = Router();
@@ -23,7 +23,9 @@ router.get('/', async (_req, res, next) => {
       where: eq(skills.candidateId, candidate.id),
     });
     res.json(list);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/skills
@@ -32,15 +34,20 @@ router.post('/', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const data = req.body;
-    const [skill] = await db.insert(skills).values({
-      candidateId: candidate.id,
-      name: data.name,
-      category: data.category || 'tool',
-      confidenceScore: data.confidenceScore ?? 50,
-      yearsUsed: data.yearsUsed ?? null,
-    }).returning();
+    const [skill] = await db
+      .insert(skills)
+      .values({
+        candidateId: candidate.id,
+        name: data.name,
+        category: data.category || 'tool',
+        confidenceScore: data.confidenceScore ?? 50,
+        yearsUsed: data.yearsUsed ?? null,
+      })
+      .returning();
     res.json(skill);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/skills/update
@@ -49,13 +56,16 @@ router.post('/update', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const { skillId, ...data } = req.body;
-    const [updated] = await db.update(skills)
+    const [updated] = await db
+      .update(skills)
       .set(data)
       .where(and(eq(skills.id, skillId), eq(skills.candidateId, candidate.id)))
       .returning();
     if (!updated) throw new Error('Skill not found');
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/skills/delete
@@ -64,9 +74,13 @@ router.post('/delete', async (req, res, next) => {
     const ctx = getTenantContext();
     const candidate = await getCurrentCandidate(ctx);
     const { skillId } = req.body;
-    await db.delete(skills).where(and(eq(skills.id, skillId), eq(skills.candidateId, candidate.id)));
+    await db
+      .delete(skills)
+      .where(and(eq(skills.id, skillId), eq(skills.candidateId, candidate.id)));
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/skills/bulk
@@ -84,7 +98,9 @@ router.post('/bulk', async (req, res, next) => {
     }));
     const result = await db.insert(skills).values(values).returning();
     res.json(result);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

@@ -28,12 +28,12 @@ docker compose -f docker/docker-compose.yml ps
 
 You should see `jobpilot-postgres`, `jobpilot-redis`, and `jobpilot-minio` all healthy.
 
-| Service    | Port  | Purpose                          |
-|------------|-------|----------------------------------|
-| PostgreSQL | 5432  | Database (pgvector enabled)      |
-| Redis      | 6379  | Caching (optional, degrades gracefully) |
-| MinIO      | 9000  | S3-compatible file storage       |
-| MinIO UI   | 9001  | MinIO admin console              |
+| Service    | Port | Purpose                                 |
+| ---------- | ---- | --------------------------------------- |
+| PostgreSQL | 5432 | Database (pgvector enabled)             |
+| Redis      | 6379 | Caching (optional, degrades gracefully) |
+| MinIO      | 9000 | S3-compatible file storage              |
+| MinIO UI   | 9001 | MinIO admin console                     |
 
 ---
 
@@ -91,10 +91,10 @@ pnpm dev
 
 This starts both servers via Turborepo:
 
-| App      | URL                        | What it runs              |
-|----------|----------------------------|---------------------------|
-| Frontend | http://localhost:5173       | Vite SPA (React)          |
-| API      | http://localhost:3001       | Express REST API          |
+| App      | URL                   | What it runs     |
+| -------- | --------------------- | ---------------- |
+| Frontend | http://localhost:5173 | Vite SPA (React) |
+| API      | http://localhost:3001 | Express REST API |
 
 The Vite dev server proxies all `/api/*` requests to Express automatically.
 
@@ -117,26 +117,33 @@ The Vite dev server proxies all `/api/*` requests to Express automatically.
 Navigate to **Pilot Profile** in the sidebar.
 
 Fill in your professional details:
+
 - **Headline** and **Summary**
 - **Current title**, **company**, **location**
 - **Years of experience**, **salary range**, **remote preference**
 
 ### Add Skills
+
 Scroll to the Skills section and add your technical skills with:
+
 - Category (language, framework, tool, platform, methodology)
 - Confidence score (0-100)
 - Years used
 
 ### Add Experience
+
 Add your work history:
+
 - Company, title, dates
 - Description and bullet points
 - Skills used at each role
 
 ### Add Projects
+
 Add portfolio projects with descriptions, URLs, and skills used.
 
 ### Add Preferences
+
 Set job search preferences (target roles, locations, salary expectations, etc.)
 
 ---
@@ -144,12 +151,14 @@ Set job search preferences (target roles, locations, salary expectations, etc.)
 ## Step 8: Add Jobs
 
 ### Option A: Manual Entry (no API key needed)
+
 1. Go to **Radar** (Jobs) in the sidebar
 2. Click **"Add Job"**
 3. Fill in company, title, location, compensation, required skills, etc.
 4. Save
 
 ### Option B: Add from URL (requires ANTHROPIC_API_KEY)
+
 1. Go to **Radar** (Jobs)
 2. Click **"Add from URL"**
 3. Paste a job posting URL
@@ -161,6 +170,7 @@ Set job search preferences (target roles, locations, salary expectations, etc.)
 ## Step 9: Score Jobs (requires ANTHROPIC_API_KEY)
 
 If you have an API key configured:
+
 - Jobs added via URL are scored automatically
 - For manually-added jobs, click **"Score"** on the job detail page
 - Scoring runs a two-pass AI analysis (fit score + competitiveness score)
@@ -176,6 +186,7 @@ If you have an API key configured:
    - Discovered → Applied → Phone Screen → Technical → Onsite → Offer → Accepted/Rejected
 
 ### Update Status
+
 1. Go to **Flight Log** (Applications)
 2. Click into an application
 3. Change the status dropdown
@@ -186,26 +197,31 @@ If you have an API key configured:
 ## Step 11: Explore Other Features
 
 ### Answer Bank (Hangar)
+
 - Save reusable answers to common application questions
 - Organize by category (behavioral, technical, etc.)
 
 ### Analytics (Flight Analytics)
+
 - View your application funnel
 - Track conversion rates by stage
 - See score correlations with outcomes
 - Company response rates
 
 ### Resume Management
+
 - Upload resumes (stored in MinIO)
 - Set a preferred resume
 - AI resume tailoring per job (requires API key)
 - Side-by-side comparison view
 
 ### Settings (Control Tower)
+
 - Configure API keys (encrypted at rest)
 - Set up job sources for syncing
 
 ### Notifications
+
 - In-app notification bell
 - Alerts for status changes and AI completions
 
@@ -213,32 +229,33 @@ If you have an API key configured:
 
 ## What Works Without an API Key
 
-| Feature                        | Works? |
-|--------------------------------|--------|
-| Signup / Login                 | Yes    |
-| Profile management             | Yes    |
-| Manual job entry               | Yes    |
-| Application tracking           | Yes    |
-| Status pipeline                | Yes    |
-| Answer bank                    | Yes    |
-| Dashboard stats                | Yes    |
-| Analytics / funnel             | Yes    |
-| Resume upload / download       | Yes    |
-| Notifications                  | Yes    |
-| Job URL ingestion (AI parse)   | No - needs ANTHROPIC_API_KEY |
-| Job scoring                    | No - needs ANTHROPIC_API_KEY |
-| Resume parsing from PDF        | No - needs ANTHROPIC_API_KEY |
-| Resume tailoring               | No - needs ANTHROPIC_API_KEY |
-| Answer AI suggestions          | No - needs ANTHROPIC_API_KEY |
-| Email status detection         | No - needs ANTHROPIC_API_KEY |
-| Gmail integration              | No - needs Google OAuth credentials |
-| Skill gap analysis             | Yes (deterministic, no AI) |
+| Feature                      | Works?                              |
+| ---------------------------- | ----------------------------------- |
+| Signup / Login               | Yes                                 |
+| Profile management           | Yes                                 |
+| Manual job entry             | Yes                                 |
+| Application tracking         | Yes                                 |
+| Status pipeline              | Yes                                 |
+| Answer bank                  | Yes                                 |
+| Dashboard stats              | Yes                                 |
+| Analytics / funnel           | Yes                                 |
+| Resume upload / download     | Yes                                 |
+| Notifications                | Yes                                 |
+| Job URL ingestion (AI parse) | No - needs ANTHROPIC_API_KEY        |
+| Job scoring                  | No - needs ANTHROPIC_API_KEY        |
+| Resume parsing from PDF      | No - needs ANTHROPIC_API_KEY        |
+| Resume tailoring             | No - needs ANTHROPIC_API_KEY        |
+| Answer AI suggestions        | No - needs ANTHROPIC_API_KEY        |
+| Email status detection       | No - needs ANTHROPIC_API_KEY        |
+| Gmail integration            | No - needs Google OAuth credentials |
+| Skill gap analysis           | Yes (deterministic, no AI)          |
 
 ---
 
 ## Troubleshooting
 
 ### "Cannot connect to database"
+
 ```bash
 docker compose -f docker/docker-compose.yml ps
 # Verify postgres is healthy, then:
@@ -246,24 +263,31 @@ docker compose -f docker/docker-compose.yml logs postgres
 ```
 
 ### Auth not working / session not persisting
+
 Make sure `BETTER_AUTH_SECRET` is set in `.env` and both servers are restarted.
 
 ### Redis warnings in console
+
 Redis is optional. If it's not running, the app falls back to no caching. This is fine for local testing.
 
 ### MinIO / resume upload failing
+
 Check MinIO is running and the `job-pilot` bucket was created:
+
 ```bash
 docker compose -f docker/docker-compose.yml logs minio-setup
 ```
+
 You can also visit http://localhost:9001 (minioadmin/minioadmin) to verify.
 
 ### Port conflicts
+
 - Frontend: Set `VITE_PORT` or edit `apps/web/vite.config.ts`
 - API: Set `API_PORT` env var (default 3001)
 - Postgres: Change port mapping in `docker/docker-compose.yml`
 
 ### Resetting everything
+
 ```bash
 docker compose -f docker/docker-compose.yml down -v   # Wipe volumes
 docker compose -f docker/docker-compose.yml up -d      # Fresh start
@@ -281,6 +305,7 @@ pnpm db:seed
 ```
 
 This creates a demo workspace with:
+
 - 15 skills, 3 experience blocks, 1 project, 6 preferences
 - 3 sample jobs (Vercel, Stripe, Anthropic) with pre-computed scores
 - 1 sample application

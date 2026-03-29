@@ -1,9 +1,9 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { candidates } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { cacheDelete, cacheGet, cacheSet } from '../lib/cache.js';
 import { getTenantContext } from '../lib/context.js';
-import { cacheGet, cacheSet, cacheDelete } from '../lib/cache.js';
 
 const router = Router();
 
@@ -13,20 +13,22 @@ router.get('/', async (_req, res, next) => {
     const ctx = getTenantContext();
     const cacheKey = `candidate:${ctx.tenantId}:${ctx.userId}`;
     const cached = await cacheGet(cacheKey);
-    if (cached) { res.json(cached); return; }
+    if (cached) {
+      res.json(cached);
+      return;
+    }
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) throw new Error('No candidate profile found.');
 
     await cacheSet(cacheKey, candidate, 600);
     res.json(candidate);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/candidates
@@ -36,10 +38,7 @@ router.post('/', async (req, res, next) => {
     const data = req.body;
 
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) throw new Error('No candidate profile found.');
@@ -50,11 +49,13 @@ router.post('/', async (req, res, next) => {
         email: data.email !== undefined ? data.email : candidate.email,
         phone: data.phone !== undefined ? data.phone : candidate.phone,
         legalName: data.legalName !== undefined ? data.legalName : candidate.legalName,
-        preferredName: data.preferredName !== undefined ? data.preferredName : candidate.preferredName,
+        preferredName:
+          data.preferredName !== undefined ? data.preferredName : candidate.preferredName,
         headline: data.headline ?? candidate.headline,
         summary: data.summary ?? candidate.summary,
         currentTitle: data.currentTitle ?? candidate.currentTitle,
-        currentCompany: data.currentCompany !== undefined ? data.currentCompany : candidate.currentCompany,
+        currentCompany:
+          data.currentCompany !== undefined ? data.currentCompany : candidate.currentCompany,
         location: data.location ?? candidate.location,
         remotePreference: data.remotePreference ?? candidate.remotePreference,
         yearsOfExperience: data.yearsOfExperience ?? candidate.yearsOfExperience,
@@ -66,7 +67,8 @@ router.post('/', async (req, res, next) => {
         githubUrl: data.githubUrl !== undefined ? data.githubUrl : candidate.githubUrl,
         websiteUrl: data.websiteUrl !== undefined ? data.websiteUrl : candidate.websiteUrl,
         portfolioUrl: data.portfolioUrl !== undefined ? data.portfolioUrl : candidate.portfolioUrl,
-        avoidedCompanies: data.avoidedCompanies !== undefined ? data.avoidedCompanies : candidate.avoidedCompanies,
+        avoidedCompanies:
+          data.avoidedCompanies !== undefined ? data.avoidedCompanies : candidate.avoidedCompanies,
         updatedAt: new Date(),
       })
       .where(eq(candidates.id, candidate.id))
@@ -74,7 +76,9 @@ router.post('/', async (req, res, next) => {
 
     await cacheDelete(`candidate:${ctx.tenantId}:${ctx.userId}`);
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

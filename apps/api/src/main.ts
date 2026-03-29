@@ -1,6 +1,6 @@
-import { config } from 'dotenv';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { resolve, dirname } from 'path';
+import { config } from 'dotenv';
 
 // Load .env from monorepo root BEFORE any app code evaluates
 const __dirname = dirname(fileURLToPath(import.meta.url));

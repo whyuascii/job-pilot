@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { eq } from 'drizzle-orm';
-import { db, tenants, users, candidates } from '@job-pilot/db';
+import { candidates, db, tenants, users } from '@job-pilot/db';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -106,10 +106,7 @@ export const auth = betterAuth({
             });
 
             // 2. Update the user with the new tenantId and admin role
-            await db
-              .update(users)
-              .set({ tenantId, role: 'admin' })
-              .where(eq(users.id, user.id));
+            await db.update(users).set({ tenantId, role: 'admin' }).where(eq(users.id, user.id));
 
             // 3. Create a bare candidate profile
             await db.insert(candidates).values({

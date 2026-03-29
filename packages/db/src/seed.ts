@@ -1,18 +1,18 @@
 import { db } from './client.js';
-import { createId } from './utils.js';
 import {
-  tenants,
-  users,
+  applications,
   candidates,
-  skills,
   experienceBlocks,
-  projects,
-  preferences,
-  jobSources,
   jobs,
   jobScores,
-  applications,
+  jobSources,
+  preferences,
+  projects,
+  skills,
+  tenants,
+  users,
 } from './schema/index.js';
+import { createId } from './utils.js';
 
 async function seed() {
   console.log('🌱 Seeding database...\n');
@@ -60,7 +60,8 @@ async function seed() {
     userId,
     tenantId,
     headline: 'Senior Full-Stack Engineer',
-    summary: 'Experienced full-stack developer with 8+ years building web applications. Passionate about TypeScript, React, and cloud architecture. Looking for a senior or staff-level role at a product-focused company.',
+    summary:
+      'Experienced full-stack developer with 8+ years building web applications. Passionate about TypeScript, React, and cloud architecture. Looking for a senior or staff-level role at a product-focused company.',
     yearsOfExperience: 8,
     currentTitle: 'Senior Software Engineer',
     currentCompany: 'TechCorp Inc.',
@@ -113,7 +114,8 @@ async function seed() {
     location: 'San Francisco, CA',
     startDate: new Date('2021-03-01'),
     current: true,
-    description: 'Leading frontend architecture and full-stack development for the core product platform.',
+    description:
+      'Leading frontend architecture and full-stack development for the core product platform.',
     bullets: [
       'Led migration from JavaScript to TypeScript across 200+ files, reducing production bugs by 40%',
       'Architected and implemented real-time collaboration features serving 50K+ daily users',
@@ -167,7 +169,8 @@ async function seed() {
   await db.insert(projects).values({
     candidateId,
     name: 'Open Source Component Library',
-    description: 'A React component library with 50+ accessible, customizable components. 2K+ GitHub stars.',
+    description:
+      'A React component library with 50+ accessible, customizable components. 2K+ GitHub stars.',
     url: 'https://github.com/demo/components',
     skills: ['TypeScript', 'React', 'Tailwind CSS', 'Storybook'],
     highlights: [
@@ -180,10 +183,18 @@ async function seed() {
 
   // Create preferences
   const prefsData = [
-    { key: 'target_cities', value: 'San Francisco, New York, Seattle, Austin', category: 'location' as const },
+    {
+      key: 'target_cities',
+      value: 'San Francisco, New York, Seattle, Austin',
+      category: 'location' as const,
+    },
     { key: 'open_to_relocation', value: 'yes', category: 'location' as const },
     { key: 'min_salary', value: '180000', category: 'salary' as const },
-    { key: 'target_roles', value: 'Senior Engineer, Staff Engineer, Tech Lead', category: 'role' as const },
+    {
+      key: 'target_roles',
+      value: 'Senior Engineer, Staff Engineer, Tech Lead',
+      category: 'role' as const,
+    },
     { key: 'preferred_company_size', value: 'startup, mid-size', category: 'company' as const },
     { key: 'industries', value: 'SaaS, Developer Tools, AI/ML', category: 'company' as const },
   ];
@@ -253,8 +264,10 @@ async function seed() {
       sponsorship: 'yes' as const,
       applyUrl: 'https://stripe.com/jobs',
       sourceUrl: 'https://stripe.com/jobs/staff-swe-dashboard',
-      rawDescription: 'Join the Stripe Dashboard team to build the interface millions of businesses use...',
-      parsedDescription: 'Staff Software Engineer on Stripe Dashboard. Build financial tools at scale.',
+      rawDescription:
+        'Join the Stripe Dashboard team to build the interface millions of businesses use...',
+      parsedDescription:
+        'Staff Software Engineer on Stripe Dashboard. Build financial tools at scale.',
     },
     {
       id: createId(),
@@ -292,7 +305,8 @@ async function seed() {
     const fitScore = [88, 72, 85][i];
     const compScore = [82, 65, 78][i];
     const overallScore = Math.round(fitScore * 0.5 + compScore * 0.5);
-    const recommendation = overallScore >= 75 ? 'strong_apply' : overallScore >= 60 ? 'apply' : 'maybe';
+    const recommendation =
+      overallScore >= 75 ? 'strong_apply' : overallScore >= 60 ? 'apply' : 'maybe';
 
     await db.insert(jobScores).values({
       jobId: job.id,
@@ -318,7 +332,7 @@ async function seed() {
       },
       recommendation: recommendation as 'strong_apply' | 'apply' | 'maybe' | 'skip',
       reasoning: [
-        'Strong match: TypeScript/React expertise aligns perfectly with Vercel\'s stack. Remote-friendly and compensation within range.',
+        "Strong match: TypeScript/React expertise aligns perfectly with Vercel's stack. Remote-friendly and compensation within range.",
         'Good match but Ruby is a gap. Compensation is excellent. Strong frontend skills compensate for missing backend experience.',
         'Great cultural and technical fit. Python experience plus TypeScript/React covers the stack. AI domain is a strong interest area.',
       ][i],

@@ -1,38 +1,39 @@
 import * as React from 'react';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  Button,
+  Bookmark,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  Sparkles,
+  User,
+} from 'lucide-react';
+import {
   Badge,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
+  Button,
   Card,
   CardContent,
   Separator,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
 } from '@job-pilot/ui';
-import {
-  Copy,
-  Check,
-  FileText,
-  MessageSquare,
-  User,
-  RefreshCw,
-  Loader2,
-  Send,
-  Bookmark,
-  Download,
-  Sparkles,
-} from 'lucide-react';
-import { api } from '~/lib/api-client';
 import { EmailComposeDialog } from '~/components/email-compose-dialog';
 import { ResumeInterview } from '~/components/resume-interview';
+import { api } from '~/lib/api-client';
+import { captureEvent } from '~/lib/posthog';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -83,13 +84,17 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-md border bg-muted/30 text-sm">
+    <div className="bg-muted/30 flex items-center justify-between rounded-md border px-3 py-2 text-sm">
       <div className="min-w-0">
-        <span className="text-xs text-muted-foreground block">{label}</span>
-        <span className="font-medium truncate block">{text}</span>
+        <span className="text-muted-foreground block text-xs">{label}</span>
+        <span className="block truncate font-medium">{text}</span>
       </div>
-      <Button variant="ghost" size="sm" className="shrink-0 ml-2 h-7 w-7 p-0" onClick={handleCopy}>
-        {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+      <Button variant="ghost" size="sm" className="ml-2 h-7 w-7 shrink-0 p-0" onClick={handleCopy}>
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-emerald-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
       </Button>
     </div>
   );
@@ -103,8 +108,10 @@ function ProfileClipboardTab({ candidate }: { candidate: CandidateProfile | null
   if (!candidate) {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <User className="h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">No candidate profile found. Complete your profile first.</p>
+        <User className="text-muted-foreground/40 h-8 w-8" />
+        <p className="text-muted-foreground text-sm">
+          No candidate profile found. Complete your profile first.
+        </p>
       </div>
     );
   }
@@ -122,19 +129,29 @@ function ProfileClipboardTab({ candidate }: { candidate: CandidateProfile | null
     { label: 'Website', value: candidate.websiteUrl },
     { label: 'Portfolio', value: candidate.portfolioUrl },
     { label: 'Years of Experience', value: candidate.yearsOfExperience?.toString() },
-    { label: 'Salary Range', value: candidate.salaryMin && candidate.salaryMax ? `$${candidate.salaryMin.toLocaleString()} - $${candidate.salaryMax.toLocaleString()}` : candidate.salaryMin ? `$${candidate.salaryMin.toLocaleString()}+` : undefined },
+    {
+      label: 'Salary Range',
+      value:
+        candidate.salaryMin && candidate.salaryMax
+          ? `$${candidate.salaryMin.toLocaleString()} - $${candidate.salaryMax.toLocaleString()}`
+          : candidate.salaryMin
+            ? `$${candidate.salaryMin.toLocaleString()}+`
+            : undefined,
+    },
   ];
 
   const validFields = fields.filter((f) => f.value);
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground mb-3">Click to copy any field to clipboard.</p>
+      <p className="text-muted-foreground mb-3 text-xs">Click to copy any field to clipboard.</p>
       {validFields.map((field) => (
         <CopyButton key={field.label} label={field.label} text={field.value!} />
       ))}
       {validFields.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-6">No profile fields to display.</p>
+        <p className="text-muted-foreground py-6 text-center text-sm">
+          No profile fields to display.
+        </p>
       )}
     </div>
   );
@@ -160,6 +177,7 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
     setLoading(true);
     try {
       const result = await api.ai.tailorResume({ jobId: job.id });
+      captureEvent('assist_resume_generated', { company: job.company, title: job.title });
       setTailored(result);
     } catch (err) {
       console.error('Failed to tailor resume:', err);
@@ -224,7 +242,10 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
         onBack={() => {
           setMode('preview');
           // Refresh the tailored resume to pick up any accepted enhancements
-          api.ai.getTailoredResume(job.id).then(setTailored).catch(() => {});
+          api.ai
+            .getTailoredResume(job.id)
+            .then(setTailored)
+            .catch(() => {});
         }}
         onResumeUpdated={handleResumeUpdated}
       />
@@ -235,7 +256,7 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
     return (
       <div className="flex flex-col items-center gap-3 py-10">
         <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
-        <p className="text-sm text-muted-foreground">Tailoring your resume...</p>
+        <p className="text-muted-foreground text-sm">Tailoring your resume...</p>
       </div>
     );
   }
@@ -243,8 +264,8 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
   if (!tailored) {
     return (
       <div className="flex flex-col items-center gap-3 py-10">
-        <FileText className="h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Failed to generate tailored resume.</p>
+        <FileText className="text-muted-foreground/40 h-8 w-8" />
+        <p className="text-muted-foreground text-sm">Failed to generate tailored resume.</p>
         <Button variant="outline" size="sm" onClick={generateResume}>
           <RefreshCw className="h-4 w-4" />
           Retry
@@ -257,7 +278,9 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Badge variant="secondary" className="text-xs">v{tailored.version}</Badge>
+        <Badge variant="secondary" className="text-xs">
+          v{tailored.version}
+        </Badge>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={generateResume} disabled={loading}>
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -273,7 +296,7 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
       {content?.summary && (
         <Card>
           <CardContent className="pt-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+            <p className="text-muted-foreground mb-1 text-xs font-medium">Summary</p>
             <p className="text-sm">{content.summary}</p>
           </CardContent>
         </Card>
@@ -281,10 +304,12 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
 
       {content?.highlightedSkills?.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2">Key Skills</p>
+          <p className="text-muted-foreground mb-2 text-xs font-medium">Key Skills</p>
           <div className="flex flex-wrap gap-1.5">
             {content.highlightedSkills.slice(0, 12).map((skill: string) => (
-              <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
+              <Badge key={skill} variant="secondary" className="text-xs">
+                {skill}
+              </Badge>
             ))}
           </div>
         </div>
@@ -292,14 +317,16 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
 
       {content?.experienceBlocks?.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Experience Highlights</p>
+          <p className="text-muted-foreground text-xs font-medium">Experience Highlights</p>
           {content.experienceBlocks.slice(0, 3).map((block: any, i: number) => (
             <Card key={i}>
-              <CardContent className="pt-3 pb-3">
+              <CardContent className="pb-3 pt-3">
                 <p className="text-sm font-medium">{block.title}</p>
-                <p className="text-xs text-muted-foreground">{block.company}</p>
+                <p className="text-muted-foreground text-xs">{block.company}</p>
                 {block.bullets?.slice(0, 2).map((b: string, j: number) => (
-                  <p key={j} className="text-xs text-muted-foreground mt-1">- {b}</p>
+                  <p key={j} className="text-muted-foreground mt-1 text-xs">
+                    - {b}
+                  </p>
                 ))}
               </CardContent>
             </Card>
@@ -318,7 +345,7 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
         <Sparkles className="h-3.5 w-3.5" />
         Deepen Resume
       </Button>
-      <p className="text-[10px] text-muted-foreground text-center">
+      <p className="text-muted-foreground text-center text-[10px]">
         AI will interview you to strengthen weak bullets with specific examples and metrics.
       </p>
     </div>
@@ -329,8 +356,16 @@ function ResumeTab({ job, existingTailored }: { job: any; existingTailored: any 
 // Tab 3: Cover Letter
 // ---------------------------------------------------------------------------
 
-function CoverLetterTab({ job, existingCoverLetter }: { job: any; existingCoverLetter: { content: string; contentHtml?: string } | null }) {
-  const [coverLetter, setCoverLetter] = React.useState<{ content: string } | null>(existingCoverLetter);
+function CoverLetterTab({
+  job,
+  existingCoverLetter,
+}: {
+  job: any;
+  existingCoverLetter: { content: string; contentHtml?: string } | null;
+}) {
+  const [coverLetter, setCoverLetter] = React.useState<{ content: string } | null>(
+    existingCoverLetter,
+  );
   const [loading, setLoading] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
 
@@ -344,6 +379,7 @@ function CoverLetterTab({ job, existingCoverLetter }: { job: any; existingCoverL
     setLoading(true);
     try {
       const result = await api.coverLetter.generate({ jobId: job.id });
+      captureEvent('assist_cover_letter_generated', { company: job.company, title: job.title });
       setCoverLetter(result);
     } catch (err) {
       console.error('Failed to generate cover letter:', err);
@@ -365,7 +401,7 @@ function CoverLetterTab({ job, existingCoverLetter }: { job: any; existingCoverL
     return (
       <div className="flex flex-col items-center gap-3 py-10">
         <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
-        <p className="text-sm text-muted-foreground">Generating cover letter...</p>
+        <p className="text-muted-foreground text-sm">Generating cover letter...</p>
       </div>
     );
   }
@@ -373,8 +409,8 @@ function CoverLetterTab({ job, existingCoverLetter }: { job: any; existingCoverL
   if (!coverLetter) {
     return (
       <div className="flex flex-col items-center gap-3 py-10">
-        <FileText className="h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Failed to generate cover letter.</p>
+        <FileText className="text-muted-foreground/40 h-8 w-8" />
+        <p className="text-muted-foreground text-sm">Failed to generate cover letter.</p>
         <Button variant="outline" size="sm" onClick={generateCoverLetter}>
           <RefreshCw className="h-4 w-4" />
           Retry
@@ -391,7 +427,11 @@ function CoverLetterTab({ job, existingCoverLetter }: { job: any; existingCoverL
           Regenerate
         </Button>
         <Button variant="outline" size="sm" onClick={handleCopy}>
-          {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
           {copied ? 'Copied!' : 'Copy'}
         </Button>
       </div>
@@ -452,7 +492,11 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
 
     setInput('');
     const userMsg: ChatMessage = { id: `user-${Date.now()}`, role: 'user', content: messageText };
-    const assistantMsg: ChatMessage = { id: `assistant-${Date.now()}`, role: 'assistant', content: '' };
+    const assistantMsg: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+    };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setStreaming(true);
@@ -504,7 +548,10 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
         const updated = [...prev];
         const last = updated[updated.length - 1];
         if (last && last.role === 'assistant' && !last.content) {
-          updated[updated.length - 1] = { ...last, content: 'Sorry, something went wrong. Please try again.' };
+          updated[updated.length - 1] = {
+            ...last,
+            content: 'Sorry, something went wrong. Please try again.',
+          };
         }
         return updated;
       });
@@ -520,6 +567,7 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
         question: 'Ghostwriter response',
         answer: msg.content,
       });
+      captureEvent('ghostwriter_saved_to_answers');
     } catch (err) {
       console.error('Failed to save to answers:', err);
     } finally {
@@ -528,30 +576,42 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
   }
 
   const quickActions = [
-    { label: 'How should I answer "Why this company?"', prompt: 'How should I answer "Why do you want to work at this company?" for this role?' },
-    { label: 'Write an intro email', prompt: 'Write a professional introduction email I could send to the hiring manager or recruiter for this role.' },
-    { label: 'Prepare me for an interview', prompt: 'What are the most likely interview questions for this role, and how should I answer them based on my background?' },
+    {
+      label: 'How should I answer "Why this company?"',
+      prompt: 'How should I answer "Why do you want to work at this company?" for this role?',
+    },
+    {
+      label: 'Write an intro email',
+      prompt:
+        'Write a professional introduction email I could send to the hiring manager or recruiter for this role.',
+    },
+    {
+      label: 'Prepare me for an interview',
+      prompt:
+        'What are the most likely interview questions for this role, and how should I answer them based on my background?',
+    },
   ];
 
   if (loadingHistory) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-220px)]">
+    <div className="flex h-[calc(100vh-220px)] flex-col">
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 mb-3">
+      <div ref={scrollRef} className="mb-3 flex-1 space-y-3 overflow-y-auto">
         {messages.length === 0 && (
-          <div className="text-center py-6 space-y-4">
-            <MessageSquare className="h-8 w-8 text-muted-foreground/40 mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Ask me anything about this application — answer drafts, networking emails, interview prep.
+          <div className="space-y-4 py-6 text-center">
+            <MessageSquare className="text-muted-foreground/40 mx-auto h-8 w-8" />
+            <p className="text-muted-foreground text-sm">
+              Ask me anything about this application — answer drafts, networking emails, interview
+              prep.
             </p>
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap justify-center gap-2">
               {quickActions.map((action) => (
                 <Button
                   key={action.label}
@@ -568,15 +628,18 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
         )}
 
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-              msg.role === 'user'
-                ? 'bg-sky-600 text-white'
-                : 'bg-muted'
-            }`}>
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                msg.role === 'user' ? 'bg-sky-600 text-white' : 'bg-muted'
+              }`}
+            >
               <div className="whitespace-pre-wrap">{msg.content || (streaming ? '...' : '')}</div>
               {msg.role === 'assistant' && msg.content && (
-                <div className="flex items-center gap-1 mt-2 pt-1 border-t border-border/50">
+                <div className="border-border/50 mt-2 flex items-center gap-1 border-t pt-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -600,13 +663,13 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
 
       {/* Quick actions (show after first exchange) */}
       {messages.length > 0 && !streaming && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="mb-2 flex flex-wrap gap-1.5">
           {quickActions.map((action) => (
             <Button
               key={action.label}
               variant="outline"
               size="sm"
-              className="text-[10px] h-6 px-2"
+              className="h-6 px-2 text-[10px]"
               onClick={() => sendMessage(action.prompt)}
             >
               {action.label}
@@ -627,7 +690,7 @@ function GhostwriterTab({ jobId }: { jobId: string }) {
             }
           }}
           placeholder="Ask about this application..."
-          className="min-h-[40px] max-h-[100px] resize-none text-sm"
+          className="max-h-[100px] min-h-[40px] resize-none text-sm"
           disabled={streaming}
         />
         <Button
@@ -663,6 +726,7 @@ export function ApplicationAssistDrawer({
     setMarking(true);
     try {
       await api.applications.markApplied({ jobId: job.id });
+      captureEvent('application_marked_applied', { company: job.company, title: job.title });
       onMarkApplied();
       onOpenChange(false);
     } catch (err) {
@@ -674,8 +738,8 @@ export function ApplicationAssistDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-[500px] flex flex-col p-0">
-        <SheetHeader className="px-6 pt-6 pb-3">
+      <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[500px]">
+        <SheetHeader className="px-6 pb-3 pt-6">
           <SheetTitle className="text-base">Application Assist</SheetTitle>
           <SheetDescription className="text-xs">
             {job.title} at {job.company}
@@ -685,27 +749,27 @@ export function ApplicationAssistDrawer({
         <Separator />
 
         <div className="flex-1 overflow-hidden px-6 pt-3">
-          <Tabs defaultValue="profile" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 h-8">
-              <TabsTrigger value="profile" className="text-xs px-1">
-                <User className="h-3 w-3 mr-1" />
+          <Tabs defaultValue="profile" className="flex h-full flex-col">
+            <TabsList className="grid h-8 w-full grid-cols-4">
+              <TabsTrigger value="profile" className="px-1 text-xs">
+                <User className="mr-1 h-3 w-3" />
                 Info
               </TabsTrigger>
-              <TabsTrigger value="resume" className="text-xs px-1">
-                <FileText className="h-3 w-3 mr-1" />
+              <TabsTrigger value="resume" className="px-1 text-xs">
+                <FileText className="mr-1 h-3 w-3" />
                 Resume
               </TabsTrigger>
-              <TabsTrigger value="cover" className="text-xs px-1">
-                <FileText className="h-3 w-3 mr-1" />
+              <TabsTrigger value="cover" className="px-1 text-xs">
+                <FileText className="mr-1 h-3 w-3" />
                 Cover
               </TabsTrigger>
-              <TabsTrigger value="chat" className="text-xs px-1">
-                <MessageSquare className="h-3 w-3 mr-1" />
+              <TabsTrigger value="chat" className="px-1 text-xs">
+                <MessageSquare className="mr-1 h-3 w-3" />
                 Chat
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto mt-3 pb-3">
+            <div className="mt-3 flex-1 overflow-y-auto pb-3">
               <TabsContent value="profile" className="mt-0">
                 <ProfileClipboardTab candidate={candidate} />
               </TabsContent>
@@ -727,7 +791,7 @@ export function ApplicationAssistDrawer({
 
         <Separator />
 
-        <SheetFooter className="px-6 py-3 flex-row gap-2 sm:justify-between">
+        <SheetFooter className="flex-row gap-2 px-6 py-3 sm:justify-between">
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Close
@@ -739,7 +803,7 @@ export function ApplicationAssistDrawer({
           </div>
           <Button
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
             onClick={handleMarkApplied}
             disabled={marking}
           >

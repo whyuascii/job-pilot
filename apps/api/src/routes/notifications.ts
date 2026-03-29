@@ -1,7 +1,7 @@
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
 import { notifications } from '@job-pilot/db/schema';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
@@ -21,52 +21,69 @@ router.get('/', async (_req, res, next) => {
       limit: 50,
     });
     res.json(list);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/read', async (req, res, next) => {
   try {
     const ctx = getTenantContext();
     const { notificationId } = req.body;
-    const [updated] = await db.update(notifications)
+    const [updated] = await db
+      .update(notifications)
       .set({ read: true })
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.tenantId, ctx.tenantId),
-        eq(notifications.userId, ctx.userId),
-      ))
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.tenantId, ctx.tenantId),
+          eq(notifications.userId, ctx.userId),
+        ),
+      )
       .returning();
     if (!updated) throw new Error('Notification not found');
     res.json(updated);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/read-all', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
-    await db.update(notifications)
+    await db
+      .update(notifications)
       .set({ read: true })
-      .where(and(
-        eq(notifications.tenantId, ctx.tenantId),
-        eq(notifications.userId, ctx.userId),
-        eq(notifications.read, false),
-      ));
+      .where(
+        and(
+          eq(notifications.tenantId, ctx.tenantId),
+          eq(notifications.userId, ctx.userId),
+          eq(notifications.read, false),
+        ),
+      );
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/unread-count', async (_req, res, next) => {
   try {
     const ctx = getTenantContext();
-    const [result] = await db.select({ count: count() })
+    const [result] = await db
+      .select({ count: count() })
       .from(notifications)
-      .where(and(
-        eq(notifications.tenantId, ctx.tenantId),
-        eq(notifications.userId, ctx.userId),
-        eq(notifications.read, false),
-      ));
+      .where(
+        and(
+          eq(notifications.tenantId, ctx.tenantId),
+          eq(notifications.userId, ctx.userId),
+          eq(notifications.read, false),
+        ),
+      );
     res.json({ count: result?.count ?? 0 });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // Helper for other modules to create notifications

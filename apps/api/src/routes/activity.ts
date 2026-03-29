@@ -1,7 +1,7 @@
+import { and, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { applications, recruiterMessages, outcomes } from '@job-pilot/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { applications, outcomes, recruiterMessages } from '@job-pilot/db/schema';
 import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
@@ -20,7 +20,9 @@ router.post('/confirm', async (req, res, next) => {
     // action: 'confirm_status' | 'dismiss' | 'add_application'
 
     if (action === 'dismiss' && itemType === 'email') {
-      await db.update(recruiterMessages).set({ parsed: true })
+      await db
+        .update(recruiterMessages)
+        .set({ parsed: true })
         .where(and(eq(recruiterMessages.id, itemId), eq(recruiterMessages.tenantId, ctx.tenantId)));
       res.json({ success: true });
       return;
@@ -31,9 +33,12 @@ router.post('/confirm', async (req, res, next) => {
       const updates: any = { status: data.newStatus, lastActivityAt: now, updatedAt: now };
       if (data.newStatus === 'rejected') updates.rejectedAt = now;
 
-      const [updated] = await db.update(applications)
+      const [updated] = await db
+        .update(applications)
         .set(updates)
-        .where(and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)))
+        .where(
+          and(eq(applications.id, data.applicationId), eq(applications.tenantId, ctx.tenantId)),
+        )
         .returning();
 
       if (updated) {
@@ -47,7 +52,9 @@ router.post('/confirm', async (req, res, next) => {
 
       // Mark email as processed if applicable
       if (itemId && itemType === 'email') {
-        await db.update(recruiterMessages).set({ parsed: true, applicationId: data.applicationId })
+        await db
+          .update(recruiterMessages)
+          .set({ parsed: true, applicationId: data.applicationId })
           .where(eq(recruiterMessages.id, itemId));
       }
 
@@ -56,7 +63,9 @@ router.post('/confirm', async (req, res, next) => {
     }
 
     res.json({ success: true });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

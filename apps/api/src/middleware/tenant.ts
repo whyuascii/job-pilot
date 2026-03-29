@@ -1,8 +1,8 @@
-import type { Response, NextFunction } from 'express';
-import type { AuthenticatedRequest } from './auth.js';
-import { runWithTenantContext } from '../lib/context.js';
-import { db } from '@job-pilot/db';
 import { sql } from 'drizzle-orm';
+import type { NextFunction, Response } from 'express';
+import { db } from '@job-pilot/db';
+import { runWithTenantContext } from '../lib/context.js';
+import type { AuthenticatedRequest } from './auth.js';
 
 /**
  * Express middleware that wraps route handlers in AsyncLocalStorage.run()
@@ -27,7 +27,9 @@ export function tenantMiddleware(
   runWithTenantContext(req.tenantContext, async () => {
     try {
       // Set Postgres session variable for RLS policies
-      await db.execute(sql`SELECT set_config('app.tenant_id', ${req.tenantContext!.tenantId}, true)`);
+      await db.execute(
+        sql`SELECT set_config('app.tenant_id', ${req.tenantContext!.tenantId}, true)`,
+      );
       next();
     } catch (error) {
       next(error);

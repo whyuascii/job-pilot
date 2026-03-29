@@ -1,43 +1,43 @@
 import React from 'react';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import {
-  GraduationCap,
+  ArrowRight,
   Building2,
+  CheckCircle2,
+  CheckSquare,
+  Clock,
+  Compass,
+  GraduationCap,
+  Lightbulb,
+  Loader2,
   MapPin,
+  Plane,
+  RefreshCw,
+  Rocket,
+  Sparkles,
+  Square,
+  Target,
   Trash2,
   TrendingUp,
-  Rocket,
-  Loader2,
-  RefreshCw,
-  Plane,
-  Compass,
-  Target,
-  Lightbulb,
-  ArrowRight,
-  CheckCircle2,
-  Sparkles,
-  Clock,
-  Square,
-  CheckSquare,
 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Badge,
   Separator,
   Skeleton,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
 } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
@@ -54,7 +54,7 @@ function CareerGoalsSkeleton() {
       </div>
       <Separator />
       <Skeleton className="h-64 rounded-xl" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Skeleton className="h-48 rounded-xl" />
         <Skeleton className="h-48 rounded-xl" />
       </div>
@@ -105,12 +105,18 @@ function getPriorityColor(priority: string): 'destructive' | 'warning' | 'second
 
 function getLevelWidth(level: string): string {
   switch (level) {
-    case 'none': return 'w-0';
-    case 'beginner': return 'w-1/4';
-    case 'intermediate': return 'w-1/2';
-    case 'advanced': return 'w-3/4';
-    case 'expert': return 'w-full';
-    default: return 'w-0';
+    case 'none':
+      return 'w-0';
+    case 'beginner':
+      return 'w-1/4';
+    case 'intermediate':
+      return 'w-1/2';
+    case 'advanced':
+      return 'w-3/4';
+    case 'expert':
+      return 'w-full';
+    default:
+      return 'w-0';
   }
 }
 
@@ -136,19 +142,23 @@ function CareerDirectionCard({ plan }: { plan: any }) {
             </CardDescription>
           </div>
           {plan.readinessScore != null && (
-            <div className="flex flex-col items-center gap-1 shrink-0">
-              <div className={`text-3xl font-bold tabular-nums ${getReadinessColor(plan.readinessScore)}`}>
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <div
+                className={`text-3xl font-bold tabular-nums ${getReadinessColor(plan.readinessScore)}`}
+              >
                 {plan.readinessScore}
               </div>
               <div className="flex items-center gap-1">
-                <div className={`h-1.5 w-12 rounded-full bg-muted overflow-hidden`}>
+                <div className={`bg-muted h-1.5 w-12 overflow-hidden rounded-full`}>
                   <div
                     className={`h-full rounded-full transition-all ${getReadinessBg(plan.readinessScore)}`}
                     style={{ width: `${plan.readinessScore}%` }}
                   />
                 </div>
               </div>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Readiness</span>
+              <span className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                Readiness
+              </span>
             </div>
           )}
         </div>
@@ -157,26 +167,38 @@ function CareerDirectionCard({ plan }: { plan: any }) {
         <div className="flex flex-wrap gap-4">
           {(direction.themes ?? []).length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Themes</p>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Themes
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {direction.themes.map((theme: string) => (
-                  <Badge key={theme} variant="secondary">{theme}</Badge>
+                  <Badge key={theme} variant="secondary">
+                    {theme}
+                  </Badge>
                 ))}
               </div>
             </div>
           )}
           {direction.targetLevel && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Target Level</p>
-              <Badge variant="default" className="capitalize">{direction.targetLevel}</Badge>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Target Level
+              </p>
+              <Badge variant="default" className="capitalize">
+                {direction.targetLevel}
+              </Badge>
             </div>
           )}
           {(direction.industries ?? []).length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Industries</p>
+              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Industries
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {direction.industries.map((ind: string) => (
-                  <Badge key={ind} variant="secondary">{ind}</Badge>
+                  <Badge key={ind} variant="secondary">
+                    {ind}
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -201,15 +223,17 @@ function StrengthAlignmentCard({ strengths }: { strengths: any[] }) {
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           Your Strengths
         </CardTitle>
-        <CardDescription>Skills and experience that already align with your target roles</CardDescription>
+        <CardDescription>
+          Skills and experience that already align with your target roles
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {strengths.map((item: any, idx: number) => (
-          <div key={idx} className="flex gap-3 items-start">
-            <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+          <div key={idx} className="flex items-start gap-3">
+            <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
             <div className="space-y-0.5">
               <p className="text-sm font-medium">{item.strength}</p>
-              <p className="text-xs text-muted-foreground">{item.relevance}</p>
+              <p className="text-muted-foreground text-xs">{item.relevance}</p>
             </div>
           </div>
         ))}
@@ -232,7 +256,9 @@ function SkillRoadmapCard({ skills }: { skills: any[] }) {
           <TrendingUp className="h-4 w-4 text-sky-500" />
           Skill Roadmap
         </CardTitle>
-        <CardDescription>Prioritized skills based on patterns across all your target roles</CardDescription>
+        <CardDescription>
+          Prioritized skills based on patterns across all your target roles
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {skills.map((skill: any, idx: number) => (
@@ -245,20 +271,20 @@ function SkillRoadmapCard({ skills }: { skills: any[] }) {
             </div>
             {/* Level indicator */}
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2 text-xs">
                 <span>{skill.currentLevel ?? 'none'}</span>
                 <ArrowRight className="h-3 w-3" />
-                <span className="font-medium text-foreground">{skill.targetLevel}</span>
+                <span className="text-foreground font-medium">{skill.targetLevel}</span>
               </div>
-              <div className="flex gap-1 h-1.5">
-                <div className="flex-1 rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full rounded-full bg-sky-400 ${getLevelWidth(skill.currentLevel ?? 'none')}`} />
+              <div className="flex h-1.5 gap-1">
+                <div className="bg-muted flex-1 overflow-hidden rounded-full">
+                  <div
+                    className={`h-full rounded-full bg-sky-400 ${getLevelWidth(skill.currentLevel ?? 'none')}`}
+                  />
                 </div>
               </div>
             </div>
-            {skill.rationale && (
-              <p className="text-xs text-muted-foreground">{skill.rationale}</p>
-            )}
+            {skill.rationale && <p className="text-muted-foreground text-xs">{skill.rationale}</p>}
             {skill.howToLearn && (
               <p className="text-xs text-sky-700 dark:text-sky-400">{skill.howToLearn}</p>
             )}
@@ -289,29 +315,35 @@ function CareerTrajectoryCard({ trajectory }: { trajectory: any[] }) {
       <CardContent>
         <div className="relative space-y-6">
           {/* Timeline line */}
-          <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
+          <div className="bg-border absolute bottom-2 left-3 top-2 w-px" />
 
           {trajectory.map((phase: any, idx: number) => (
             <div key={idx} className="relative pl-9">
               {/* Timeline dot */}
-              <div className={`absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 border-background ${
-                idx === 0 ? 'bg-sky-500' : idx === trajectory.length - 1 ? 'bg-violet-500' : 'bg-amber-500'
-              }`} />
+              <div
+                className={`border-background absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 ${
+                  idx === 0
+                    ? 'bg-sky-500'
+                    : idx === trajectory.length - 1
+                      ? 'bg-violet-500'
+                      : 'bg-amber-500'
+                }`}
+              />
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">{phase.phase}</span>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Clock className="h-3 w-3" />
                     {phase.timeframe}
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">{phase.focus}</p>
+                <p className="text-muted-foreground text-sm">{phase.focus}</p>
                 {(phase.milestones ?? []).length > 0 && (
                   <ul className="space-y-1">
                     {phase.milestones.map((milestone: string, mIdx: number) => (
                       <li key={mIdx} className="flex items-start gap-2 text-xs">
-                        <CheckCircle2 className="h-3 w-3 mt-0.5 text-muted-foreground shrink-0" />
+                        <CheckCircle2 className="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
                         <span>{milestone}</span>
                       </li>
                     ))}
@@ -340,20 +372,26 @@ function ProjectIdeasCard({ projects }: { projects: any[] }) {
           <Rocket className="h-4 w-4 text-orange-500" />
           Portfolio Project Ideas
         </CardTitle>
-        <CardDescription>Projects that demonstrate skills relevant to multiple target roles</CardDescription>
+        <CardDescription>
+          Projects that demonstrate skills relevant to multiple target roles
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {projects.map((project: any, idx: number) => (
           <div key={idx} className="space-y-2">
             <p className="text-sm font-medium">{project.name}</p>
-            <p className="text-xs text-muted-foreground">{project.description}</p>
+            <p className="text-muted-foreground text-xs">{project.description}</p>
             <div className="flex flex-wrap gap-1.5">
               {(project.skillsGained ?? []).map((s: string) => (
-                <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+                <Badge key={s} variant="secondary" className="text-[10px]">
+                  {s}
+                </Badge>
               ))}
             </div>
             {project.relevantToJobs && (
-              <p className="text-[11px] text-muted-foreground italic">Relevant to: {project.relevantToJobs}</p>
+              <p className="text-muted-foreground text-[11px] italic">
+                Relevant to: {project.relevantToJobs}
+              </p>
             )}
             {idx < projects.length - 1 && <Separator className="mt-2" />}
           </div>
@@ -371,12 +409,14 @@ function KeyInsightCard({ insight }: { insight: string }) {
   if (!insight) return null;
 
   return (
-    <Card className="border-sky-200 dark:border-sky-900 bg-sky-50/50 dark:bg-sky-950/20">
+    <Card className="border-sky-200 bg-sky-50/50 dark:border-sky-900 dark:bg-sky-950/20">
       <CardContent className="pt-6">
-        <div className="flex gap-3 items-start">
-          <Lightbulb className="h-5 w-5 text-sky-500 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3">
+          <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-sky-500" />
           <div>
-            <p className="text-xs font-medium text-sky-600 dark:text-sky-400 uppercase tracking-wide mb-1">Key Insight</p>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
+              Key Insight
+            </p>
             <p className="text-sm leading-relaxed">{insight}</p>
           </div>
         </div>
@@ -396,19 +436,19 @@ function CoachingPlanView({ plan }: { plan: any }) {
 
       {plan.keyInsight && <KeyInsightCard insight={plan.keyInsight} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <StrengthAlignmentCard strengths={plan.strengthAlignment} />
         <SkillRoadmapCard skills={plan.skillRoadmap} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <CareerTrajectoryCard trajectory={plan.careerTrajectory} />
         <ProjectIdeasCard projects={plan.projectIdeas} />
       </div>
 
       {/* Metadata */}
       {(plan.generatedAt || plan.jobCount) && (
-        <p className="text-xs text-muted-foreground text-right">
+        <p className="text-muted-foreground text-right text-xs">
           {plan.jobCount && `Based on ${plan.jobCount} saved role${plan.jobCount > 1 ? 's' : ''}`}
           {plan.generatedAt && plan.jobCount && ' · '}
           {plan.generatedAt && `Generated ${new Date(plan.generatedAt).toLocaleDateString()}`}
@@ -434,19 +474,21 @@ function AspirationalJobCard({
   const isSelected = goal.selectedForCoaching;
 
   return (
-    <Card className={`transition-shadow hover:shadow-sm ${isSelected ? 'border-sky-300 dark:border-sky-700 bg-sky-50/30 dark:bg-sky-950/10' : 'opacity-60'}`}>
+    <Card
+      className={`transition-shadow hover:shadow-sm ${isSelected ? 'border-sky-300 bg-sky-50/30 dark:border-sky-700 dark:bg-sky-950/10' : 'opacity-60'}`}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           {/* Selection toggle */}
           <button
             onClick={() => onToggleSelected(goal.id, !isSelected)}
-            className="shrink-0 text-sky-500 hover:text-sky-600 transition-colors"
+            className="shrink-0 text-sky-500 transition-colors hover:text-sky-600"
             aria-label={isSelected ? 'Deselect for coaching' : 'Select for coaching'}
           >
             {isSelected ? (
               <CheckSquare className="h-5 w-5" />
             ) : (
-              <Square className="h-5 w-5 text-muted-foreground" />
+              <Square className="text-muted-foreground h-5 w-5" />
             )}
           </button>
 
@@ -456,27 +498,27 @@ function AspirationalJobCard({
                 <Link
                   to="/jobs/$jobId"
                   params={{ jobId: goal.job.id }}
-                  className="truncate font-medium text-sm hover:text-primary transition-colors"
+                  className="hover:text-primary truncate text-sm font-medium transition-colors"
                 >
                   {goal.job.title}
                 </Link>
               ) : (
-                <p className="truncate font-medium text-sm">Unknown Position</p>
+                <p className="truncate text-sm font-medium">Unknown Position</p>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-1">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="mt-1 flex items-center gap-3">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <Building2 className="h-3 w-3 shrink-0" />
                 <span className="truncate">{goal.job?.company ?? 'Unknown Company'}</span>
               </div>
               {goal.job?.location && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1 text-xs">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">{goal.job.location}</span>
                 </div>
               )}
               {goal.job?.remotePolicy && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
                   {goal.job.remotePolicy}
                 </Badge>
               )}
@@ -486,7 +528,7 @@ function AspirationalJobCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+            className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
             onClick={() => onRequestDelete(goal.id)}
             aria-label="Remove aspirational role"
           >
@@ -581,12 +623,12 @@ function CareerGoalsPage() {
           </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 shadow">
-          <Compass className="mb-4 h-16 w-16 text-muted-foreground/20" />
+        <div className="bg-card flex flex-col items-center justify-center rounded-xl border py-20 shadow">
+          <Compass className="text-muted-foreground/20 mb-4 h-16 w-16" />
           <h3 className="mb-1 text-lg font-semibold">No aspirational roles saved</h3>
-          <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
-            Browse jobs and save roles you aspire to. Your career coach will analyze
-            the patterns across all saved roles and create a unified growth plan.
+          <p className="text-muted-foreground mb-6 max-w-md text-center text-sm">
+            Browse jobs and save roles you aspire to. Your career coach will analyze the patterns
+            across all saved roles and create a unified growth plan.
           </p>
           <Button asChild>
             <Link to="/jobs">
@@ -602,12 +644,21 @@ function CareerGoalsPage() {
   return (
     <div className="space-y-8">
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Aspirational Role?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove {deletingGoal ? `"${deletingGoal.job?.title ?? 'this role'}" at ${deletingGoal.job?.company ?? 'unknown company'}` : 'this role'} from your career goals. You may want to regenerate your coaching plan afterward.
+              This will remove{' '}
+              {deletingGoal
+                ? `"${deletingGoal.job?.title ?? 'this role'}" at ${deletingGoal.job?.company ?? 'unknown company'}`
+                : 'this role'}{' '}
+              from your career goals. You may want to regenerate your coaching plan afterward.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -664,9 +715,9 @@ function CareerGoalsPage() {
         <Card className="border-dashed">
           <CardContent className="py-12">
             <div className="flex flex-col items-center text-center">
-              <GraduationCap className="mb-3 h-10 w-10 text-muted-foreground/30" />
+              <GraduationCap className="text-muted-foreground/30 mb-3 h-10 w-10" />
               <h3 className="mb-1 text-base font-semibold">No coaching plan yet</h3>
-              <p className="max-w-sm text-sm text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-4 max-w-sm text-sm">
                 {selectedCount > 0
                   ? `Click below to have your AI career coach analyze the patterns across your ${selectedCount} selected role${selectedCount > 1 ? 's' : ''} and create a unified growth roadmap.`
                   : 'Select some roles below to enable coaching plan generation.'}
@@ -698,8 +749,9 @@ function CareerGoalsPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Saved Aspirational Roles</h2>
-            <p className="text-sm text-muted-foreground">
-              {selectedCount} of {goals.length} role{goals.length !== 1 ? 's' : ''} selected for coaching (max 10)
+            <p className="text-muted-foreground text-sm">
+              {selectedCount} of {goals.length} role{goals.length !== 1 ? 's' : ''} selected for
+              coaching (max 10)
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -725,12 +777,12 @@ function CareerGoalsPage() {
         </div>
 
         {selectionError && (
-          <div className="rounded-md border border-destructive/50 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <div className="border-destructive/50 bg-destructive/5 text-destructive rounded-md border px-3 py-2 text-sm">
             {selectionError}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {goals.map((goal: any) => (
             <AspirationalJobCard
               key={goal.id}

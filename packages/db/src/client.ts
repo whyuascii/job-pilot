@@ -1,7 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { getEnv } from '@job-pilot/shared';
-
 import * as schema from './schema/index.js';
 
 const env = getEnv();

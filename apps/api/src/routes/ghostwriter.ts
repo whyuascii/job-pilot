@@ -1,10 +1,16 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { and, asc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { db } from '@job-pilot/db';
-import { ghostwriterMessages, candidates, jobs, jobScores, coverLetters } from '@job-pilot/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
-import { getTenantContext } from '../lib/context.js';
+import {
+  candidates,
+  coverLetters,
+  ghostwriterMessages,
+  jobs,
+  jobScores,
+} from '@job-pilot/db/schema';
 import { GHOSTWRITER_PROMPT } from '@job-pilot/mastra/prompts';
-import Anthropic from '@anthropic-ai/sdk';
+import { getTenantContext } from '../lib/context.js';
 
 function createId(): string {
   const timestamp = Date.now().toString(36);
@@ -41,7 +47,9 @@ router.get('/messages', async (req, res, next) => {
     });
 
     res.json(messages);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 // POST /api/ghostwriter/chat — SSE streaming
@@ -66,7 +74,10 @@ router.post('/chat', async (req, res, next) => {
         where: and(eq(coverLetters.jobId, jobId), eq(coverLetters.tenantId, ctx.tenantId)),
       }),
       db.query.ghostwriterMessages.findMany({
-        where: and(eq(ghostwriterMessages.tenantId, ctx.tenantId), eq(ghostwriterMessages.jobId, jobId)),
+        where: and(
+          eq(ghostwriterMessages.tenantId, ctx.tenantId),
+          eq(ghostwriterMessages.jobId, jobId),
+        ),
         orderBy: [asc(ghostwriterMessages.createdAt)],
       }),
     ]);
@@ -100,20 +111,17 @@ router.post('/chat', async (req, res, next) => {
     }
 
     if (coverLetter) {
-      contextParts.push(
-        '',
-        '--- COVER LETTER ---',
-        truncate(coverLetter.content, 1500),
-      );
+      contextParts.push('', '--- COVER LETTER ---', truncate(coverLetter.content, 1500));
     }
 
     const systemPrompt = contextParts.filter(Boolean).join('\n');
 
     // Build messages array
-    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> = history.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
+    const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> =
+      history.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
     conversationMessages.push({ role: 'user', content: message });
 
     // Save user message
@@ -187,17 +195,22 @@ router.post('/save-to-answers', async (req, res, next) => {
     });
     if (!candidate) throw new Error('No candidate profile found');
 
-    const [saved] = await db.insert(answerBank).values({
-      id: createId(),
-      candidateId: candidate.id,
-      tenantId: ctx.tenantId,
-      questionPattern: question || 'Ghostwriter response',
-      answer,
-      category: 'ghostwriter',
-    }).returning();
+    const [saved] = await db
+      .insert(answerBank)
+      .values({
+        id: createId(),
+        candidateId: candidate.id,
+        tenantId: ctx.tenantId,
+        questionPattern: question || 'Ghostwriter response',
+        answer,
+        category: 'ghostwriter',
+      })
+      .returning();
 
     res.json(saved);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

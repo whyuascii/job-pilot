@@ -1,45 +1,45 @@
 import * as React from 'react';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import {
+  AlertCircle,
   BookOpen,
-  Plus,
-  Pencil,
-  Trash2,
+  Check,
   ChevronDown,
   ChevronUp,
-  Save,
-  X,
-  Check,
-  Hash,
   Clock,
-  Search,
+  Hash,
   Loader2,
-  AlertCircle,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  X,
 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Badge,
-  Separator,
-  Input,
-  Label,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
+  Input,
+  Label,
+  Separator,
 } from '@job-pilot/ui';
 import { api } from '~/lib/api-client';
 
@@ -88,9 +88,7 @@ function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength).trimEnd() + '...';
 }
 
-function categoryBadgeVariant(
-  category: string
-): 'default' | 'secondary' | 'outline' {
+function categoryBadgeVariant(category: string): 'default' | 'secondary' | 'outline' {
   switch (category) {
     case 'Technical':
       return 'default';
@@ -171,7 +169,8 @@ function AnswersPage() {
     setSearching(true);
     setSearchError('');
     setHasSearched(true);
-    api.answerAi.searchSimilar({ searchText: questionPattern })
+    api.answerAi
+      .searchSimilar({ searchText: questionPattern })
       .then((results) => setSearchResults(results))
       .catch((err) => {
         setSearchError(err instanceof Error ? err.message : 'Search failed');
@@ -188,11 +187,7 @@ function AnswersPage() {
         customCategories.add(answer.category);
       }
     }
-    return [
-      'All',
-      ...CATEGORY_VALUES,
-      ...Array.from(customCategories).sort(),
-    ];
+    return ['All', ...CATEGORY_VALUES, ...Array.from(customCategories).sort()];
   }, [answers]);
 
   // Filter answers
@@ -288,14 +283,12 @@ function AnswersPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <BookOpen className="h-5 w-5 text-primary-foreground" />
+          <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-lg">
+            <BookOpen className="text-primary-foreground h-5 w-5" />
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Black Box</h1>
-            <p className="text-muted-foreground">
-              Your library of reusable application answers.
-            </p>
+            <p className="text-muted-foreground">Your library of reusable application answers.</p>
           </div>
         </div>
       </div>
@@ -305,9 +298,7 @@ function AnswersPage() {
         {allCategories.map((cat) => {
           const isActive = activeFilter === cat;
           const count =
-            cat === 'All'
-              ? answers.length
-              : answers.filter((a) => a.category === cat).length;
+            cat === 'All' ? answers.length : answers.filter((a) => a.category === cat).length;
           return (
             <button
               key={cat}
@@ -339,29 +330,31 @@ function AnswersPage() {
           <Plus className="h-4 w-4" />
           Add Answer
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => setShowSearch(true)}
-        >
+        <Button variant="outline" onClick={() => setShowSearch(true)}>
           <Search className="h-4 w-4" />
           Find Similar
         </Button>
       </div>
 
       {/* Find Similar Dialog */}
-      <Dialog open={showSearch} onOpenChange={(open) => {
-        setShowSearch(open);
-        if (!open) {
-          setSearchResults([]);
-          setSearchQuery('');
-          setHasSearched(false);
-          setSearchError('');
-        }
-      }}>
+      <Dialog
+        open={showSearch}
+        onOpenChange={(open) => {
+          setShowSearch(open);
+          if (!open) {
+            setSearchResults([]);
+            setSearchQuery('');
+            setHasSearched(false);
+            setSearchError('');
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Find Similar Answers</DialogTitle>
-            <DialogDescription>Search your answer bank for similar past answers by keyword or question.</DialogDescription>
+            <DialogDescription>
+              Search your answer bank for similar past answers by keyword or question.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
@@ -374,10 +367,7 @@ function AnswersPage() {
                 }}
                 className="flex-1"
               />
-              <Button
-                onClick={handleSearch}
-                disabled={searching || searchQuery.trim().length < 3}
-              >
+              <Button onClick={handleSearch} disabled={searching || searchQuery.trim().length < 3}>
                 {searching ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -397,29 +387,38 @@ function AnswersPage() {
             )}
 
             {hasSearched && !searching && searchResults.length === 0 && !searchError && (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-muted-foreground py-4 text-center text-sm">
                 No similar answers found. Try different keywords.
               </p>
             )}
 
             {searchResults.length > 0 && (
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                <p className="text-xs font-medium text-muted-foreground">
+              <div className="max-h-[50vh] space-y-3 overflow-y-auto">
+                <p className="text-muted-foreground text-xs font-medium">
                   {searchResults.length} similar answer{searchResults.length !== 1 ? 's' : ''} found
                 </p>
                 {searchResults.map((result) => (
-                  <div key={result.id} className="rounded-lg border p-3 space-y-2">
+                  <div key={result.id} className="space-y-2 rounded-lg border p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium leading-snug">{result.questionPattern}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={categoryBadgeVariant(result.category)} className="text-xs">{result.category}</Badge>
-                          <Badge variant="outline" className="text-xs">{result.relevance}% match</Badge>
-                          <span className="text-xs text-muted-foreground">Used {result.timesUsed} time{result.timesUsed !== 1 ? 's' : ''}</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <Badge
+                            variant={categoryBadgeVariant(result.category)}
+                            className="text-xs"
+                          >
+                            {result.category}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {result.relevance}% match
+                          </Badge>
+                          <span className="text-muted-foreground text-xs">
+                            Used {result.timesUsed} time{result.timesUsed !== 1 ? 's' : ''}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{truncate(result.answer, 250)}</p>
+                    <p className="text-muted-foreground text-sm">{truncate(result.answer, 250)}</p>
                   </div>
                 ))}
               </div>
@@ -430,10 +429,12 @@ function AnswersPage() {
 
       {/* Add Answer Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Answer</DialogTitle>
-            <DialogDescription>Save a reusable answer for common application questions.</DialogDescription>
+            <DialogDescription>
+              Save a reusable answer for common application questions.
+            </DialogDescription>
           </DialogHeader>
           <AnswerForm
             initial={emptyAnswerForm}
@@ -448,20 +449,17 @@ function AnswersPage() {
       {answers.length === 0 && !showAddForm && (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-20">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              <BookOpen className="h-10 w-10 text-primary/40" />
+            <div className="bg-primary/10 mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+              <BookOpen className="text-primary/40 h-10 w-10" />
             </div>
-            <h3 className="font-semibold text-lg mb-1">
-              Your Black Box is empty
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-md text-center mb-2">
-              Every great pilot keeps a Black Box. Record your best answers to
-              common interview and application questions here so you can deploy
-              them instantly on future missions.
+            <h3 className="mb-1 text-lg font-semibold">Your Black Box is empty</h3>
+            <p className="text-muted-foreground mb-2 max-w-md text-center text-sm">
+              Every great pilot keeps a Black Box. Record your best answers to common interview and
+              application questions here so you can deploy them instantly on future missions.
             </p>
-            <p className="text-xs text-muted-foreground max-w-sm text-center mb-6">
-              Tip: Start with a &quot;Tell me about yourself&quot; answer -- it is the
-              most reused response across applications.
+            <p className="text-muted-foreground mb-6 max-w-sm text-center text-xs">
+              Tip: Start with a &quot;Tell me about yourself&quot; answer -- it is the most reused
+              response across applications.
             </p>
             <Button onClick={() => setShowAddForm(true)} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -475,9 +473,9 @@ function AnswersPage() {
       {answers.length > 0 && filteredAnswers.length === 0 && (
         <Card className="rounded-xl shadow">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <BookOpen className="h-12 w-12 text-muted-foreground/20 mb-3" />
-            <p className="font-medium mb-1">No answers in this category</p>
-            <p className="text-sm text-muted-foreground">
+            <BookOpen className="text-muted-foreground/20 mb-3 h-12 w-12" />
+            <p className="mb-1 font-medium">No answers in this category</p>
+            <p className="text-muted-foreground text-sm">
               Try selecting a different filter or add a new answer.
             </p>
           </CardContent>
@@ -486,17 +484,26 @@ function AnswersPage() {
 
       {/* Showing X of Y */}
       {filteredAnswers.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          Showing {visibleAnswers.length} of {filteredAnswers.length} answer{filteredAnswers.length !== 1 ? 's' : ''}
+        <p className="text-muted-foreground text-sm">
+          Showing {visibleAnswers.length} of {filteredAnswers.length} answer
+          {filteredAnswers.length !== 1 ? 's' : ''}
         </p>
       )}
 
       {/* Edit Answer Dialog */}
       {(() => {
-        const editingAnswer = editingId ? filteredAnswers.find((a) => a.id === editingId) ?? answers.find((a) => a.id === editingId) : null;
+        const editingAnswer = editingId
+          ? (filteredAnswers.find((a) => a.id === editingId) ??
+            answers.find((a) => a.id === editingId))
+          : null;
         return (
-          <Dialog open={!!editingId} onOpenChange={(open) => { if (!open) setEditingId(null); }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <Dialog
+            open={!!editingId}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Answer</DialogTitle>
               </DialogHeader>
@@ -520,9 +527,17 @@ function AnswersPage() {
 
       {/* Delete Answer Confirmation */}
       {(() => {
-        const deletingAnswer = deletingId ? filteredAnswers.find((a) => a.id === deletingId) ?? answers.find((a) => a.id === deletingId) : null;
+        const deletingAnswer = deletingId
+          ? (filteredAnswers.find((a) => a.id === deletingId) ??
+            answers.find((a) => a.id === deletingId))
+          : null;
         return (
-          <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <AlertDialog
+            open={!!deletingId}
+            onOpenChange={(open) => {
+              if (!open) setDeletingId(null);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Answer?</AlertDialogTitle>
@@ -561,42 +576,36 @@ function AnswersPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     {/* Question Pattern */}
-                    <h3 className="font-semibold text-sm leading-snug">
-                      {answer.questionPattern}
-                    </h3>
+                    <h3 className="text-sm font-semibold leading-snug">{answer.questionPattern}</h3>
 
                     {/* Metadata row */}
-                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
                       <Badge variant={categoryBadgeVariant(answer.category)}>
                         {answer.category}
                       </Badge>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="text-muted-foreground flex items-center gap-1 text-xs">
                         <Hash className="h-3 w-3" />
                         Used {answer.timesUsed} time
                         {answer.timesUsed !== 1 ? 's' : ''}
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="text-muted-foreground flex items-center gap-1 text-xs">
                         <Clock className="h-3 w-3" />
                         Last used: {formatDate(answer.lastUsed)}
                       </span>
                     </div>
 
                     {/* Truncated answer preview */}
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {expandedId === answer.id
-                        ? answer.answer
-                        : truncate(answer.answer, 180)}
+                    <p className="text-muted-foreground mt-3 text-sm">
+                      {expandedId === answer.id ? answer.answer : truncate(answer.answer, 180)}
                     </p>
 
                     {/* Context note */}
                     {expandedId === answer.id && answer.context && (
-                      <div className="mt-3 rounded-lg border bg-muted/50 px-3 py-2">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                      <div className="bg-muted/50 mt-3 rounded-lg border px-3 py-2">
+                        <p className="text-muted-foreground mb-1 text-xs font-medium">
                           Context / Usage Notes
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {answer.context}
-                        </p>
+                        <p className="text-muted-foreground text-sm">{answer.context}</p>
                       </div>
                     )}
 
@@ -604,7 +613,7 @@ function AnswersPage() {
                     {(answer.answer.length > 180 || answer.context) && (
                       <button
                         onClick={() => toggleExpand(answer.id)}
-                        className="mt-2 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
                       >
                         {expandedId === answer.id ? (
                           <>
@@ -622,7 +631,7 @@ function AnswersPage() {
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex shrink-0 gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -641,11 +650,7 @@ function AnswersPage() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeletingId(answer.id)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => setDeletingId(answer.id)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
@@ -711,7 +716,7 @@ function AnswerForm({
         <Label>Question Pattern *</Label>
         <textarea
           rows={2}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder='e.g. "Tell me about a time you led a team through a difficult project"'
           value={form.questionPattern}
           onChange={(e) => updateField('questionPattern', e.target.value)}
@@ -722,7 +727,7 @@ function AnswerForm({
       <div className="space-y-2">
         <Label>Category *</Label>
         <select
-          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="border-input bg-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2"
           value={form.category}
           onChange={(e) => updateField('category', e.target.value)}
         >
@@ -739,14 +744,12 @@ function AnswerForm({
         <Label>Answer *</Label>
         <textarea
           rows={6}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Write your reusable answer here. Be thorough -- you can always trim it for specific applications."
           value={form.answer}
           onChange={(e) => updateField('answer', e.target.value)}
         />
-        <p className="text-xs text-muted-foreground">
-          {form.answer.length} characters
-        </p>
+        <p className="text-muted-foreground text-xs">{form.answer.length} characters</p>
       </div>
 
       {/* Context (optional) */}
@@ -754,7 +757,7 @@ function AnswerForm({
         <Label>Context / Usage Notes (optional)</Label>
         <textarea
           rows={2}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="e.g. Best for senior-level roles, pair with project X example..."
           value={form.context}
           onChange={(e) => updateField('context', e.target.value)}

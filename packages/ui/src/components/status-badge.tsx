@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-
 import { cn } from '../lib/utils.js';
 
 const statusBadgeVariants = cva(
@@ -42,17 +41,14 @@ const statusLabels: Record<string, string> = {
 };
 
 export interface StatusBadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof statusBadgeVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof statusBadgeVariants> {
   showDot?: boolean;
 }
 
 function StatusBadge({ className, status, showDot = true, ...props }: StatusBadgeProps) {
   return (
     <span className={cn(statusBadgeVariants({ status }), className)} {...props}>
-      {showDot && (
-        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      )}
+      {showDot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       {statusLabels[status ?? 'discovered'] ?? status}
     </span>
   );

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { sanitizeText, sanitizeUrl } from './sanitize';
 
 // ---------------------------------------------------------------------------
@@ -292,18 +292,20 @@ describe('sanitizeUrl - thorough coverage', () => {
   });
 
   it('accepts URL with fragment', () => {
-    expect(sanitizeUrl('https://example.com/page#section')).toBe('https://example.com/page#section');
+    expect(sanitizeUrl('https://example.com/page#section')).toBe(
+      'https://example.com/page#section',
+    );
   });
 
   it('accepts URL with query params', () => {
     expect(sanitizeUrl('https://example.com/search?q=test&page=1')).toBe(
-      'https://example.com/search?q=test&page=1'
+      'https://example.com/search?q=test&page=1',
     );
   });
 
   it('accepts URL with encoded characters', () => {
     expect(sanitizeUrl('https://example.com/path%20with%20spaces')).toBe(
-      'https://example.com/path%20with%20spaces'
+      'https://example.com/path%20with%20spaces',
     );
   });
 

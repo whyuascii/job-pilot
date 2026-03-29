@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@job-pilot/db';
-import { candidates, tailoredResumes, jobs, users } from '@job-pilot/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { candidates, jobs, tailoredResumes, users } from '@job-pilot/db/schema';
 import { getTenantContext } from '~/lib/api';
 
 // ---------------------------------------------------------------------------
@@ -476,10 +476,7 @@ export const exportTailoredResume = createServerFn({ method: 'POST' })
 
     // 1. Load the candidate
     const candidate = await db.query.candidates.findFirst({
-      where: and(
-        eq(candidates.tenantId, ctx.tenantId),
-        eq(candidates.userId, ctx.userId),
-      ),
+      where: and(eq(candidates.tenantId, ctx.tenantId), eq(candidates.userId, ctx.userId)),
     });
 
     if (!candidate) {

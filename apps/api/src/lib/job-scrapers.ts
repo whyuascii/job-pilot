@@ -53,20 +53,22 @@ export async function searchWithTsJobspy(config: TsJobspySearchConfig): Promise<
       descriptionFormat: 'markdown',
     });
 
-    return jobs.map((job: any) => ({
-      title: job.title || 'Untitled',
-      company: job.company || 'Unknown',
-      location: formatTsJobspyLocation(job.location),
-      description: job.description || '',
-      url: job.job_url || '',
-      remotePolicy: job.is_remote ? 'remote' : undefined,
-      employmentType: mapJobType(job.job_type),
-      salaryMin: job.min_amount ?? undefined,
-      salaryMax: job.max_amount ?? undefined,
-      salaryCurrency: job.currency ?? undefined,
-      postedAt: job.date_posted ?? undefined,
-      source: `ts-jobspy:${job.site || 'unknown'}`,
-    })).filter((j: ScrapedJob) => j.url && j.title !== 'Untitled');
+    return jobs
+      .map((job: any) => ({
+        title: job.title || 'Untitled',
+        company: job.company || 'Unknown',
+        location: formatTsJobspyLocation(job.location),
+        description: job.description || '',
+        url: job.job_url || '',
+        remotePolicy: job.is_remote ? 'remote' : undefined,
+        employmentType: mapJobType(job.job_type),
+        salaryMin: job.min_amount ?? undefined,
+        salaryMax: job.max_amount ?? undefined,
+        salaryCurrency: job.currency ?? undefined,
+        postedAt: job.date_posted ?? undefined,
+        source: `ts-jobspy:${job.site || 'unknown'}`,
+      }))
+      .filter((j: ScrapedJob) => j.url && j.title !== 'Untitled');
   } catch (err) {
     console.error('[ts-jobspy] Scraping failed:', err);
     throw new Error(`Job scraping failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -179,19 +181,21 @@ export async function searchWithAdzuna(
     }
   }
 
-  return allJobs.map((job) => ({
-    title: stripHtmlTags(job.title),
-    company: job.company?.display_name || 'Unknown',
-    location: job.location?.display_name || '',
-    description: job.description || '',
-    url: job.redirect_url || '',
-    employmentType: mapAdzunaContractTime(job.contract_time),
-    salaryMin: job.salary_min ?? undefined,
-    salaryMax: job.salary_max ?? undefined,
-    salaryCurrency: country === 'us' ? 'USD' : country === 'gb' ? 'GBP' : 'EUR',
-    postedAt: job.created ?? undefined,
-    source: 'adzuna',
-  })).filter((j) => j.url);
+  return allJobs
+    .map((job) => ({
+      title: stripHtmlTags(job.title),
+      company: job.company?.display_name || 'Unknown',
+      location: job.location?.display_name || '',
+      description: job.description || '',
+      url: job.redirect_url || '',
+      employmentType: mapAdzunaContractTime(job.contract_time),
+      salaryMin: job.salary_min ?? undefined,
+      salaryMax: job.salary_max ?? undefined,
+      salaryCurrency: country === 'us' ? 'USD' : country === 'gb' ? 'GBP' : 'EUR',
+      postedAt: job.created ?? undefined,
+      source: 'adzuna',
+    }))
+    .filter((j) => j.url);
 }
 
 function stripHtmlTags(text: string): string {
@@ -311,25 +315,27 @@ export async function searchWithSerpApi(
     }
   }
 
-  return allJobs.map((job) => {
-    // Find the best apply URL from apply_options, or fall back to share_link
-    const applyUrl = job.apply_options?.[0]?.link || job.share_link || '';
+  return allJobs
+    .map((job) => {
+      // Find the best apply URL from apply_options, or fall back to share_link
+      const applyUrl = job.apply_options?.[0]?.link || job.share_link || '';
 
-    return {
-      title: job.title || 'Untitled',
-      company: job.company_name || 'Unknown',
-      location: job.location || '',
-      description: job.description || '',
-      url: applyUrl,
-      remotePolicy: job.detected_extensions?.work_from_home ? 'remote' : undefined,
-      employmentType: mapSerpApiScheduleType(job.detected_extensions?.schedule_type),
-      salaryMin: parseSerpApiSalary(job.detected_extensions?.salary)?.min,
-      salaryMax: parseSerpApiSalary(job.detected_extensions?.salary)?.max,
-      salaryCurrency: 'USD',
-      postedAt: job.detected_extensions?.posted_at,
-      source: `serpapi:google_jobs`,
-    };
-  }).filter((j) => j.url && j.title !== 'Untitled');
+      return {
+        title: job.title || 'Untitled',
+        company: job.company_name || 'Unknown',
+        location: job.location || '',
+        description: job.description || '',
+        url: applyUrl,
+        remotePolicy: job.detected_extensions?.work_from_home ? 'remote' : undefined,
+        employmentType: mapSerpApiScheduleType(job.detected_extensions?.schedule_type),
+        salaryMin: parseSerpApiSalary(job.detected_extensions?.salary)?.min,
+        salaryMax: parseSerpApiSalary(job.detected_extensions?.salary)?.max,
+        salaryCurrency: 'USD',
+        postedAt: job.detected_extensions?.posted_at,
+        source: `serpapi:google_jobs`,
+      };
+    })
+    .filter((j) => j.url && j.title !== 'Untitled');
 }
 
 function mapSerpApiScheduleType(type: string | undefined): string | undefined {
@@ -342,7 +348,9 @@ function mapSerpApiScheduleType(type: string | undefined): string | undefined {
   return type;
 }
 
-function parseSerpApiSalary(salary: string | undefined): { min?: number; max?: number } | undefined {
+function parseSerpApiSalary(
+  salary: string | undefined,
+): { min?: number; max?: number } | undefined {
   if (!salary) return undefined;
   // Salary strings look like "$120K - $180K a year" or "$50 - $70 an hour"
   const numbers = salary.match(/[\d,]+\.?\d*/g);
