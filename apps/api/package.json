@@ -1,0 +1,38 @@
+{
+  "name": "@job-pilot/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@aws-sdk/client-s3": "^3.1017.0",
+    "@aws-sdk/s3-request-presigner": "^3.1017.0",
+    "@job-pilot/db": "workspace:*",
+    "@job-pilot/mastra": "workspace:*",
+    "@job-pilot/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.100.1",
+    "better-auth": "^1.2.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.45.0",
+    "express": "^5.1.0",
+    "ioredis": "^5.6.1",
+    "postgres": "^3.4.0",
+    "ts-jobspy": "^2.0.3"
+  },
+  "devDependencies": {
+    "@job-pilot/config-typescript": "workspace:*",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.2",
+    "dotenv": "^17.3.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+
+# Base stage
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+WORKDIR /app
+
+# Dependencies stage
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/db/package.json ./packages/db/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/mastra/package.json ./packages/mastra/
+COPY packages/config-tailwind/package.json ./packages/config-tailwind/
+COPY packages/config-typescript/package.json ./packages/config-typescript/
+RUN pnpm install --frozen-lockfile
+
+# Build stage
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY . .
+RUN pnpm turbo build --filter=@job-pilot/web
+
+# Production stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 jobpilot
+
+COPY --from=builder --chown=jobpilot:nodejs /app/apps/web/.output ./.output
+
+USER jobpilot
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", ".output/server/index.mjs"]

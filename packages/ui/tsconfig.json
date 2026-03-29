@@ -1,0 +1,7 @@
+{
+  "extends": "@job-pilot/config-typescript/react.json",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["src"]
+}

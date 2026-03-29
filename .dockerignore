@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.git
+node_modules
+**/node_modules
+docker/data
+coverage
+.turbo
+*.log
+.vinxi
+.output
+dist
+docs

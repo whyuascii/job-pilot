@@ -1,0 +1,9 @@
+{
+  "extends": "@job-pilot/config-typescript/react.json",
+  "compilerOptions": {
+    "paths": {
+      "~/*": ["./app/*"]
+    }
+  },
+  "include": ["app"]
+}

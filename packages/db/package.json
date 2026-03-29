@@ -1,0 +1,33 @@
+{
+  "name": "@job-pilot/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate:run": "tsx src/run-migrate.ts",
+    "type-check": "tsc --noEmit",
+    "db:seed": "tsx src/run-seed.ts",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@job-pilot/shared": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@job-pilot/config-typescript": "workspace:*",
+    "dotenv": "^17.3.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

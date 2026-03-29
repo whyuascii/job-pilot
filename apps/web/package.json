@@ -1,0 +1,35 @@
+{
+  "name": "@job-pilot/web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@job-pilot/mastra": "workspace:*",
+    "@job-pilot/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.100.1",
+    "@tanstack/react-router": "1.168.4",
+    "better-auth": "^1.2.0",
+    "lucide-react": "^0.469.0",
+    "posthog-js": "^1.364.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@job-pilot/config-tailwind": "workspace:*",
+    "@job-pilot/config-typescript": "workspace:*",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.5.2",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^7.0.0"
+  }
+}

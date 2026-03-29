@@ -1,0 +1,16 @@
+{
+  "name": "@job-pilot/config-tailwind",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./globals.css": "./globals.css",
+    "./theme": "./theme.ts"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.0.0"
+  },
+  "dependencies": {
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

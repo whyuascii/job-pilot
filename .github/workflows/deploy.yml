@@ -1,0 +1,183 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+# Prevent concurrent deployments
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC token for AWS auth
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  # ─── CI Gate ────────────────────────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm turbo typecheck
+
+      - name: Run tests
+        run: pnpm turbo test
+
+  # ─── Build & Push Docker Images ─────────────────────────────────────────────
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Generate image tag from commit SHA
+        id: meta
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push web image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ steps.meta.outputs.version }}
+        run: |
+          docker build \
+            -f docker/Dockerfile \
+            -t "$REGISTRY/whyuascii/job-pilot-web:$TAG" \
+            .
+          docker push "$REGISTRY/whyuascii/job-pilot-web:$TAG"
+
+      - name: Build and push API image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ steps.meta.outputs.version }}
+        run: |
+          docker build \
+            -f apps/api/Dockerfile \
+            -t "$REGISTRY/whyuascii/job-pilot-api:$TAG" \
+            .
+          docker push "$REGISTRY/whyuascii/job-pilot-api:$TAG"
+
+  # ─── Deploy to ECS ──────────────────────────────────────────────────────────
+  deploy-web:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy web service
+        env:
+          SERVICE: job-pilot-web
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          ECR_URL: ${{ vars.WEB_ECR_REPO_URL }}
+        run: |
+          TASK_DEF=$(aws ecs describe-services \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services "$SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition' \
+            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            | jq --arg img "$ECR_URL:$IMAGE_TAG" '.containerDefinitions[0].image = $img' \
+            > new-task-def.json
+
+          NEW_TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --service "$SERVICE" \
+            --task-definition "$NEW_TASK_ARN"
+
+      - name: Wait for web deployment to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services job-pilot-web
+
+  deploy-api:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy API service
+        env:
+          SERVICE: job-pilot-api
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          ECR_URL: ${{ vars.API_ECR_REPO_URL }}
+        run: |
+          TASK_DEF=$(aws ecs describe-services \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services "$SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition' \
+            | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            | jq --arg img "$ECR_URL:$IMAGE_TAG" '.containerDefinitions[0].image = $img' \
+            > new-task-def.json
+
+          NEW_TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --service "$SERVICE" \
+            --task-definition "$NEW_TASK_ARN"
+
+      - name: Wait for API deployment to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --services job-pilot-api

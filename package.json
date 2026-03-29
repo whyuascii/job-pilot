@@ -1,0 +1,40 @@
+{
+  "name": "job-pilot",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean",
+    "db:generate": "turbo db:generate --filter=@job-pilot/db",
+    "db:migrate": "turbo db:migrate --filter=@job-pilot/db",
+    "db:push": "turbo db:push --filter=@job-pilot/db",
+    "db:seed": "turbo db:seed --filter=@job-pilot/db",
+    "db:studio": "turbo db:studio --filter=@job-pilot/db",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
+    "@playwright/test": "^1.58.2",
+    "@vitest/coverage-v8": "^4.1.1",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.1"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@tanstack/react-router": "1.168.4"
+    }
+  }
+}
